@@ -1,68 +1,59 @@
-:root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+@import 'tailwindcss';
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+@theme {
+    --font-sans: Inter, system-ui, sans-serif;
+    --font-display: Montserrat, system-ui, sans-serif;
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
+    --color-primary-50: #f0f8ff; /* Very light sky blue */
+    --color-primary-100: #e0f2ff; /* Soft cloud blue */
+    --color-primary-200: #bae6ff; /* Light pastel blue */
+    --color-primary-300: #7dd3ff; /* Medium pastel blue */
+    --color-primary-400: #5cb8f0; /* Lighter logo color */
+    --color-primary-500: #428dd1; /* Logo color */
+    --color-primary-600: #2970b8; /* Slightly deeper */
+    --color-primary-700: #1e5a9b; /* Professional blue */
+    --color-primary-800: #174a82; /* Deep blue */
+    --color-primary-900: #123d6b; /* Navy blue */
+    --color-primary-950: #0a2644; /* Dark navy */
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
-}
+    /* Success (Mint Green) */
+    --color-success-50: #f0fdf5; /* Very light mint */
+    --color-success-100: #dcfce7; /* Light mint */
+    --color-success-200: #bbf7d0; /* Pastel mint */
+    --color-success-300: #86efac; /* Medium mint */
+    --color-success-400: #4ade80; /* Bright green */
+    --color-success-500: #22c55e; /* Main green */
+    --color-success-600: #16a34a; /* Deep green */
 
-body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
-}
+    /* Warning (Soft Peach) */
+    --color-warning-50: #fffbeb; /* Very light peach */
+    --color-warning-100: #fef3c7; /* Light peach */
+    --color-warning-200: #fde68a; /* Pastel yellow */
+    --color-warning-300: #fcd34d; /* Medium yellow */
+    --color-warning-400: #fbbf24; /* Bright yellow */
+    --color-warning-500: #f59e0b; /* Main orange */
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+    /* Error (Soft Coral) */
+    --color-error-50: #fef2f2; /* Very light coral */
+    --color-error-100: #fee2e2; /* Light coral */
+    --color-error-200: #fecaca; /* Pastel coral */
+    --color-error-300: #fca5a5; /* Medium coral */
+    --color-error-400: #f87171; /* Bright coral */
+    --color-error-500: #ef4444; /* Main red */
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+@layer base {
+    body {
+        @apply bg-white text-gray-900;
+        font-family: var(--font-sans);
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        @apply font-display;
+    }
 }
