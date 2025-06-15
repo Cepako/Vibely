@@ -45,10 +45,10 @@ export default function LoginView() {
                 <div className='text-gray-500'>
                     Don't have an account?{' '}
                     <Link
-                        to='/register'
+                        to='/registration'
                         className='text-primary-400 hover:underline'
                     >
-                        Register
+                        Registration
                     </Link>
                 </div>
             </div>

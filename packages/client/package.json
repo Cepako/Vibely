@@ -10,10 +10,13 @@
         "preview": "vite preview"
     },
     "dependencies": {
+        "@floating-ui/react": "^0.27.12",
         "@tabler/icons-react": "^3.34.0",
         "@tailwindcss/vite": "^4.1.8",
         "@tanstack/react-router": "^1.120.18",
         "@tanstack/react-router-devtools": "^1.120.18",
+        "clsx": "^2.1.1",
+        "date-fns": "^4.1.0",
         "react": "^19.1.0",
         "react-dom": "^19.1.0",
         "react-hook-form": "^7.57.0",

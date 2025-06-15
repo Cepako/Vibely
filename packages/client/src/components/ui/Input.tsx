@@ -1,3 +1,5 @@
+import clsx from 'clsx';
+
 export default function Input({
     type = 'text',
     name,
@@ -15,7 +17,10 @@ export default function Input({
             type={type}
             name={name}
             placeholder={placeholder}
-            className={`outline-primary-400 rounded border border-slate-300 p-2 placeholder:text-slate-400 focus:outline-1 ${className}`}
+            className={clsx(
+                'outline-primary-400 rounded border border-slate-300 p-2 placeholder:text-slate-400 focus:outline-1',
+                className
+            )}
             {...props}
         />
     );
