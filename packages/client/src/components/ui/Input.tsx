@@ -1,4 +1,4 @@
-import clsx from 'clsx';
+import { cn } from '../../utils/utils';
 
 export default function Input({
     type = 'text',
@@ -17,7 +17,7 @@ export default function Input({
             type={type}
             name={name}
             placeholder={placeholder}
-            className={clsx(
+            className={cn(
                 'outline-primary-400 rounded border border-slate-300 p-2 placeholder:text-slate-400 focus:outline-1',
                 className
             )}

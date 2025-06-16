@@ -27,10 +27,10 @@ export const UserInfoStep: React.FC = () => {
         defaultValues: {
             name: formData.name || '',
             surname: formData.surname || '',
-            gender: formData.gender || 'male',
+            gender: formData.gender || undefined,
             city: formData.city || '',
             region: formData.region || '',
-            dateOfBirth: formData.dateOfBirth || new Date(),
+            dateOfBirth: formData.dateOfBirth || undefined,
             bio: formData.bio || '',
         },
     });
@@ -148,12 +148,24 @@ export const UserInfoStep: React.FC = () => {
                         control={control}
                         rules={{ required: 'Date of birth is required' }}
                         render={({ field }) => {
-                            const currentDate = field.value || new Date();
-                            const day = currentDate.getDate();
-                            const month = currentDate.getMonth();
-                            const year = currentDate.getFullYear();
+                            const currentDate = field.value;
+                            const day = currentDate
+                                ? currentDate.getDate()
+                                : '';
+                            const month = currentDate
+                                ? currentDate.getMonth()
+                                : '';
+                            const year = currentDate
+                                ? currentDate.getFullYear()
+                                : '';
 
-                            const daysInMonth = getDaysInMonth(month, year);
+                            const daysInMonth =
+                                month !== '' && year !== ''
+                                    ? getDaysInMonth(
+                                          month as number,
+                                          year as number
+                                      )
+                                    : 31;
                             const days = Array.from(
                                 { length: daysInMonth },
                                 (_, i) => i + 1
@@ -167,17 +179,28 @@ export const UserInfoStep: React.FC = () => {
                                             const selectedDay = parseInt(
                                                 e.target.value
                                             );
+                                            if (isNaN(selectedDay)) return;
+
+                                            const currentMonth =
+                                                month !== ''
+                                                    ? (month as number)
+                                                    : new Date().getMonth();
+                                            const currentYear =
+                                                year !== ''
+                                                    ? (year as number)
+                                                    : new Date().getFullYear();
+
                                             const maxDays = getDaysInMonth(
-                                                month,
-                                                year
+                                                currentMonth,
+                                                currentYear
                                             );
                                             const validDay =
                                                 selectedDay > maxDays
                                                     ? maxDays
                                                     : selectedDay;
                                             const newDate = new Date(
-                                                year,
-                                                month,
+                                                currentYear,
+                                                currentMonth,
                                                 validDay
                                             );
                                             field.onChange(newDate);
@@ -200,17 +223,27 @@ export const UserInfoStep: React.FC = () => {
                                             const selectedMonth = parseInt(
                                                 e.target.value
                                             );
+                                            if (isNaN(selectedMonth)) return;
+                                            const currentDay =
+                                                day !== ''
+                                                    ? (day as number)
+                                                    : 1;
+                                            const currentYear =
+                                                year !== ''
+                                                    ? (year as number)
+                                                    : new Date().getFullYear();
+
                                             const maxDaysInNewMonth =
                                                 getDaysInMonth(
                                                     selectedMonth,
-                                                    year
+                                                    currentYear
                                                 );
                                             const validDay =
-                                                day > maxDaysInNewMonth
+                                                currentDay > maxDaysInNewMonth
                                                     ? maxDaysInNewMonth
-                                                    : day;
+                                                    : currentDay;
                                             const newDate = new Date(
-                                                year,
+                                                currentYear,
                                                 selectedMonth,
                                                 validDay
                                             );
@@ -237,18 +270,29 @@ export const UserInfoStep: React.FC = () => {
                                             const selectedYear = parseInt(
                                                 e.target.value
                                             );
+                                            if (isNaN(selectedYear)) return;
+
+                                            const currentDay =
+                                                day !== ''
+                                                    ? (day as number)
+                                                    : 1;
+                                            const currentMonth =
+                                                month !== ''
+                                                    ? (month as number)
+                                                    : 0;
+
                                             const maxDaysInMonth =
                                                 getDaysInMonth(
-                                                    month,
+                                                    currentMonth,
                                                     selectedYear
                                                 );
                                             const validDay =
-                                                day > maxDaysInMonth
+                                                currentDay > maxDaysInMonth
                                                     ? maxDaysInMonth
-                                                    : day;
+                                                    : currentDay;
                                             const newDate = new Date(
                                                 selectedYear,
-                                                month,
+                                                currentMonth,
                                                 validDay
                                             );
                                             field.onChange(newDate);

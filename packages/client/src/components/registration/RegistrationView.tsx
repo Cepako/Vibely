@@ -68,13 +68,13 @@ export default function RegisterView() {
                                 <div className='flex gap-3'>
                                     <Button
                                         onClick={modal.closeModal}
-                                        className='flex-1 bg-amber-400'
+                                        className='flex-1'
                                     >
                                         Stay
                                     </Button>
                                     <Button
                                         onClick={handleConfirmLeave}
-                                        className='flex-1 !bg-rose-600 hover:!bg-rose-700'
+                                        className='flex-1 bg-rose-600 hover:bg-rose-700'
                                     >
                                         Leave
                                     </Button>
@@ -83,7 +83,7 @@ export default function RegisterView() {
                         </Modal>
                         <div
                             onClick={handleLoginClick}
-                            className='text-primary-400 hover:underline'
+                            className='text-primary-400 cursor-pointer hover:underline'
                         >
                             Login
                         </div>

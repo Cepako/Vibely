@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useRegistration } from './RegistrationProvider';
 import Button from '../ui/Button';
 import { IconTrash, IconUserFilled } from '@tabler/icons-react';
+import Tooltip from '../ui/Tooltip';
 
 export const ProfilePictureStep: React.FC = () => {
     const { formData, updateFormData, prevStep, submitRegistration } =
@@ -51,29 +52,35 @@ export const ProfilePictureStep: React.FC = () => {
                 Add Profile Picture
             </h2>
 
-            <div className='relative flex flex-col items-center gap-6'>
-                <div className='border-primary-400 flex h-32 w-32 items-center justify-center overflow-hidden rounded-full border-4 bg-gray-100'>
-                    {selectedImage ? (
-                        <img
-                            src={selectedImage}
-                            alt='Profile'
-                            className='h-full w-full object-cover'
-                        />
-                    ) : (
-                        <div className='text-primary-500 text-4xl'>
-                            <IconUserFilled size={50} />
-                        </div>
-                    )}
+            <div className='flex flex-col items-center gap-6'>
+                <div className='relative'>
+                    <div className='border-primary-400 flex h-32 w-32 items-center justify-center overflow-hidden rounded-full border-4 bg-gray-100'>
+                        {selectedImage ? (
+                            <img
+                                src={selectedImage}
+                                alt='Profile'
+                                className='h-full w-full object-cover'
+                            />
+                        ) : (
+                            <div className='text-primary-500 text-4xl'>
+                                <IconUserFilled size={50} />
+                            </div>
+                        )}
+                    </div>
 
                     {selectedImage && !isUploading && (
-                        <button
-                            type='button'
-                            onClick={handleRemoveImage}
-                            className='absolute top-0 right-0 z-30 cursor-pointer rounded-full bg-red-500 p-1 text-white shadow-lg transition-colors hover:bg-red-600'
-                            aria-label='Remove profile picture'
-                        >
-                            <IconTrash size={16} />
-                        </button>
+                        <div className='absolute -top-2 -right-2'>
+                            <Tooltip content='Remove image' offset={10}>
+                                <button
+                                    type='button'
+                                    onClick={handleRemoveImage}
+                                    className='flex cursor-pointer items-center justify-center rounded-full bg-red-500 p-2 text-white shadow-lg transition-all hover:bg-red-600'
+                                    aria-label='Remove profile picture'
+                                >
+                                    <IconTrash size={16} />
+                                </button>
+                            </Tooltip>
+                        </div>
                     )}
                 </div>
 

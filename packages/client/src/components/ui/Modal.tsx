@@ -20,6 +20,7 @@ import {
     type Placement,
 } from '@floating-ui/react';
 import { IconX } from '@tabler/icons-react';
+import { cn } from '../../utils/utils';
 
 export type ModalSize = 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'full';
 export type ModalPlacement = 'center' | Placement;
@@ -124,7 +125,12 @@ export const Modal: React.FC<ModalProps> = ({
                             : floatingStyles
                     }
                     {...getFloatingProps()}
-                    className={`rounded-lg border border-gray-200 bg-white shadow-xl ${sizeClasses[size]} ${placement === 'center' ? 'max-h-[90vh] w-full' : ''} ${className}`}
+                    className={cn(
+                        'rounded-lg border border-gray-200 bg-white shadow-xl',
+                        sizeClasses[size],
+                        placement === 'center' ? 'max-h-[90vh] w-full' : '',
+                        className
+                    )}
                 >
                     {(title || showCloseButton) && (
                         <div className='flex items-center justify-between border-b border-gray-200 p-4'>
@@ -174,6 +180,7 @@ export const Modal: React.FC<ModalProps> = ({
     );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useModal = (initialState: boolean = false): UseModalReturn => {
     const [isOpen, setIsOpen] = useState<boolean>(initialState);
 

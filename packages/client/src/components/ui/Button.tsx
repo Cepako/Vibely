@@ -1,3 +1,5 @@
+import { cn } from '../../utils/utils';
+
 export default function Button({
     children,
     className = '',
@@ -13,7 +15,10 @@ export default function Button({
     return (
         <button
             type={type}
-            className={`bg-primary-600 hover:bg-primary-700 cursor-pointer rounded p-2 text-white duration-200 ${className}`}
+            className={cn(
+                'bg-primary-600 hover:bg-primary-700 cursor-pointer rounded p-2 text-white duration-200',
+                className
+            )}
             onClick={onClick}
             {...props}
         >
