@@ -22,7 +22,7 @@ export default function NavBar({ view }: NavBarProps) {
     const handleNavigate = (view: string) => navigate({ to: `/${view}` });
 
     return (
-        <div className='flex h-screen flex-col overflow-hidden border-r border-slate-300 p-5'>
+        <div className='flex h-screen min-w-[250px] flex-col border-r border-slate-300 bg-white p-5'>
             <h1
                 className='text-primary-500 flex cursor-pointer items-center text-5xl font-bold'
                 onClick={() => handleNavigate('home')}

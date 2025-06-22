@@ -43,6 +43,8 @@ export interface TooltipProps {
         | 'right-end';
     /** Opóźnienie przed pokazaniem tooltip (ms) */
     delay?: number;
+    /** Opóźnienie przed ukryciem tooltip (ms) */
+    closeDelay?: number;
     /** Czy tooltip ma być widoczny */
     open?: boolean;
     /** Callback wywoływany przy zmianie stanu widoczności */
@@ -68,6 +70,7 @@ const Tooltip: React.FC<TooltipProps> = ({
     children,
     placement = 'top',
     delay = 0,
+    closeDelay = 0,
     open: controlledOpen,
     onOpenChange,
     trigger = 'hover',
@@ -107,9 +110,9 @@ const Tooltip: React.FC<TooltipProps> = ({
         enabled: trigger === 'hover',
         delay: {
             open: delay,
-            close: 0,
+            close: closeDelay,
         },
-        restMs: 40,
+        restMs: delay + 40,
     });
 
     const focus = useFocus(context, {

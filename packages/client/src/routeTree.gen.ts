@@ -13,6 +13,10 @@
 import { Route as rootRoute } from './routes/__root'
 import { Route as RegistrationImport } from './routes/registration'
 import { Route as IndexImport } from './routes/index'
+import { Route as MessagesIndexImport } from './routes/messages/index'
+import { Route as HomeIndexImport } from './routes/home/index'
+import { Route as ExploreIndexImport } from './routes/explore/index'
+import { Route as EventsIndexImport } from './routes/events/index'
 
 // Create/Update Routes
 
@@ -25,6 +29,30 @@ const RegistrationRoute = RegistrationImport.update({
 const IndexRoute = IndexImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const MessagesIndexRoute = MessagesIndexImport.update({
+  id: '/messages/',
+  path: '/messages/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const HomeIndexRoute = HomeIndexImport.update({
+  id: '/home/',
+  path: '/home/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const ExploreIndexRoute = ExploreIndexImport.update({
+  id: '/explore/',
+  path: '/explore/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const EventsIndexRoute = EventsIndexImport.update({
+  id: '/events/',
+  path: '/events/',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -46,6 +74,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RegistrationImport
       parentRoute: typeof rootRoute
     }
+    '/events/': {
+      id: '/events/'
+      path: '/events'
+      fullPath: '/events'
+      preLoaderRoute: typeof EventsIndexImport
+      parentRoute: typeof rootRoute
+    }
+    '/explore/': {
+      id: '/explore/'
+      path: '/explore'
+      fullPath: '/explore'
+      preLoaderRoute: typeof ExploreIndexImport
+      parentRoute: typeof rootRoute
+    }
+    '/home/': {
+      id: '/home/'
+      path: '/home'
+      fullPath: '/home'
+      preLoaderRoute: typeof HomeIndexImport
+      parentRoute: typeof rootRoute
+    }
+    '/messages/': {
+      id: '/messages/'
+      path: '/messages'
+      fullPath: '/messages'
+      preLoaderRoute: typeof MessagesIndexImport
+      parentRoute: typeof rootRoute
+    }
   }
 }
 
@@ -54,36 +110,69 @@ declare module '@tanstack/react-router' {
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/registration': typeof RegistrationRoute
+  '/events': typeof EventsIndexRoute
+  '/explore': typeof ExploreIndexRoute
+  '/home': typeof HomeIndexRoute
+  '/messages': typeof MessagesIndexRoute
 }
 
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/registration': typeof RegistrationRoute
+  '/events': typeof EventsIndexRoute
+  '/explore': typeof ExploreIndexRoute
+  '/home': typeof HomeIndexRoute
+  '/messages': typeof MessagesIndexRoute
 }
 
 export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
   '/registration': typeof RegistrationRoute
+  '/events/': typeof EventsIndexRoute
+  '/explore/': typeof ExploreIndexRoute
+  '/home/': typeof HomeIndexRoute
+  '/messages/': typeof MessagesIndexRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/registration'
+  fullPaths:
+    | '/'
+    | '/registration'
+    | '/events'
+    | '/explore'
+    | '/home'
+    | '/messages'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/registration'
-  id: '__root__' | '/' | '/registration'
+  to: '/' | '/registration' | '/events' | '/explore' | '/home' | '/messages'
+  id:
+    | '__root__'
+    | '/'
+    | '/registration'
+    | '/events/'
+    | '/explore/'
+    | '/home/'
+    | '/messages/'
   fileRoutesById: FileRoutesById
 }
 
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   RegistrationRoute: typeof RegistrationRoute
+  EventsIndexRoute: typeof EventsIndexRoute
+  ExploreIndexRoute: typeof ExploreIndexRoute
+  HomeIndexRoute: typeof HomeIndexRoute
+  MessagesIndexRoute: typeof MessagesIndexRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   RegistrationRoute: RegistrationRoute,
+  EventsIndexRoute: EventsIndexRoute,
+  ExploreIndexRoute: ExploreIndexRoute,
+  HomeIndexRoute: HomeIndexRoute,
+  MessagesIndexRoute: MessagesIndexRoute,
 }
 
 export const routeTree = rootRoute
@@ -97,7 +186,11 @@ export const routeTree = rootRoute
       "filePath": "__root.tsx",
       "children": [
         "/",
-        "/registration"
+        "/registration",
+        "/events/",
+        "/explore/",
+        "/home/",
+        "/messages/"
       ]
     },
     "/": {
@@ -105,6 +198,18 @@ export const routeTree = rootRoute
     },
     "/registration": {
       "filePath": "registration.tsx"
+    },
+    "/events/": {
+      "filePath": "events/index.tsx"
+    },
+    "/explore/": {
+      "filePath": "explore/index.tsx"
+    },
+    "/home/": {
+      "filePath": "home/index.tsx"
+    },
+    "/messages/": {
+      "filePath": "messages/index.tsx"
     }
   }
 }

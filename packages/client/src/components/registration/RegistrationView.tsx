@@ -7,25 +7,25 @@ import { UserInfoStep } from './UserInfoStep';
 import { ProfilePictureStep } from './ProfilePictureStep';
 import VibelyIcon from '../ui/VibelyIcon';
 import { useNavigate } from '@tanstack/react-router';
-import { Modal, useModal } from '../ui/Modal';
+import { Dialog, useDialog } from '../ui/Dialog';
 import Button from '../ui/Button';
 
 export default function RegisterView() {
     const { currentStep, formData } = useRegistration();
-    const modal = useModal(false);
+    const dialog = useDialog(false);
     const navigate = useNavigate();
     const dataExists = hasFormData(formData);
 
     const handleLoginClick = () => {
         if (dataExists) {
-            modal.openModal();
+            dialog.openDialog();
         } else {
             navigate({ to: '/' });
         }
     };
 
     const handleConfirmLeave = () => {
-        modal.closeModal();
+        dialog.closeDialog();
         navigate({ to: '/' });
     };
 
@@ -53,21 +53,21 @@ export default function RegisterView() {
                     <>{renderCurrentStep()}</>
                     <div className='flex gap-1 text-gray-500'>
                         Already have account?{' '}
-                        <Modal
-                            isOpen={modal.isOpen}
-                            onClose={modal.closeModal}
+                        <Dialog
+                            isOpen={dialog.isOpen}
+                            onClose={dialog.closeDialog}
                             title='You have unsaved changes in your registration form!'
                             size='md'
                             placement='center'
                         >
-                            <div className='flex flex-col gap-5'>
+                            <div className='flex flex-col gap-5 rounded-2xl border border-slate-700 bg-white p-5'>
                                 <p className='text-slate-500'>
                                     Are you sure you want to leave? All your
                                     progress will be lost.
                                 </p>
                                 <div className='flex gap-3'>
                                     <Button
-                                        onClick={modal.closeModal}
+                                        onClick={dialog.closeDialog}
                                         className='flex-1'
                                     >
                                         Stay
@@ -80,7 +80,7 @@ export default function RegisterView() {
                                     </Button>
                                 </div>
                             </div>
-                        </Modal>
+                        </Dialog>
                         <div
                             onClick={handleLoginClick}
                             className='text-primary-400 cursor-pointer hover:underline'

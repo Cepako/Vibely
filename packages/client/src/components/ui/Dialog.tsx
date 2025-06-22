@@ -19,19 +19,18 @@ import {
     FloatingOverlay,
     type Placement,
 } from '@floating-ui/react';
-import { IconX } from '@tabler/icons-react';
 import { cn } from '../../utils/utils';
 
-export type ModalSize = 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'full';
-export type ModalPlacement = 'center' | Placement;
+export type DialogSize = 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'full';
+export type DialogPlacement = 'center' | Placement;
 
-export interface ModalProps {
+export interface DialogProps {
     isOpen: boolean;
     onClose: () => void;
     children: ReactNode;
     title?: string;
-    size?: ModalSize;
-    placement?: ModalPlacement;
+    size?: DialogSize;
+    placement?: DialogPlacement;
     closeOnOverlayClick?: boolean;
     closeOnEscape?: boolean;
     showCloseButton?: boolean;
@@ -40,23 +39,21 @@ export interface ModalProps {
     trigger?: ReactElement<{ ref?: React.Ref<HTMLElement> }>;
 }
 
-export interface UseModalReturn {
+export interface UseDialogReturn {
     isOpen: boolean;
-    openModal: () => void;
-    closeModal: () => void;
-    toggleModal: () => void;
+    openDialog: () => void;
+    closeDialog: () => void;
+    toggleDialog: () => void;
 }
 
-export const Modal: React.FC<ModalProps> = ({
+export const Dialog: React.FC<DialogProps> = ({
     isOpen,
     onClose,
     children,
-    title,
     size = 'md',
     placement = 'center',
     closeOnOverlayClick = true,
     closeOnEscape = true,
-    showCloseButton = true,
     className = '',
     overlayClassName = '',
     trigger = null,
@@ -96,7 +93,7 @@ export const Modal: React.FC<ModalProps> = ({
         role,
     ]);
 
-    const sizeClasses: Record<ModalSize, string> = {
+    const sizeClasses: Record<DialogSize, string> = {
         sm: 'max-w-sm',
         md: 'max-w-md',
         lg: 'max-w-lg',
@@ -105,7 +102,7 @@ export const Modal: React.FC<ModalProps> = ({
         full: 'max-w-full mx-4',
     };
 
-    const modalContent = (
+    const DialogContent = (
         <FloatingOverlay
             className={`fixed inset-0 z-50 bg-black/50 backdrop-blur-sm ${overlayClassName}`}
             lockScroll
@@ -126,38 +123,13 @@ export const Modal: React.FC<ModalProps> = ({
                     }
                     {...getFloatingProps()}
                     className={cn(
-                        'rounded-lg border border-gray-200 bg-white shadow-xl',
+                        'border-0 outline-none focus:border-0 focus:ring-0 focus:outline-none',
                         sizeClasses[size],
                         placement === 'center' ? 'max-h-[90vh] w-full' : '',
                         className
                     )}
                 >
-                    {(title || showCloseButton) && (
-                        <div className='flex items-center justify-between border-b border-gray-200 p-4'>
-                            {title && (
-                                <h2 className='text-lg font-bold text-slate-700'>
-                                    {title}
-                                </h2>
-                            )}
-                            {showCloseButton && (
-                                <button
-                                    onClick={onClose}
-                                    className='cursor-pointer rounded-md p-1 transition-colors hover:bg-gray-100'
-                                    aria-label='Close modal'
-                                    type='button'
-                                >
-                                    <IconX
-                                        size={20}
-                                        className='text-gray-500'
-                                    />
-                                </button>
-                            )}
-                        </div>
-                    )}
-
-                    <div className='max-h-[calc(90vh-8rem)] overflow-y-auto p-4'>
-                        {children}
-                    </div>
+                    {children}
                 </div>
             </FloatingFocusManager>
         </FloatingOverlay>
@@ -175,23 +147,23 @@ export const Modal: React.FC<ModalProps> = ({
     return (
         <>
             {triggerElement}
-            {isOpen && createPortal(modalContent, document.body)}
+            {isOpen && createPortal(DialogContent, document.body)}
         </>
     );
 };
 
 // eslint-disable-next-line react-refresh/only-export-components
-export const useModal = (initialState: boolean = false): UseModalReturn => {
+export const useDialog = (initialState: boolean = false): UseDialogReturn => {
     const [isOpen, setIsOpen] = useState<boolean>(initialState);
 
-    const openModal = (): void => setIsOpen(true);
-    const closeModal = (): void => setIsOpen(false);
-    const toggleModal = (): void => setIsOpen((prev) => !prev);
+    const openDialog = (): void => setIsOpen(true);
+    const closeDialog = (): void => setIsOpen(false);
+    const toggleDialog = (): void => setIsOpen((prev) => !prev);
 
     return {
         isOpen,
-        openModal,
-        closeModal,
-        toggleModal,
+        openDialog,
+        closeDialog,
+        toggleDialog,
     };
 };
