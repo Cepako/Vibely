@@ -17,6 +17,7 @@ import { Route as MessagesIndexImport } from './routes/messages/index'
 import { Route as HomeIndexImport } from './routes/home/index'
 import { Route as ExploreIndexImport } from './routes/explore/index'
 import { Route as EventsIndexImport } from './routes/events/index'
+import { Route as ProfileIdImport } from './routes/profile.$id'
 
 // Create/Update Routes
 
@@ -56,6 +57,12 @@ const EventsIndexRoute = EventsIndexImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
+const ProfileIdRoute = ProfileIdImport.update({
+  id: '/profile/$id',
+  path: '/profile/$id',
+  getParentRoute: () => rootRoute,
+} as any)
+
 // Populate the FileRoutesByPath interface
 
 declare module '@tanstack/react-router' {
@@ -72,6 +79,13 @@ declare module '@tanstack/react-router' {
       path: '/registration'
       fullPath: '/registration'
       preLoaderRoute: typeof RegistrationImport
+      parentRoute: typeof rootRoute
+    }
+    '/profile/$id': {
+      id: '/profile/$id'
+      path: '/profile/$id'
+      fullPath: '/profile/$id'
+      preLoaderRoute: typeof ProfileIdImport
       parentRoute: typeof rootRoute
     }
     '/events/': {
@@ -110,6 +124,7 @@ declare module '@tanstack/react-router' {
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/registration': typeof RegistrationRoute
+  '/profile/$id': typeof ProfileIdRoute
   '/events': typeof EventsIndexRoute
   '/explore': typeof ExploreIndexRoute
   '/home': typeof HomeIndexRoute
@@ -119,6 +134,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/registration': typeof RegistrationRoute
+  '/profile/$id': typeof ProfileIdRoute
   '/events': typeof EventsIndexRoute
   '/explore': typeof ExploreIndexRoute
   '/home': typeof HomeIndexRoute
@@ -129,6 +145,7 @@ export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
   '/registration': typeof RegistrationRoute
+  '/profile/$id': typeof ProfileIdRoute
   '/events/': typeof EventsIndexRoute
   '/explore/': typeof ExploreIndexRoute
   '/home/': typeof HomeIndexRoute
@@ -140,16 +157,25 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/registration'
+    | '/profile/$id'
     | '/events'
     | '/explore'
     | '/home'
     | '/messages'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/registration' | '/events' | '/explore' | '/home' | '/messages'
+  to:
+    | '/'
+    | '/registration'
+    | '/profile/$id'
+    | '/events'
+    | '/explore'
+    | '/home'
+    | '/messages'
   id:
     | '__root__'
     | '/'
     | '/registration'
+    | '/profile/$id'
     | '/events/'
     | '/explore/'
     | '/home/'
@@ -160,6 +186,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   RegistrationRoute: typeof RegistrationRoute
+  ProfileIdRoute: typeof ProfileIdRoute
   EventsIndexRoute: typeof EventsIndexRoute
   ExploreIndexRoute: typeof ExploreIndexRoute
   HomeIndexRoute: typeof HomeIndexRoute
@@ -169,6 +196,7 @@ export interface RootRouteChildren {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   RegistrationRoute: RegistrationRoute,
+  ProfileIdRoute: ProfileIdRoute,
   EventsIndexRoute: EventsIndexRoute,
   ExploreIndexRoute: ExploreIndexRoute,
   HomeIndexRoute: HomeIndexRoute,
@@ -187,6 +215,7 @@ export const routeTree = rootRoute
       "children": [
         "/",
         "/registration",
+        "/profile/$id",
         "/events/",
         "/explore/",
         "/home/",
@@ -198,6 +227,9 @@ export const routeTree = rootRoute
     },
     "/registration": {
       "filePath": "registration.tsx"
+    },
+    "/profile/$id": {
+      "filePath": "profile.$id.tsx"
     },
     "/events/": {
       "filePath": "events/index.tsx"

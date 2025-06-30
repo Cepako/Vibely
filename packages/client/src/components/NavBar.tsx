@@ -9,7 +9,7 @@ import {
 } from '@tabler/icons-react';
 
 interface NavBarProps {
-    view: 'home' | 'messages' | 'events' | 'explore';
+    view?: 'home' | 'messages' | 'events' | 'explore' | 'me';
 }
 
 export default function NavBar({ view }: NavBarProps) {
@@ -70,9 +70,22 @@ export default function NavBar({ view }: NavBarProps) {
                     <IconCompass /> Explore
                 </div>
             </div>
-            <div className='mt-auto mb-8 flex cursor-pointer items-center gap-2 pt-52 text-xl font-semibold'>
-                <div className='bg-primary-600 h-10 w-10 rounded-full' />
-                John Smith
+            <div
+                className={cn(
+                    'mt-auto mb-8 flex cursor-pointer items-center gap-2 rounded-xl p-3 text-xl font-semibold duration-200',
+                    view === 'me' && activeStyles
+                )}
+                onClick={() => {
+                    navigate({ to: '/profile/$id', params: { id: '1' } });
+                }}
+            >
+                <div className='h-10 w-10 overflow-hidden rounded-full border border-slate-200'>
+                    <img
+                        src='https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&crop=face'
+                        alt='profile image'
+                    />
+                </div>
+                <div>John Smith</div>
             </div>
         </div>
     );
