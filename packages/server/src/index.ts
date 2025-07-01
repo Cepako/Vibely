@@ -1,18 +1,57 @@
-import 'dotenv/config';
-import Fastify from 'fastify';
+import Fastify, { FastifyInstance } from 'fastify';
+import cors from '@fastify/cors';
+import swagger from '@fastify/swagger';
+import swaggerUI from '@fastify/swagger-ui';
+import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
+import authRoute from './auth/auth.routes';
+import { ENV } from './utils/env';
 
-const fastify = Fastify({
+const server = Fastify({
     logger: true,
+}).withTypeProvider<TypeBoxTypeProvider>();
+
+server.register(cors, {
+    origin: true,
+    credentials: true,
 });
 
-fastify.get('/', async (_, __) => {
-    return { hello: 'world' };
+server.register(swagger, {
+    openapi: {
+        info: {
+            title: 'Vibely API Docs',
+            version: '1.0.0',
+        },
+    },
 });
 
-fastify.listen({ port: 3000 }, (err, address) => {
+server.register(swaggerUI, {
+    routePrefix: '/docs',
+    uiConfig: {
+        docExpansion: 'full',
+        deepLinking: false,
+    },
+});
+
+server.register(
+    async (api: FastifyInstance) => {
+        api.register(authRoute, { prefix: '/auth' });
+    },
+    { prefix: '/api' }
+);
+
+server.get('/health', async () => ({ status: 'ok' }));
+
+server.setErrorHandler((error, request, reply) => {
+    request.log.error(error);
+    reply.status(error.statusCode || 500).send({
+        error: error.message || 'Internal Server Error',
+    });
+});
+
+server.listen({ port: ENV.PORT || 3000 }, (err, address) => {
     if (err) {
-        fastify.log.error(err);
+        server.log.error(err);
         process.exit(1);
     }
-    fastify.log.info(`Server listening at ${address}`);
+    server.log.info(`Server listening at ${address}`);
 });
