@@ -5,6 +5,7 @@ import swaggerUI from '@fastify/swagger-ui';
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import authRoute from './auth/auth.routes';
 import { ENV } from './utils/env';
+import { errorHandler } from './plugins/errorHandler';
 
 const server = Fastify({
     logger: true,
@@ -32,6 +33,8 @@ server.register(swaggerUI, {
     },
 });
 
+server.setErrorHandler(errorHandler);
+
 server.register(
     async (api: FastifyInstance) => {
         api.register(authRoute, { prefix: '/auth' });
@@ -40,13 +43,6 @@ server.register(
 );
 
 server.get('/health', async () => ({ status: 'ok' }));
-
-server.setErrorHandler((error, request, reply) => {
-    request.log.error(error);
-    reply.status(error.statusCode || 500).send({
-        error: error.message || 'Internal Server Error',
-    });
-});
 
 server.listen({ port: ENV.PORT || 3000 }, (err, address) => {
     if (err) {

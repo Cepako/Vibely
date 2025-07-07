@@ -10,6 +10,7 @@ const EnvSchema = Type.Object({
     ]),
     DATABASE_URL: Type.String({ format: 'uri' }),
     PORT: Type.Optional(Type.Number()),
+    JWT_SECRET: Type.String(),
 });
 
 export type Env = Static<typeof EnvSchema>;
@@ -22,6 +23,7 @@ const env = {
     NODE_ENV: process.env.NODE_ENV,
     DATABASE_URL: process.env.DATABASE_URL,
     PORT: process.env.PORT ? Number(process.env.PORT) : undefined,
+    JWT_SECRET: process.env.JWT_SECRET,
 };
 
 if (!validate(env)) {
