@@ -3,7 +3,7 @@ import AuthController from './auth.controller';
 import { LoginBody, LoginSchema } from './auth.schema';
 import { AuthService } from './auth.service';
 
-export default async function authRoute(fastify: FastifyInstance) {
+export default async function authRoutes(fastify: FastifyInstance) {
     const authService = new AuthService();
     const authController = new AuthController(authService);
 
@@ -17,4 +17,6 @@ export default async function authRoute(fastify: FastifyInstance) {
         (req: FastifyRequest<{ Body: LoginBody }>, reply: FastifyReply) =>
             authController.login(req, reply)
     );
+
+    //TODO:Logout - change users table (is_online,last_login_at), add to Login - change users table (is_online)
 }

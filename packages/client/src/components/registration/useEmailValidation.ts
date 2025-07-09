@@ -18,7 +18,7 @@ export const useEmailValidation = (email: string, delay: number = 500) => {
             setError(null);
 
             try {
-                const response = await fetch('/api/auth/check-email', {
+                const response = await fetch('/api/user/check-email', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -38,8 +38,8 @@ export const useEmailValidation = (email: string, delay: number = 500) => {
                 }
             } catch (err) {
                 console.error(err);
-                // setError('Failed to verify email');
-                setIsAvailable(true); //TODO: change to null when connect with backend
+                setError('Failed to verify email');
+                setIsAvailable(null);
             } finally {
                 setIsChecking(false);
             }

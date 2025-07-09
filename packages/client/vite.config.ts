@@ -17,4 +17,12 @@ export default defineConfig({
                 '@tabler/icons-react/dist/esm/icons/index.mjs',
         },
     },
+    server: {
+        proxy: {
+            '/api': {
+                target: 'http://localhost:3000',
+                changeOrigin: true,
+            },
+        },
+    },
 });

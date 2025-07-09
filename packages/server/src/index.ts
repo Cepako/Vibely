@@ -3,9 +3,10 @@ import cors from '@fastify/cors';
 import swagger from '@fastify/swagger';
 import swaggerUI from '@fastify/swagger-ui';
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
-import authRoute from './auth/auth.routes';
 import { ENV } from './utils/env';
 import { errorHandler } from './plugins/errorHandler';
+import authRoutes from './auth/auth.routes';
+import userRoutes from './user/user.routes';
 
 const server = Fastify({
     logger: true,
@@ -37,7 +38,8 @@ server.setErrorHandler(errorHandler);
 
 server.register(
     async (api: FastifyInstance) => {
-        api.register(authRoute, { prefix: '/auth' });
+        api.register(authRoutes, { prefix: '/auth' });
+        api.register(userRoutes, { prefix: '/user' });
     },
     { prefix: '/api' }
 );
