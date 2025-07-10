@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, type ReactNode } from 'react';
+import { useRegisterUser } from './useRegisterUser';
 
 export type RegistrationFormData = {
     email: string;
@@ -7,7 +8,7 @@ export type RegistrationFormData = {
     name: string;
     surname: string;
     gender: 'male' | 'female';
-    profilePicture?: string;
+    profilePicture?: File;
     bio?: string;
     city?: string;
     region?: string;
@@ -48,6 +49,7 @@ const RegistrationProvider: React.FC<RegistrationProviderProps> = ({
     const [currentStep, setCurrentStep] =
         useState<RegistrationStep>('credentials');
     const [formData, setFormData] = useState<Partial<RegistrationFormData>>({});
+    const { mutate: register } = useRegisterUser();
 
     const steps: RegistrationStep[] = [
         'credentials',
@@ -74,8 +76,27 @@ const RegistrationProvider: React.FC<RegistrationProviderProps> = ({
     };
 
     const submitRegistration = () => {
-        console.log('Final registration data:', formData);
-        // TODO: Handle final registration submission
+        const payload = new FormData();
+
+        payload.append('email', formData.email!);
+        payload.append('password', formData.password!);
+        payload.append('name', formData.name!);
+        payload.append('surname', formData.surname!);
+        payload.append('gender', formData.gender!);
+        payload.append('dateOfBirth', formData.dateOfBirth!.toISOString());
+
+        if (formData.city) payload.append('city', formData.city);
+        if (formData.region) payload.append('region', formData.region);
+        if (formData.bio) payload.append('bio', formData.bio);
+
+        if (
+            formData.profilePicture &&
+            formData.profilePicture instanceof File
+        ) {
+            payload.append('profilePicture', formData.profilePicture);
+        }
+
+        register(payload);
     };
 
     return (

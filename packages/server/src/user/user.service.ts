@@ -22,7 +22,7 @@ export default class UserService implements IUserService {
         user.surname = user.surname.trim();
 
         const { email, password } = user;
-        const isEmailAvailable = this.checkIsEmailAvailable(email);
+        const isEmailAvailable = await this.checkIsEmailAvailable(email);
         if (!isEmailAvailable) {
             const EmailInUse = createError(
                 'EMAIL_IN_USE',

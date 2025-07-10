@@ -5,44 +5,31 @@ import { IconTrash, IconUserFilled } from '@tabler/icons-react';
 import Tooltip from '../ui/Tooltip';
 
 export const ProfilePictureStep: React.FC = () => {
-    const { formData, updateFormData, prevStep, submitRegistration } =
-        useRegistration();
-    const [selectedImage, setSelectedImage] = useState<string>(
-        formData.profilePicture || ''
-    );
-    const [isUploading, setIsUploading] = useState(false);
+    const { updateFormData, prevStep, submitRegistration } = useRegistration();
+    const [preview, setPreview] = useState<string>('');
 
     const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (file) {
-            setIsUploading(true);
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const imageUrl = e.target?.result as string;
-                setSelectedImage(imageUrl);
-                setIsUploading(false);
-            };
-            reader.readAsDataURL(file);
+            updateFormData({ profilePicture: file });
+            setPreview(URL.createObjectURL(file));
         }
     };
 
     const handleRemoveImage = () => {
-        setSelectedImage('');
+        updateFormData({ profilePicture: undefined });
+        setPreview('');
         const fileInput = document.querySelector(
             'input[type="file"]'
         ) as HTMLInputElement;
-        if (fileInput) {
-            fileInput.value = '';
-        }
+        if (fileInput) fileInput.value = '';
     };
 
     const handleSubmit = () => {
-        updateFormData({ profilePicture: selectedImage });
         submitRegistration();
     };
 
     const handleSkip = () => {
-        updateFormData({ profilePicture: '' });
         submitRegistration();
     };
 
@@ -55,9 +42,9 @@ export const ProfilePictureStep: React.FC = () => {
             <div className='flex flex-col items-center gap-6'>
                 <div className='relative'>
                     <div className='border-primary-400 flex h-32 w-32 items-center justify-center overflow-hidden rounded-full border-4 bg-gray-100'>
-                        {selectedImage ? (
+                        {preview ? (
                             <img
-                                src={selectedImage}
+                                src={preview}
                                 alt='Profile'
                                 className='h-full w-full object-cover'
                             />
@@ -68,7 +55,7 @@ export const ProfilePictureStep: React.FC = () => {
                         )}
                     </div>
 
-                    {selectedImage && !isUploading && (
+                    {preview && (
                         <div className='absolute -top-2 -right-2'>
                             <Tooltip content='Remove image' offset={10}>
                                 <button
@@ -83,10 +70,6 @@ export const ProfilePictureStep: React.FC = () => {
                         </div>
                     )}
                 </div>
-
-                {isUploading && (
-                    <div className='text-blue-500'>Uploading...</div>
-                )}
 
                 <label className='bg-primary-400 hover:bg-primary-500 cursor-pointer rounded-lg px-6 py-2 text-white transition-colors'>
                     Choose Photo

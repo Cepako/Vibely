@@ -1,10 +1,19 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
 import UserService from './user.service';
-import { RegisterUser } from './user.schema';
+import { RegisterUser, RegisterUserSchema } from './user.schema';
+import path from 'path';
+import fs from 'fs';
+import Ajv from 'ajv';
+import addFormats from 'ajv-formats';
 
 interface IUserController {
     registerUser: (
-        req: FastifyRequest<{ Body: { user: RegisterUser } }>,
+        fields: RegisterUser,
+        profilePicture: {
+            buffer: Buffer;
+            filename: string;
+            mimetype: string;
+        } | null,
         reply: FastifyReply
     ) => Promise<void>;
     checkIsEmailAvailable: (
@@ -21,14 +30,47 @@ export default class UserController implements IUserController {
     }
 
     async registerUser(
-        req: FastifyRequest<{
-            Body: { user: RegisterUser };
-        }>,
+        fields: RegisterUser,
+        profilePicture: {
+            buffer: Buffer;
+            filename: string;
+            mimetype: string;
+        } | null,
         reply: FastifyReply
     ): Promise<void> {
-        const { user } = req.body;
+        const ajv = new Ajv({ allErrors: true });
+        addFormats(ajv);
 
-        this.userService.createUser(user);
+        if (fields.dateOfBirth) {
+            fields.dateOfBirth = new Date(fields.dateOfBirth).toISOString();
+        }
+
+        const validate = ajv.compile(RegisterUserSchema);
+        const isValid = validate(fields);
+
+        if (!isValid) {
+            return reply.code(400).send({
+                message: 'Validation failed',
+                errors: validate.errors,
+            });
+        }
+
+        if (profilePicture) {
+            const uploadDir = path.resolve(__dirname, '../../uploads');
+            if (!fs.existsSync(uploadDir))
+                fs.mkdirSync(uploadDir, { recursive: true });
+
+            const filename = `${Date.now()}-${profilePicture.filename}`;
+            const filepath = path.join(uploadDir, filename);
+
+            await fs.promises.writeFile(filepath, profilePicture.buffer);
+
+            fields.profilePictureUrl = `/uploads/${filename}`;
+        }
+
+        const user: RegisterUser = fields;
+
+        await this.userService.createUser(user);
 
         return reply
             .code(201)

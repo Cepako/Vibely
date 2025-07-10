@@ -4,7 +4,7 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Debug Fastify Server",
+            "name": "Debug Server",
             "runtimeExecutable": "npx",
             "runtimeArgs": ["tsx", "packages/server/src/index.ts"],
             "skipFiles": ["<node_internals>/**"],

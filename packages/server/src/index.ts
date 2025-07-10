@@ -5,6 +5,9 @@ import swaggerUI from '@fastify/swagger-ui';
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { ENV } from './utils/env';
 import { errorHandler } from './plugins/errorHandler';
+import multipart from '@fastify/multipart';
+import fastifyStatic from '@fastify/static';
+import path from 'path';
 import authRoutes from './auth/auth.routes';
 import userRoutes from './user/user.routes';
 
@@ -15,6 +18,17 @@ const server = Fastify({
 server.register(cors, {
     origin: true,
     credentials: true,
+});
+
+server.register(multipart, {
+    limits: {
+        fileSize: 10 * 1024 * 1024, // max 10MB
+    },
+});
+
+server.register(fastifyStatic, {
+    root: path.join(__dirname, '../uploads'),
+    prefix: '/uploads/',
 });
 
 server.register(swagger, {
