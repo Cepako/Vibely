@@ -3,10 +3,16 @@ import UserController from './user.controller';
 import UserService from './user.service';
 import { Type } from '@sinclair/typebox';
 import { RegisterUser } from './user.schema';
+import { AuthService } from '../auth/auth.service';
 
 export default async function userRoutes(fastify: FastifyInstance) {
     const userService = new UserService();
-    const userController = new UserController(userService);
+    const authService = new AuthService();
+    const userController = new UserController(userService, authService);
+
+    fastify.get('/me', async (req: FastifyRequest, reply: FastifyReply) =>
+        userController.me(req, reply)
+    );
 
     fastify.post(
         '/register',

@@ -5,12 +5,30 @@ import path from 'path';
 import fs from 'fs';
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
+import { AuthService } from '../auth/auth.service';
 
 export default class UserController {
     private userService: UserService;
+    private authService: AuthService;
 
-    constructor(userService: UserService) {
+    constructor(userService: UserService, authService: AuthService) {
         this.userService = userService;
+        this.authService = authService;
+    }
+
+    async me(req: FastifyRequest, reply: FastifyReply) {
+        const token = req.cookies.token;
+
+        if (!token) return reply.status(401).send({ error: 'Unauthenticated' });
+
+        const { id } = this.authService.verifyToken(token);
+        const user = await this.userService.findUserById(id);
+
+        if (!user) {
+            return reply.status(404).send({ error: 'User not found' });
+        }
+
+        return reply.status(200).send(user);
     }
 
     async registerUser(

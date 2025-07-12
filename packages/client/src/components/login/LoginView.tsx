@@ -31,7 +31,7 @@ export default function LoginView() {
         if (!response.ok) {
             setIsError(true);
         } else {
-            queryClient.invalidateQueries({ queryKey: ['me'] });
+            queryClient.invalidateQueries({ queryKey: ['verify'] });
             setTimeout(() => navigate({ to: '/home' }), 100);
         }
     };

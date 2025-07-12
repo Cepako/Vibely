@@ -1,14 +1,14 @@
 import { createContext, useContext } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
-type User = {
+type UserPayload = {
     id: number;
     email: string;
     role: 'admin' | 'user';
 };
 
 export type AuthContextType = {
-    user: User | null;
+    user: UserPayload | null;
     isAuthenticated: boolean;
     isLoading: boolean;
     logout: () => Promise<void>;
@@ -19,10 +19,10 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const queryClient = useQueryClient();
 
-    const { data, isLoading } = useQuery<User>({
-        queryKey: ['me'],
+    const { data, isLoading } = useQuery<UserPayload>({
+        queryKey: ['verify'],
         queryFn: async () => {
-            const res = await fetch('/api/auth/me', {
+            const res = await fetch('/api/auth/verify', {
                 credentials: 'include',
             });
 
@@ -41,7 +41,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             method: 'POST',
             credentials: 'include',
         });
-        queryClient.invalidateQueries({ queryKey: ['me'] });
+        queryClient.invalidateQueries({ queryKey: ['verify'] });
     };
 
     return (

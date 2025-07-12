@@ -1,5 +1,5 @@
 import { db } from '../db';
-import { users } from './user.model';
+import { SafeUser, users } from './user.model';
 import { eq } from 'drizzle-orm';
 import { RegisterUser } from './user.schema';
 import bcrypt from 'bcrypt';
@@ -8,6 +8,7 @@ import createError from '@fastify/error';
 interface IUserService {
     createUser: (user: RegisterUser) => Promise<void>;
     checkIsEmailAvailable: (email: string) => Promise<boolean>;
+    findUserById: (id: number) => Promise<SafeUser | null>;
 }
 
 export default class UserService implements IUserService {
@@ -43,9 +44,13 @@ export default class UserService implements IUserService {
         return !existingEmail;
     }
 
-    async findUserById(id: number) {
-        return db.query.users.findFirst({
+    async findUserById(id: number): Promise<SafeUser | null> {
+        const user = await db.query.users.findFirst({
             where: eq(users.id, id),
         });
+        if (!user) return null;
+        const { password, ...safeUser } = user;
+
+        return safeUser;
     }
 }

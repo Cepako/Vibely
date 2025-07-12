@@ -10,7 +10,7 @@ export default class AuthController {
         this.authService = authService;
     }
 
-    async me(req: FastifyRequest, reply: FastifyReply) {
+    async verifyToken(req: FastifyRequest, reply: FastifyReply) {
         const token = req.cookies.token;
 
         if (!token) {
@@ -38,7 +38,18 @@ export default class AuthController {
             .send({ success: true });
     }
 
-    async logout(_: FastifyRequest, reply: FastifyReply) {
+    async logout(req: FastifyRequest, reply: FastifyReply) {
+        const token = req.cookies.token;
+
+        if (token) {
+            const payload = this.authService.verifyToken(token);
+
+            const { id } = payload;
+
+            this.authService.updateOnlineStatus(id, false);
+            this.authService.updateLastLoginAt(id);
+        }
+
         reply.clearCookie('token', { path: '/' }).send({ success: true });
     }
 }
