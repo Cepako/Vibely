@@ -1,24 +1,32 @@
-import { Outlet, createRootRoute } from '@tanstack/react-router';
+import { Outlet, createRootRouteWithContext } from '@tanstack/react-router';
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
 import ErrorPage from '../components/error/ErrorPage';
 import NotFoundPage from '../components/error/NotFoundPage';
 import { Toaster } from 'react-hot-toast';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { AuthContextType as AuthContext } from '../components/auth/AuthProvider';
+import { UnauthenticatedPage } from '../components/error/UnauthenticatedPage';
 
-export const Route = createRootRoute({
+interface RouterContext {
+    auth: AuthContext;
+}
+
+export const Route = createRootRouteWithContext<RouterContext>()({
     component: RootComponent,
-    errorComponent: () => <ErrorPage />,
+    errorComponent: ({ error }) => {
+        if (error?.message === 'unauthenticated') {
+            return <UnauthenticatedPage />;
+        }
+        return <ErrorPage />;
+    },
     notFoundComponent: () => <NotFoundPage />,
 });
 
-const queryClient = new QueryClient();
-
 function RootComponent() {
     return (
-        <QueryClientProvider client={queryClient}>
+        <>
             <Outlet />
             <TanStackRouterDevtools />
             <Toaster />
-        </QueryClientProvider>
+        </>
     );
 }

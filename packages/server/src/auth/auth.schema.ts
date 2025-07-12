@@ -1,3 +1,4 @@
+import { RoleSchema } from '../user/user.schema';
 import { Static, Type } from '@sinclair/typebox';
 
 export const LoginSchema = Type.Object({
@@ -6,3 +7,11 @@ export const LoginSchema = Type.Object({
 });
 
 export type LoginBody = Static<typeof LoginSchema>;
+
+export const PayloadSchema = Type.Object({
+    id: Type.Number(),
+    email: Type.String(),
+    role: RoleSchema,
+});
+
+export type Payload = Static<typeof PayloadSchema>;

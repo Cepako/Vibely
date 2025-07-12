@@ -78,7 +78,7 @@ export const CredentialsStep: React.FC = () => {
                 Create Account
             </h2>
             <form
-                className='flex flex-col gap-3'
+                className='flex max-w-[400px] flex-col gap-3'
                 onSubmit={handleSubmit(onSubmit)}
             >
                 <div className='relative'>
@@ -117,13 +117,18 @@ export const CredentialsStep: React.FC = () => {
                     {...register('password', {
                         required: 'Password is required',
                         minLength: {
-                            value: 6,
-                            message: 'Password must be at least 6 characters',
+                            value: 8,
+                            message: 'Password must be at least 8 characters',
+                        },
+                        pattern: {
+                            value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s]).+$/,
+                            message:
+                                'Password must contain at least one uppercase, lowercase, number, and special character',
                         },
                     })}
                 />
                 {errors.password && (
-                    <span className='text-sm text-red-500'>
+                    <span className='text-sm break-words whitespace-normal text-red-500'>
                         {errors.password.message}
                     </span>
                 )}

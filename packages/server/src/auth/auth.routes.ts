@@ -7,6 +7,10 @@ export default async function authRoutes(fastify: FastifyInstance) {
     const authService = new AuthService();
     const authController = new AuthController(authService);
 
+    fastify.get('/me', (req: FastifyRequest, reply: FastifyReply) =>
+        authController.me(req, reply)
+    );
+
     fastify.post(
         '/login',
         {
@@ -16,6 +20,10 @@ export default async function authRoutes(fastify: FastifyInstance) {
         },
         (req: FastifyRequest<{ Body: LoginBody }>, reply: FastifyReply) =>
             authController.login(req, reply)
+    );
+
+    fastify.post('/logout', (req: FastifyRequest, reply: FastifyReply) =>
+        authController.logout(req, reply)
     );
 
     //TODO:Logout - change users table (is_online,last_login_at), add to Login - change users table (is_online)

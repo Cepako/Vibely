@@ -36,7 +36,7 @@ export function UnauthenticatedPage() {
                     </Link>
 
                     <Link
-                        to='/register'
+                        to='/registration'
                         className='bg-success-200 hover:bg-success-300 flex w-full items-center justify-center gap-2 rounded-lg px-4 py-3 font-medium text-slate-700 transition-colors duration-200'
                     >
                         <IconUserPlus className='h-4 w-4' />

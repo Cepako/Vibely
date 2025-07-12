@@ -7,6 +7,7 @@ import { ENV } from './utils/env';
 import { errorHandler } from './plugins/errorHandler';
 import multipart from '@fastify/multipart';
 import fastifyStatic from '@fastify/static';
+import fastifyCookie, { FastifyCookieOptions } from '@fastify/cookie';
 import path from 'path';
 import authRoutes from './auth/auth.routes';
 import userRoutes from './user/user.routes';
@@ -19,6 +20,10 @@ server.register(cors, {
     origin: true,
     credentials: true,
 });
+
+server.register(fastifyCookie, {
+    secret: ENV.COOKIE_SECRET,
+} as FastifyCookieOptions);
 
 server.register(multipart, {
     limits: {

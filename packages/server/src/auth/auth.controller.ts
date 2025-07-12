@@ -1,27 +1,44 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { LoginBody } from './auth.schema';
 import { AuthService } from './auth.service';
+import { ENV } from '../utils/env';
 
-interface IAuthController {
-    login: (
-        req: FastifyRequest<{ Body: LoginBody }>,
-        reply: FastifyReply
-    ) => Promise<{ token: string }>;
-}
-
-export default class AuthController implements IAuthController {
+export default class AuthController {
     private authService: AuthService;
 
     constructor(authService: AuthService) {
         this.authService = authService;
     }
 
-    async login(
-        req: FastifyRequest<{ Body: LoginBody }>,
-        reply: FastifyReply
-    ): Promise<{ token: string }> {
+    async me(req: FastifyRequest, reply: FastifyReply) {
+        const token = req.cookies.token;
+
+        if (!token) {
+            return reply.send({ user: null });
+        }
+
+        const payload = this.authService.verifyToken(token);
+        return reply.send({ user: payload });
+    }
+
+    async login(req: FastifyRequest<{ Body: LoginBody }>, reply: FastifyReply) {
         const { email, password } = req.body;
+
         const token = await this.authService.login(email, password);
-        return reply.status(200).send({ token });
+
+        return reply
+            .status(200)
+            .setCookie('token', token, {
+                httpOnly: true,
+                secure: ENV.NODE_ENV === 'production',
+                sameSite: 'strict',
+                path: '/',
+                maxAge: 60 * 60 * 2,
+            })
+            .send({ success: true });
+    }
+
+    async logout(_: FastifyRequest, reply: FastifyReply) {
+        reply.clearCookie('token', { path: '/' }).send({ success: true });
     }
 }

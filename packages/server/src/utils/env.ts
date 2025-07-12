@@ -11,6 +11,7 @@ const EnvSchema = Type.Object({
     DATABASE_URL: Type.String({ format: 'uri' }),
     PORT: Type.Optional(Type.Number()),
     JWT_SECRET: Type.String(),
+    COOKIE_SECRET: Type.String(),
 });
 
 export type Env = Static<typeof EnvSchema>;
@@ -24,6 +25,7 @@ const env = {
     DATABASE_URL: process.env.DATABASE_URL,
     PORT: process.env.PORT ? Number(process.env.PORT) : undefined,
     JWT_SECRET: process.env.JWT_SECRET,
+    COOKIE_SECRET: process.env.COOKIE_SECRET,
 };
 
 if (!validate(env)) {

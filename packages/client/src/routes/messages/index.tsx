@@ -2,6 +2,11 @@ import { createFileRoute } from '@tanstack/react-router';
 import NavBar from '../../components/NavBar';
 
 export const Route = createFileRoute('/messages/')({
+    beforeLoad: ({ context }) => {
+        if (!context.auth.isAuthenticated) {
+            throw new Error('unauthenticated');
+        }
+    },
     component: Messages,
 });
 

@@ -26,7 +26,7 @@ export const useRegisterUser = () => {
             });
             setTimeout(() => {
                 navigate({ to: '/' });
-            }, 200);
+            }, 500);
         },
         onError: (error) => {
             toast.error(error.message);

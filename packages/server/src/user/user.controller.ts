@@ -6,23 +6,7 @@ import fs from 'fs';
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
 
-interface IUserController {
-    registerUser: (
-        fields: RegisterUser,
-        profilePicture: {
-            buffer: Buffer;
-            filename: string;
-            mimetype: string;
-        } | null,
-        reply: FastifyReply
-    ) => Promise<void>;
-    checkIsEmailAvailable: (
-        req: FastifyRequest<{ Body: { email: string } }>,
-        reply: FastifyReply
-    ) => Promise<boolean>;
-}
-
-export default class UserController implements IUserController {
+export default class UserController {
     private userService: UserService;
 
     constructor(userService: UserService) {
@@ -37,7 +21,7 @@ export default class UserController implements IUserController {
             mimetype: string;
         } | null,
         reply: FastifyReply
-    ): Promise<void> {
+    ) {
         const ajv = new Ajv({ allErrors: true });
         addFormats(ajv);
 
@@ -80,7 +64,7 @@ export default class UserController implements IUserController {
     async checkIsEmailAvailable(
         req: FastifyRequest<{ Body: { email: string } }>,
         reply: FastifyReply
-    ): Promise<boolean> {
+    ) {
         const { email } = req.body;
 
         const available = await this.userService.checkIsEmailAvailable(email);
