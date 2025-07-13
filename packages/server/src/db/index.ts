@@ -1,10 +1,45 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { ENV } from '../utils/env';
-import { userPhotos, users } from './schema';
+import {
+    comments,
+    conversationParticipants,
+    conversations,
+    eventCategories,
+    eventParticipants,
+    events,
+    friendships,
+    interests,
+    messageAttachments,
+    messages,
+    notifications,
+    postReactions,
+    posts,
+    userBlocks,
+    userInterests,
+    userPhotos,
+    userReports,
+    users,
+} from './schema';
 
 export const db = drizzle(ENV.DATABASE_URL, {
     schema: {
+        comments,
+        conversationParticipants,
+        conversations,
+        eventCategories,
+        eventParticipants,
+        events,
+        friendships,
+        interests,
+        messageAttachments,
+        messages,
+        notifications,
+        postReactions,
+        posts,
         users,
-        userPhotos, //TODO: Add all etities
+        userPhotos,
+        userBlocks,
+        userInterests,
+        userReports,
     },
 });

@@ -2,7 +2,7 @@ import { useForm, type SubmitHandler } from 'react-hook-form';
 import { useRegistration } from './RegistrationProvider';
 import Input from '../ui/Input';
 import Button from '../ui/Button';
-import { useEmailValidation } from './useEmailValidation';
+import { useEmailValidation } from './hooks/useEmailValidation';
 import { IconCheck, IconHourglassHigh, IconX } from '@tabler/icons-react';
 
 type CredentialsFormData = {

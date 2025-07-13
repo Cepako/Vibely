@@ -40,3 +40,12 @@ export const RegisterUserSchema = Type.Object({
 });
 
 export type RegisterUser = Static<typeof RegisterUserSchema>;
+
+export const FriendshipStatusSchema = Type.Union([
+    Type.Literal('pending'),
+    Type.Literal('accepted'),
+    Type.Literal('rejected'),
+    Type.Literal('blocked'),
+]);
+
+export type FriendshipStatus = Static<typeof FriendshipStatusSchema>;

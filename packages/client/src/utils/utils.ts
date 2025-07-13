@@ -1,6 +1,6 @@
 import { type ClassValue, clsx } from 'clsx';
 import { formatDistanceToNow } from 'date-fns';
-import { pl } from 'date-fns/locale';
+import { enUS } from 'date-fns/locale';
 import { twMerge } from 'tailwind-merge';
 
 export function cn(...inputs: ClassValue[]) {
@@ -10,7 +10,7 @@ export function cn(...inputs: ClassValue[]) {
 export function formatTimeAgo(dateString: string) {
     return formatDistanceToNow(new Date(dateString), {
         addSuffix: true,
-        locale: pl,
+        locale: enUS,
     });
 }
 

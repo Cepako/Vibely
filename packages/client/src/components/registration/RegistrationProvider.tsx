@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, type ReactNode } from 'react';
-import { useRegisterUser } from './useRegisterUser';
+import { useRegisterUser } from './hooks/useRegisterUser';
 
 export type RegistrationFormData = {
     email: string;

@@ -14,6 +14,21 @@ export default async function userRoutes(fastify: FastifyInstance) {
         userController.me(req, reply)
     );
 
+    fastify.get(
+        '/profile/:profileId',
+        {
+            schema: {
+                params: Type.Object({
+                    profileId: Type.Number(),
+                }),
+            },
+        },
+        async (
+            req: FastifyRequest<{ Params: { profileId: number } }>,
+            reply: FastifyReply
+        ) => userController.getProfile(req, reply)
+    );
+
     fastify.post(
         '/register',
         async (req: FastifyRequest, reply: FastifyReply) => {

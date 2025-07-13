@@ -148,13 +148,25 @@ const Tooltip: React.FC<TooltipProps> = ({
 
     return (
         <>
-            <span
-                ref={refs.setReference}
-                {...getReferenceProps()}
-                style={{ display: 'inline-block' }}
-            >
-                {children}
-            </span>
+            {React.isValidElement(children) ? (
+                React.cloneElement(
+                    children as React.ReactElement<any> & {
+                        ref?: React.Ref<any>;
+                    },
+                    {
+                        ...getReferenceProps(),
+                        ref: refs.setReference,
+                    }
+                )
+            ) : (
+                <span
+                    ref={refs.setReference}
+                    {...getReferenceProps()}
+                    style={{ display: 'inline-block' }}
+                >
+                    {children}
+                </span>
+            )}
             {open && (
                 <FloatingPortal>
                     <div

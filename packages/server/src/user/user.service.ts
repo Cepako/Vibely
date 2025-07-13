@@ -1,6 +1,6 @@
 import { db } from '../db';
-import { SafeUser, users } from './user.model';
-import { eq } from 'drizzle-orm';
+import { friendships, SafeUser, UserProfile, users } from './user.model';
+import { and, eq, or } from 'drizzle-orm';
 import { RegisterUser } from './user.schema';
 import bcrypt from 'bcrypt';
 import createError from '@fastify/error';
@@ -9,6 +9,10 @@ interface IUserService {
     createUser: (user: RegisterUser) => Promise<void>;
     checkIsEmailAvailable: (email: string) => Promise<boolean>;
     findUserById: (id: number) => Promise<SafeUser | null>;
+    getProfile: (
+        profileId: number,
+        viewerId: number
+    ) => Promise<UserProfile | null>;
 }
 
 export default class UserService implements IUserService {
@@ -52,5 +56,37 @@ export default class UserService implements IUserService {
         const { password, ...safeUser } = user;
 
         return safeUser;
+    }
+
+    async getProfile(
+        profileId: number,
+        viewerId: number
+    ): Promise<UserProfile | null> {
+        const user = await this.findUserById(profileId);
+        if (!user) return null;
+
+        const friendshipStatus = await this.getFriendshipStatus(
+            viewerId,
+            profileId
+        );
+
+        return { ...user, friendshipStatus };
+    }
+
+    private async getFriendshipStatus(userId: number, profileId: number) {
+        const friendship = await db.query.friendships.findFirst({
+            where: or(
+                and(
+                    eq(friendships.userId, userId),
+                    eq(friendships.friendId, profileId)
+                ),
+                and(
+                    eq(friendships.userId, profileId),
+                    eq(friendships.friendId, userId)
+                )
+            ),
+        });
+
+        return friendship?.status ?? null;
     }
 }

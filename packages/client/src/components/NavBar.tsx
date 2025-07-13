@@ -7,8 +7,10 @@ import {
     IconHome,
     IconLogout,
     IconMessages,
+    IconUserFilled,
 } from '@tabler/icons-react';
 import { useAuth } from './auth/AuthProvider';
+import { useCurrentUser } from './hooks/useCurrentUser';
 
 interface NavBarProps {
     view?: 'home' | 'messages' | 'events' | 'explore' | 'me';
@@ -17,6 +19,7 @@ interface NavBarProps {
 export default function NavBar({ view }: NavBarProps) {
     const navigate = useNavigate();
     const { logout, user } = useAuth();
+    const { data, isLoading } = useCurrentUser();
 
     const defaultStyles =
         'rounded-lg px-3 py-4 cursor-pointer hover:bg-slate-200 duration-200 flex items-center gap-2';
@@ -26,7 +29,7 @@ export default function NavBar({ view }: NavBarProps) {
     const userId = user?.id ? user.id.toString() : '1';
 
     return (
-        <div className='flex h-screen min-w-[250px] flex-col border-r border-slate-300 bg-white p-5'>
+        <div className='flex h-screen min-w-[260px] flex-col border-r border-slate-300 bg-white p-5'>
             <h1
                 className='text-primary-500 flex cursor-pointer items-center text-5xl font-bold'
                 onClick={() => handleNavigate('home')}
@@ -75,26 +78,36 @@ export default function NavBar({ view }: NavBarProps) {
                 </div>
             </div>
             <div className='mt-auto mb-8 flex flex-col items-center gap-2'>
-                <div
-                    className={cn(
-                        'flex cursor-pointer items-center gap-2 rounded-xl px-6 py-3 text-xl font-semibold duration-200',
-                        view === 'me' && activeStyles
-                    )}
-                    onClick={() => {
-                        navigate({
-                            to: '/profile/$id',
-                            params: { id: userId },
-                        });
-                    }}
-                >
-                    <div className='h-10 w-10 overflow-hidden rounded-full border border-slate-200'>
-                        <img
-                            src='https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&crop=face'
-                            alt='profile image'
-                        />
+                {!isLoading && data && (
+                    <div
+                        className={cn(
+                            'flex cursor-pointer items-center gap-2 rounded-xl p-3 text-xl font-semibold duration-200',
+                            view === 'me' && activeStyles
+                        )}
+                        onClick={() => {
+                            navigate({
+                                to: '/profile/$id',
+                                params: { id: userId },
+                            });
+                        }}
+                    >
+                        <div className='flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-slate-200'>
+                            {data?.profilePictureUrl ? (
+                                <img
+                                    src={data.profilePictureUrl}
+                                    alt='profile image'
+                                    className='h-full w-full object-cover'
+                                />
+                            ) : (
+                                <IconUserFilled />
+                            )}
+                        </div>
+                        <div>
+                            {data.name} {data.surname}
+                        </div>
                     </div>
-                    <div>John Smith</div>
-                </div>
+                )}
+
                 <div
                     className='justify-centergap-1 hover:text-primary-500 flex cursor-pointer items-center rounded-md px-3 py-2 text-xl duration-200'
                     onClick={() => {

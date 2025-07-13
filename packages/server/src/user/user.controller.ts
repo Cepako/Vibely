@@ -31,6 +31,24 @@ export default class UserController {
         return reply.status(200).send(user);
     }
 
+    async getProfile(
+        req: FastifyRequest<{ Params: { profileId: number } }>,
+        reply: FastifyReply
+    ) {
+        const token = req.cookies.token;
+        if (!token) return reply.status(401).send({ error: 'Unauthenticated' });
+        const { id: viewerId } = this.authService.verifyToken(token);
+
+        const { profileId } = req.params;
+
+        const userProfile = await this.userService.getProfile(
+            profileId,
+            viewerId
+        );
+
+        return reply.status(200).send(userProfile);
+    }
+
     async registerUser(
         fields: RegisterUser,
         profilePicture: {
