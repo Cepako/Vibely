@@ -54,6 +54,24 @@ export default async function userRoutes(fastify: FastifyInstance) {
     );
 
     fastify.post(
+        '/profile/edit/picture/:profileId',
+        {
+            schema: {
+                params: Type.Object({
+                    profileId: Type.Number(),
+                }),
+            },
+        },
+
+        async (
+            req: FastifyRequest<{
+                Params: { profileId: number };
+            }>,
+            reply: FastifyReply
+        ) => userController.updateProfilePicture(req, reply)
+    );
+
+    fastify.post(
         '/register',
         async (req: FastifyRequest, reply: FastifyReply) => {
             const parts = req.parts();

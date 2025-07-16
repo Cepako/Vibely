@@ -1,10 +1,4 @@
-import {
-    IconMapPin,
-    IconCalendar,
-    IconCamera,
-    IconCake,
-    IconUserFilled,
-} from '@tabler/icons-react';
+import { IconMapPin, IconCalendar, IconCake } from '@tabler/icons-react';
 import { useProfile } from '../hooks/useProfile';
 import { useParams } from '@tanstack/react-router';
 import { useAuth } from '../auth/AuthProvider';
@@ -12,9 +6,8 @@ import FriendshipButton from './FriendshipButton';
 import { useState } from 'react';
 import PostsList from './PostsList';
 import FriendsList from './FriendsList';
-import Tooltip from '../ui/Tooltip';
-import { cn, formatTimeAgo } from '../../utils/utils';
 import EditProfileForm from './EditProfileForm';
+import ProfileImage from './ProfileImage';
 
 export default function ProfileView() {
     const params = useParams({ from: '/profile/$id' });
@@ -77,46 +70,10 @@ export default function ProfileView() {
         <div className='mx-auto my-5 w-full max-w-4xl overflow-hidden rounded-xl bg-white px-2 py-5 shadow-lg'>
             <div className='relative px-6 pb-6'>
                 <div className='mb-6 flex flex-col sm:flex-row sm:items-start sm:space-x-6'>
-                    <div className='relative flex-shrink-0'>
-                        <div className='flex h-30 w-30 items-center justify-center overflow-hidden rounded-full border-2 border-slate-300'>
-                            {userProfile?.profilePictureUrl ? (
-                                <img
-                                    src={userProfile.profilePictureUrl}
-                                    alt={`${userProfile.name} ${userProfile.surname}`}
-                                    className='h-full w-full object-cover'
-                                />
-                            ) : (
-                                <IconUserFilled size={48} className='' />
-                            )}
-                        </div>
-                        {isOwnProfile && (
-                            <button className='bg-primary-500 hover:bg-primary-600 absolute right-1 bottom-1 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full text-white transition-colors duration-200'>
-                                <IconCamera size={16} />
-                            </button>
-                        )}
-                        {!isOwnProfile && (
-                            <Tooltip
-                                content={
-                                    <span className='capitalize'>
-                                        {userProfile.isOnline
-                                            ? 'Active'
-                                            : userProfile.lastLoginAt
-                                              ? `${formatTimeAgo(userProfile.lastLoginAt)}`
-                                              : 'Inactive'}
-                                    </span>
-                                }
-                            >
-                                <div
-                                    className={cn(
-                                        'absolute right-1 bottom-1 h-6 w-6 rounded-full border-2 border-white',
-                                        userProfile.isOnline
-                                            ? 'bg-green-500'
-                                            : 'bg-rose-500'
-                                    )}
-                                ></div>
-                            </Tooltip>
-                        )}
-                    </div>
+                    <ProfileImage
+                        user={userProfile}
+                        isOwnProfile={isOwnProfile}
+                    />
 
                     <div className='mt-4 flex-grow sm:mt-0'>
                         <div className='flex flex-col sm:flex-row sm:items-start sm:justify-between'>

@@ -4,6 +4,8 @@ import { and, eq, or } from 'drizzle-orm';
 import { RegisterUser } from './user.schema';
 import bcrypt from 'bcrypt';
 import createError from '@fastify/error';
+import path from 'path';
+import fs from 'fs';
 
 interface IUserService {
     createUser: (user: RegisterUser) => Promise<void>;
@@ -13,6 +15,18 @@ interface IUserService {
         profileId: number,
         viewerId: number
     ) => Promise<UserProfile | null>;
+    editProfile: (
+        data: { city: string; region: string; bio: string },
+        profileId: number
+    ) => Promise<void>;
+    updateProfilePicture: (
+        userId: number,
+        newProfilePicture: {
+            buffer: Buffer;
+            filename: string;
+            mimetype: string;
+        } | null
+    ) => Promise<void>;
 }
 
 export default class UserService implements IUserService {
@@ -41,7 +55,7 @@ export default class UserService implements IUserService {
         await db.insert(users).values({ ...user, password: hashedPassword });
     }
 
-    async editUser(
+    async editProfile(
         { bio, city, region }: { city: string; region: string; bio: string },
         profileId: number
     ) {
@@ -53,6 +67,63 @@ export default class UserService implements IUserService {
             .update(users)
             .set({ bio, city, region })
             .where(eq(users.id, profileId));
+    }
+
+    async updateProfilePicture(
+        userId: number,
+        newProfilePicture: {
+            buffer: Buffer;
+            filename: string;
+            mimetype: string;
+        } | null
+    ) {
+        const currentUser = await this.findUserById(userId);
+        if (!currentUser) {
+            const UserNotFound = createError(
+                'USER_NOT_FOUND',
+                'User not found',
+                404
+            );
+            throw new UserNotFound();
+        }
+
+        const uploadDir = path.resolve(__dirname, '../../uploads');
+
+        if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
+        }
+
+        if (currentUser.profilePictureUrl) {
+            const oldFilename = currentUser.profilePictureUrl.replace(
+                '/uploads/',
+                ''
+            );
+            const oldFilePath = path.join(uploadDir, oldFilename);
+
+            try {
+                if (fs.existsSync(oldFilePath)) {
+                    await fs.promises.unlink(oldFilePath);
+                }
+            } catch (error) {
+                console.error('Error deleting old profile picture:', error);
+            }
+        }
+
+        let newProfilePictureUrl: string | null = null;
+
+        if (newProfilePicture) {
+            const fileExtension = path.extname(newProfilePicture.filename);
+            const filename = `${Date.now()}-${userId}${fileExtension}`;
+            const filepath = path.join(uploadDir, filename);
+
+            await fs.promises.writeFile(filepath, newProfilePicture.buffer);
+            newProfilePictureUrl = `/uploads/${filename}`;
+        }
+
+        await db
+            .update(users)
+            .set({ profilePictureUrl: newProfilePictureUrl })
+            .where(eq(users.id, userId));
     }
 
     async checkIsEmailAvailable(email: string): Promise<boolean> {

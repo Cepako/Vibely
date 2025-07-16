@@ -61,12 +61,80 @@ export default class UserController {
         const { id: userId } = this.authService.verifyToken(token);
         const { profileId } = req.params;
         if (userId !== profileId)
-            return reply.status(401).send({ error: 'Unauthenticated' });
+            return reply.status(403).send({ error: 'Forbidden' });
 
         const data = req.body;
-        await this.userService.editUser(data, profileId);
+        await this.userService.editProfile(data, profileId);
 
         return reply.code(201).send({ message: 'Profile edited successfully' });
+    }
+
+    async updateProfilePicture(
+        req: FastifyRequest<{
+            Params: { profileId: number };
+        }>,
+        reply: FastifyReply
+    ) {
+        const token = req.cookies.token;
+        if (!token) return reply.status(401).send({ error: 'Unauthenticated' });
+
+        const { id: userId } = this.authService.verifyToken(token);
+        const { profileId } = req.params;
+
+        if (userId !== profileId) {
+            return reply.status(403).send({ error: 'Forbidden' });
+        }
+
+        try {
+            const parts = req.parts();
+            let newProfilePicture: {
+                buffer: Buffer;
+                filename: string;
+                mimetype: string;
+            } | null = null;
+
+            for await (const part of parts) {
+                if (
+                    part.type === 'file' &&
+                    part.fieldname === 'profilePicture'
+                ) {
+                    if (!part.mimetype.startsWith('image/')) {
+                        return reply.status(400).send({
+                            error: 'Invalid file type. Only images are allowed.',
+                        });
+                    }
+
+                    const maxSize = 5 * 1024 * 1024; // 5MB
+                    const buffer = await part.toBuffer();
+
+                    if (buffer.length > maxSize) {
+                        return reply.status(400).send({
+                            error: 'File too large. Maximum size is 5MB.',
+                        });
+                    }
+
+                    newProfilePicture = {
+                        buffer,
+                        filename: part.filename,
+                        mimetype: part.mimetype,
+                    };
+                }
+            }
+
+            await this.userService.updateProfilePicture(
+                profileId,
+                newProfilePicture
+            );
+
+            return reply.status(200).send({
+                message: newProfilePicture
+                    ? 'Profile picture updated successfully'
+                    : 'Profile picture removed successfully',
+            });
+        } catch (error) {
+            console.error('Error updating profile picture:', error);
+            return reply.status(500).send({ error: 'Internal server error' });
+        }
     }
 
     async registerUser(

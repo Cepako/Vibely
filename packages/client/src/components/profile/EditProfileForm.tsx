@@ -19,6 +19,7 @@ export default function EditProfileForm({ user }: EditProfileFormProps) {
                 isOpen={dialog.isOpen}
                 onClose={dialog.closeDialog}
                 placement='center'
+                className='-translate-y-20'
             >
                 <Form
                     region={region}
