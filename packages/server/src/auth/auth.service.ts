@@ -35,14 +35,26 @@ export class AuthService implements IAuthService {
     async login(email: string, password: string): Promise<string> {
         email = email.trim().toLowerCase();
         const user = await this.findUserByEmail(email);
-        if (!user || !this.verifyPassword(password, user.password)) {
-            const InvalidCredentials = createError(
-                'INVALID_CREDENTIALS',
-                'Invalid credentials',
-                401
-            );
+
+        const InvalidCredentials = createError(
+            'INVALID_CREDENTIALS',
+            'Invalid credentials',
+            401
+        );
+
+        if (!user) {
             throw new InvalidCredentials();
         }
+
+        const isPasswordValid = await this.verifyPassword(
+            password,
+            user.password
+        );
+
+        if (!isPasswordValid) {
+            throw new InvalidCredentials();
+        }
+
         this.updateOnlineStatus(user.id, true);
         return this.generateToken(user);
     }
@@ -67,8 +79,8 @@ export class AuthService implements IAuthService {
         });
     }
 
-    private verifyPassword(password: string, hashedPassword: string) {
-        return bcrypt.compare(password, hashedPassword);
+    private async verifyPassword(password: string, hashedPassword: string) {
+        return await bcrypt.compare(password, hashedPassword);
     }
 
     private generateToken(user: User) {
