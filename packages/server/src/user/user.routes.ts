@@ -30,6 +30,30 @@ export default async function userRoutes(fastify: FastifyInstance) {
     );
 
     fastify.post(
+        '/profile/edit/:profileId',
+        {
+            schema: {
+                params: Type.Object({
+                    profileId: Type.Number(),
+                }),
+                body: Type.Object({
+                    city: Type.String(),
+                    region: Type.String(),
+                    bio: Type.String(),
+                }),
+            },
+        },
+
+        async (
+            req: FastifyRequest<{
+                Body: { city: string; region: string; bio: string };
+                Params: { profileId: number };
+            }>,
+            reply: FastifyReply
+        ) => userController.editProfile(req, reply)
+    );
+
+    fastify.post(
         '/register',
         async (req: FastifyRequest, reply: FastifyReply) => {
             const parts = req.parts();

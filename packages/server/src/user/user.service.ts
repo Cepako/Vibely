@@ -41,6 +41,20 @@ export default class UserService implements IUserService {
         await db.insert(users).values({ ...user, password: hashedPassword });
     }
 
+    async editUser(
+        { bio, city, region }: { city: string; region: string; bio: string },
+        profileId: number
+    ) {
+        bio = bio.trim();
+        city = city.trim();
+        region = region.trim();
+
+        await db
+            .update(users)
+            .set({ bio, city, region })
+            .where(eq(users.id, profileId));
+    }
+
     async checkIsEmailAvailable(email: string): Promise<boolean> {
         const existingEmail = await db.query.users.findFirst({
             where: eq(users.email, email),

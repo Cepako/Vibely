@@ -1,5 +1,4 @@
 import {
-    IconEdit,
     IconMapPin,
     IconCalendar,
     IconCamera,
@@ -15,6 +14,7 @@ import PostsList from './PostsList';
 import FriendsList from './FriendsList';
 import Tooltip from '../ui/Tooltip';
 import { cn, formatTimeAgo } from '../../utils/utils';
+import EditProfileForm from './EditProfileForm';
 
 export default function ProfileView() {
     const params = useParams({ from: '/profile/$id' });
@@ -131,12 +131,14 @@ export default function ProfileView() {
                                     <span>
                                         Age {getAge(userProfile.dateOfBirth)}
                                     </span>
-                                    {userProfile.city && userProfile.region && (
+                                    {(userProfile.city ||
+                                        userProfile.region) && (
                                         <div className='flex items-center space-x-1'>
                                             <IconMapPin size={14} />
                                             <span>
-                                                {userProfile.city},{' '}
-                                                {userProfile.region}
+                                                {userProfile.city}
+                                                {userProfile.region &&
+                                                    `, ${userProfile.region}`}
                                             </span>
                                         </div>
                                     )}
@@ -162,13 +164,7 @@ export default function ProfileView() {
 
                             <div className='flex space-x-3 sm:mt-0'>
                                 {isOwnProfile ? (
-                                    <button
-                                        onClick={() => {}}
-                                        className='flex cursor-pointer items-center space-x-2 rounded-lg bg-gray-100 px-4 py-2 transition-colors hover:bg-gray-200'
-                                    >
-                                        <IconEdit size={16} />
-                                        <span>Edit Profile</span>
-                                    </button>
+                                    <EditProfileForm user={userProfile} />
                                 ) : (
                                     <FriendshipButton
                                         friendshipStatus={

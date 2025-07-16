@@ -64,15 +64,18 @@ export const Dialog: React.FC<DialogProps> = ({
         setMounted(true);
     }, []);
 
-    const actualPlacement: Placement =
-        placement === 'center' ? 'bottom' : placement;
+    const isFloatingPlacement = placement !== 'center';
 
     const { refs, floatingStyles, context } = useFloating({
         open: isOpen,
-        onOpenChange: onClose,
-        placement: actualPlacement,
-        middleware: [offset(10), flip(), shift({ padding: 8 })],
-        whileElementsMounted: autoUpdate,
+        onOpenChange: (open) => {
+            if (!open) onClose();
+        },
+        placement: isFloatingPlacement ? placement : 'bottom',
+        middleware: isFloatingPlacement
+            ? [offset(10), flip(), shift({ padding: 8 })]
+            : [],
+        whileElementsMounted: isFloatingPlacement ? autoUpdate : undefined,
     });
 
     const click = useClick(context, {
@@ -102,10 +105,17 @@ export const Dialog: React.FC<DialogProps> = ({
         full: 'max-w-full mx-4',
     };
 
+    const handleOverlayClick = (e: React.MouseEvent) => {
+        if (closeOnOverlayClick && e.target === e.currentTarget) {
+            onClose();
+        }
+    };
+
     const DialogContent = (
         <FloatingOverlay
             className={`fixed inset-0 z-50 bg-black/50 backdrop-blur-sm ${overlayClassName}`}
             lockScroll
+            onClick={handleOverlayClick}
         >
             <FloatingFocusManager context={context}>
                 <div
@@ -123,9 +133,11 @@ export const Dialog: React.FC<DialogProps> = ({
                     }
                     {...getFloatingProps()}
                     className={cn(
-                        'border-0 outline-none focus:border-0 focus:ring-0 focus:outline-none',
+                        'rounded-lg border border-gray-200 bg-white shadow-xl outline-none focus:border-0 focus:ring-0 focus:outline-none',
                         sizeClasses[size],
-                        placement === 'center' ? 'max-h-[90vh] w-full' : '',
+                        placement === 'center'
+                            ? 'max-h-[90vh] w-full overflow-auto'
+                            : '',
                         className
                     )}
                 >
@@ -142,11 +154,27 @@ export const Dialog: React.FC<DialogProps> = ({
           } as React.ComponentPropsWithRef<any>)
         : null;
 
-    if (!mounted) return triggerElement;
+    const fallbackReference = !trigger ? (
+        <div
+            ref={refs.setReference}
+            style={{
+                position: 'fixed',
+                top: '50%',
+                left: '50%',
+                width: 0,
+                height: 0,
+                pointerEvents: 'none',
+            }}
+            aria-hidden='true'
+        />
+    ) : null;
+
+    if (!mounted) return null;
 
     return (
         <>
             {triggerElement}
+            {fallbackReference}
             {isOpen && createPortal(DialogContent, document.body)}
         </>
     );

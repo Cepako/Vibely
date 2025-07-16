@@ -49,6 +49,26 @@ export default class UserController {
         return reply.status(200).send(userProfile);
     }
 
+    async editProfile(
+        req: FastifyRequest<{
+            Body: { city: string; region: string; bio: string };
+            Params: { profileId: number };
+        }>,
+        reply: FastifyReply
+    ) {
+        const token = req.cookies.token;
+        if (!token) return reply.status(401).send({ error: 'Unauthenticated' });
+        const { id: userId } = this.authService.verifyToken(token);
+        const { profileId } = req.params;
+        if (userId !== profileId)
+            return reply.status(401).send({ error: 'Unauthenticated' });
+
+        const data = req.body;
+        await this.userService.editUser(data, profileId);
+
+        return reply.code(201).send({ message: 'Profile edited successfully' });
+    }
+
     async registerUser(
         fields: RegisterUser,
         profilePicture: {
