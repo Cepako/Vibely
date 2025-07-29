@@ -11,10 +11,14 @@ import fastifyCookie, { FastifyCookieOptions } from '@fastify/cookie';
 import path from 'path';
 import authRoutes from './auth/auth.routes';
 import userRoutes from './user/user.routes';
+import postRoutes from './post/post.routes';
+import { Payload } from 'auth/auth.schema';
 
 const server = Fastify({
     logger: true,
 }).withTypeProvider<TypeBoxTypeProvider>();
+
+server.decorate('user', null as Payload | null);
 
 server.register(cors, {
     origin: true,
@@ -59,6 +63,7 @@ server.register(
     async (api: FastifyInstance) => {
         api.register(authRoutes, { prefix: '/auth' });
         api.register(userRoutes, { prefix: '/user' });
+        api.register(postRoutes, { prefix: '/post' });
     },
     { prefix: '/api' }
 );

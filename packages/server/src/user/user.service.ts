@@ -1,11 +1,11 @@
 import { db } from '../db';
 import { friendships, SafeUser, UserProfile, users } from './user.model';
 import { and, eq, or } from 'drizzle-orm';
-import { RegisterUser } from './user.schema';
+import { FriendshipStatus, RegisterUser } from './user.schema';
 import bcrypt from 'bcrypt';
 import createError from '@fastify/error';
-import path from 'path';
-import fs from 'fs';
+import { handleFileUpload } from 'utils/handleFileUpload';
+import { deleteFile } from 'utils/deleteFile';
 
 interface IUserService {
     createUser: (user: RegisterUser) => Promise<void>;
@@ -27,6 +27,10 @@ interface IUserService {
             mimetype: string;
         } | null
     ) => Promise<void>;
+    getFriendshipStatus: (
+        profileId: number,
+        viewerId: number
+    ) => Promise<FriendshipStatus | null>;
 }
 
 export default class UserService implements IUserService {
@@ -87,42 +91,22 @@ export default class UserService implements IUserService {
             throw new UserNotFound();
         }
 
-        const uploadDir = path.resolve(__dirname, '../../uploads');
-
-        if (!fs.existsSync(uploadDir)) {
-            fs.mkdirSync(uploadDir, { recursive: true });
-        }
-
-        if (currentUser.profilePictureUrl) {
-            const oldFilename = currentUser.profilePictureUrl.replace(
-                '/uploads/',
-                ''
-            );
-            const oldFilePath = path.join(uploadDir, oldFilename);
-
-            try {
-                if (fs.existsSync(oldFilePath)) {
-                    await fs.promises.unlink(oldFilePath);
-                }
-            } catch (error) {
-                console.error('Error deleting old profile picture:', error);
-            }
-        }
-
-        let newProfilePictureUrl: string | null = null;
+        let profilePictureUrl: string | null = null;
 
         if (newProfilePicture) {
-            const fileExtension = path.extname(newProfilePicture.filename);
-            const filename = `${Date.now()}-${userId}${fileExtension}`;
-            const filepath = path.join(uploadDir, filename);
-
-            await fs.promises.writeFile(filepath, newProfilePicture.buffer);
-            newProfilePictureUrl = `/uploads/${filename}`;
+            profilePictureUrl = await handleFileUpload(newProfilePicture, {
+                allowedTypes: ['image/'],
+                maxSizeInMB: 5,
+                subFolder: 'profile-pictures',
+                oldFileUrl: currentUser.profilePictureUrl,
+            });
+        } else if (currentUser.profilePictureUrl) {
+            await deleteFile(currentUser.profilePictureUrl);
         }
 
         await db
             .update(users)
-            .set({ profilePictureUrl: newProfilePictureUrl })
+            .set({ profilePictureUrl })
             .where(eq(users.id, userId));
     }
 
@@ -158,7 +142,7 @@ export default class UserService implements IUserService {
         return { ...user, friendshipStatus };
     }
 
-    private async getFriendshipStatus(userId: number, profileId: number) {
+    public async getFriendshipStatus(userId: number, profileId: number) {
         const friendship = await db.query.friendships.findFirst({
             where: or(
                 and(

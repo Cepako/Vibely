@@ -68,7 +68,7 @@ export default function ProfileView() {
 
     return (
         <div className='mx-auto my-5 w-full max-w-4xl overflow-hidden rounded-xl bg-white px-2 py-5 shadow-lg'>
-            <div className='relative px-6 pb-6'>
+            <div className='relative px-6'>
                 <div className='mb-6 flex flex-col sm:flex-row sm:items-start sm:space-x-6'>
                     <ProfileImage
                         user={userProfile}

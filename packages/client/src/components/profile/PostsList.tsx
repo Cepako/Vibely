@@ -1,3 +1,7 @@
 export default function PostsList() {
-    return <div>Posts list</div>;
+    return (
+        <div className='px-6'>
+            <h2 className='text-xl font-bold'>Posts</h2>
+        </div>
+    );
 }

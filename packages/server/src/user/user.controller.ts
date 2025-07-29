@@ -1,27 +1,19 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
 import UserService from './user.service';
 import { RegisterUser, RegisterUserSchema } from './user.schema';
-import path from 'path';
-import fs from 'fs';
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
-import { AuthService } from '../auth/auth.service';
+import { handleFileUpload } from 'utils/handleFileUpload';
 
 export default class UserController {
     private userService: UserService;
-    private authService: AuthService;
 
-    constructor(userService: UserService, authService: AuthService) {
+    constructor(userService: UserService) {
         this.userService = userService;
-        this.authService = authService;
     }
 
     async me(req: FastifyRequest, reply: FastifyReply) {
-        const token = req.cookies.token;
-
-        if (!token) return reply.status(401).send({ error: 'Unauthenticated' });
-
-        const { id } = this.authService.verifyToken(token);
+        const { id } = req.user;
         const user = await this.userService.findUserById(id);
 
         if (!user) {
@@ -35,9 +27,7 @@ export default class UserController {
         req: FastifyRequest<{ Params: { profileId: number } }>,
         reply: FastifyReply
     ) {
-        const token = req.cookies.token;
-        if (!token) return reply.status(401).send({ error: 'Unauthenticated' });
-        const { id: viewerId } = this.authService.verifyToken(token);
+        const { id: viewerId } = req.user;
 
         const { profileId } = req.params;
 
@@ -56,9 +46,7 @@ export default class UserController {
         }>,
         reply: FastifyReply
     ) {
-        const token = req.cookies.token;
-        if (!token) return reply.status(401).send({ error: 'Unauthenticated' });
-        const { id: userId } = this.authService.verifyToken(token);
+        const { id: userId } = req.user;
         const { profileId } = req.params;
         if (userId !== profileId)
             return reply.status(403).send({ error: 'Forbidden' });
@@ -75,10 +63,7 @@ export default class UserController {
         }>,
         reply: FastifyReply
     ) {
-        const token = req.cookies.token;
-        if (!token) return reply.status(401).send({ error: 'Unauthenticated' });
-
-        const { id: userId } = this.authService.verifyToken(token);
+        const { id: userId } = req.user;
         const { profileId } = req.params;
 
         if (userId !== profileId) {
@@ -164,16 +149,11 @@ export default class UserController {
         }
 
         if (profilePicture) {
-            const uploadDir = path.resolve(__dirname, '../../uploads');
-            if (!fs.existsSync(uploadDir))
-                fs.mkdirSync(uploadDir, { recursive: true });
-
-            const filename = `${Date.now()}-${profilePicture.filename}`;
-            const filepath = path.join(uploadDir, filename);
-
-            await fs.promises.writeFile(filepath, profilePicture.buffer);
-
-            fields.profilePictureUrl = `/uploads/${filename}`;
+            fields.profilePictureUrl = (await handleFileUpload(profilePicture, {
+                allowedTypes: ['image/'],
+                maxSizeInMB: 5,
+                subFolder: 'profile-pictures',
+            })) as string;
         }
 
         const user: RegisterUser = fields;

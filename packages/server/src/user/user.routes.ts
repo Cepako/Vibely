@@ -4,11 +4,65 @@ import UserService from './user.service';
 import { Type } from '@sinclair/typebox';
 import { RegisterUser } from './user.schema';
 import { AuthService } from '../auth/auth.service';
+import { createAuthGuard } from '../hooks/authGuard';
 
 export default async function userRoutes(fastify: FastifyInstance) {
     const userService = new UserService();
     const authService = new AuthService();
-    const userController = new UserController(userService, authService);
+    const userController = new UserController(userService);
+
+    const authGuard = createAuthGuard(authService);
+
+    fastify.post(
+        '/register',
+        async (req: FastifyRequest, reply: FastifyReply) => {
+            const parts = req.parts();
+            const fields: Record<string, any> = {};
+            let profilePictureData: {
+                buffer: Buffer;
+                filename: string;
+                mimetype: string;
+            } | null = null;
+
+            for await (const part of parts) {
+                if (
+                    part.type === 'file' &&
+                    part.fieldname === 'profilePicture'
+                ) {
+                    const buffer = await part.toBuffer();
+                    profilePictureData = {
+                        buffer,
+                        filename: part.filename,
+                        mimetype: part.mimetype,
+                    };
+                } else if (part.type === 'field') {
+                    fields[part.fieldname] = part.value;
+                }
+            }
+            await userController.registerUser(
+                fields as RegisterUser,
+                profilePictureData,
+                reply
+            );
+        }
+    );
+
+    fastify.post(
+        '/check-email',
+        {
+            schema: {
+                body: Type.Object({
+                    email: Type.String({ format: 'email' }),
+                }),
+            },
+        },
+        (
+            req: FastifyRequest<{ Body: { email: string } }>,
+            reply: FastifyReply
+        ) => userController.checkIsEmailAvailable(req, reply)
+    );
+
+    fastify.addHook('preHandler', authGuard);
 
     fastify.get('/me', async (req: FastifyRequest, reply: FastifyReply) =>
         userController.me(req, reply)
@@ -69,54 +123,5 @@ export default async function userRoutes(fastify: FastifyInstance) {
             }>,
             reply: FastifyReply
         ) => userController.updateProfilePicture(req, reply)
-    );
-
-    fastify.post(
-        '/register',
-        async (req: FastifyRequest, reply: FastifyReply) => {
-            const parts = req.parts();
-            const fields: Record<string, any> = {};
-            let profilePictureData: {
-                buffer: Buffer;
-                filename: string;
-                mimetype: string;
-            } | null = null;
-
-            for await (const part of parts) {
-                if (
-                    part.type === 'file' &&
-                    part.fieldname === 'profilePicture'
-                ) {
-                    const buffer = await part.toBuffer();
-                    profilePictureData = {
-                        buffer,
-                        filename: part.filename,
-                        mimetype: part.mimetype,
-                    };
-                } else if (part.type === 'field') {
-                    fields[part.fieldname] = part.value;
-                }
-            }
-            await userController.registerUser(
-                fields as RegisterUser,
-                profilePictureData,
-                reply
-            );
-        }
-    );
-
-    fastify.post(
-        '/check-email',
-        {
-            schema: {
-                body: Type.Object({
-                    email: Type.String({ format: 'email' }),
-                }),
-            },
-        },
-        (
-            req: FastifyRequest<{ Body: { email: string } }>,
-            reply: FastifyReply
-        ) => userController.checkIsEmailAvailable(req, reply)
     );
 }
