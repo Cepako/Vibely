@@ -140,25 +140,6 @@ export const conversationParticipants = pgTable("conversation_participants", {
 	unique("conversation_participants_conversation_id_user_id_key").on(table.conversationId, table.userId),
 ]);
 
-export const posts = pgTable("posts", {
-	id: serial().primaryKey().notNull(),
-	userId: integer("user_id").notNull(),
-	content: text().notNull(),
-	contentType: postContentType("content_type").default('photo'),
-	privacyLevel: privacyLevelType("privacy_level").default('public'),
-	createdAt: timestamp("created_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
-	updatedAt: timestamp("updated_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
-}, (table) => [
-	index("idx_posts_created_at").using("btree", table.createdAt.asc().nullsLast().op("timestamp_ops")),
-	index("idx_posts_privacy_level").using("btree", table.privacyLevel.asc().nullsLast().op("enum_ops")),
-	index("idx_posts_user_id").using("btree", table.userId.asc().nullsLast().op("int4_ops")),
-	foreignKey({
-			columns: [table.userId],
-			foreignColumns: [users.id],
-			name: "posts_user_id_fkey"
-		}).onDelete("cascade"),
-]);
-
 export const comments = pgTable("comments", {
 	id: serial().primaryKey().notNull(),
 	postId: integer("post_id").notNull(),
@@ -261,6 +242,26 @@ export const interests = pgTable("interests", {
 	unique("interests_name_key").on(table.name),
 ]);
 
+export const posts = pgTable("posts", {
+	id: serial().primaryKey().notNull(),
+	userId: integer("user_id").notNull(),
+	content: text().notNull(),
+	contentType: postContentType("content_type").default('photo'),
+	privacyLevel: privacyLevelType("privacy_level").default('public'),
+	createdAt: timestamp("created_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
+	updatedAt: timestamp("updated_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
+	contentUrl: varchar("content_url", { length: 255 }),
+}, (table) => [
+	index("idx_posts_created_at").using("btree", table.createdAt.asc().nullsLast().op("timestamp_ops")),
+	index("idx_posts_privacy_level").using("btree", table.privacyLevel.asc().nullsLast().op("enum_ops")),
+	index("idx_posts_user_id").using("btree", table.userId.asc().nullsLast().op("int4_ops")),
+	foreignKey({
+			columns: [table.userId],
+			foreignColumns: [users.id],
+			name: "posts_user_id_fkey"
+		}).onDelete("cascade"),
+]);
+
 export const userReports = pgTable("user_reports", {
 	id: serial().primaryKey().notNull(),
 	reporterId: integer("reporter_id").notNull(),
@@ -332,37 +333,19 @@ export const userInterests = pgTable("user_interests", {
 	unique("user_interests_user_id_interest_id_key").on(table.userId, table.interestId),
 ]);
 
-export const userPhotos = pgTable("user_photos", {
-	id: serial().primaryKey().notNull(),
-	userId: integer("user_id").notNull(),
-	url: text().notNull(),
-	description: text(),
-	isProfilePicture: boolean("is_profile_picture").default(false),
-	createdAt: timestamp("created_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
-	updatedAt: timestamp("updated_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
-}, (table) => [
-	index("idx_user_photos_is_profile_picture").using("btree", table.isProfilePicture.asc().nullsLast().op("bool_ops")),
-	index("idx_user_photos_user_id").using("btree", table.userId.asc().nullsLast().op("int4_ops")),
-	foreignKey({
-			columns: [table.userId],
-			foreignColumns: [users.id],
-			name: "user_photos_user_id_fkey"
-		}).onDelete("cascade"),
-]);
-
 export const users = pgTable("users", {
 	id: serial().primaryKey().notNull(),
 	email: varchar({ length: 255 }).notNull(),
 	password: varchar({ length: 255 }).notNull(),
 	name: varchar({ length: 100 }).notNull(),
 	surname: varchar({ length: 100 }).notNull(),
-	gender: genderType(),
+	gender: genderType().notNull(),
 	profilePictureUrl: varchar("profile_picture_url", { length: 255 }),
 	bio: text(),
 	city: varchar({ length: 100 }),
 	region: varchar({ length: 100 }),
-	dateOfBirth: date("date_of_birth"),
-	status: userStatusType(),
+	dateOfBirth: date("date_of_birth").notNull(),
+	status: userStatusType().default('active').notNull(),
 	lastLoginAt: timestamp("last_login_at", { mode: 'string' }),
 	createdAt: timestamp("created_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
 	updatedAt: timestamp("updated_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),

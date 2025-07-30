@@ -16,7 +16,6 @@ import {
     posts,
     userBlocks,
     userInterests,
-    userPhotos,
     userReports,
     users,
 } from './schema';
@@ -37,7 +36,6 @@ export const db = drizzle(ENV.DATABASE_URL, {
         postReactions,
         posts,
         users,
-        userPhotos,
         userBlocks,
         userInterests,
         userReports,

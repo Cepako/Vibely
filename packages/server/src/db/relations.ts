@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm/relations";
-import { users, friendships, conversations, messages, notifications, posts, postReactions, conversationParticipants, comments, eventCategories, events, eventParticipants, messageAttachments, userReports, userBlocks, interests, userInterests, userPhotos } from "./schema";
+import { users, friendships, conversations, messages, notifications, posts, postReactions, conversationParticipants, comments, eventCategories, events, eventParticipants, messageAttachments, userReports, userBlocks, interests, userInterests } from "./schema";
 
 export const friendshipsRelations = relations(friendships, ({one}) => ({
 	user_friendId: one(users, {
@@ -25,10 +25,10 @@ export const usersRelations = relations(users, ({many}) => ({
 	notifications: many(notifications),
 	postReactions: many(postReactions),
 	conversationParticipants: many(conversationParticipants),
-	posts: many(posts),
 	comments: many(comments),
 	events: many(events),
 	eventParticipants: many(eventParticipants),
+	posts: many(posts),
 	userReports_reportedId: many(userReports, {
 		relationName: "userReports_reportedId_users_id"
 	}),
@@ -42,7 +42,6 @@ export const usersRelations = relations(users, ({many}) => ({
 		relationName: "userBlocks_userId_users_id"
 	}),
 	userInterests: many(userInterests),
-	userPhotos: many(userPhotos),
 }));
 
 export const messagesRelations = relations(messages, ({one, many}) => ({
@@ -82,11 +81,11 @@ export const postReactionsRelations = relations(postReactions, ({one}) => ({
 
 export const postsRelations = relations(posts, ({one, many}) => ({
 	postReactions: many(postReactions),
+	comments: many(comments),
 	user: one(users, {
 		fields: [posts.userId],
 		references: [users.id]
 	}),
-	comments: many(comments),
 }));
 
 export const conversationParticipantsRelations = relations(conversationParticipants, ({one}) => ({
@@ -184,11 +183,4 @@ export const userInterestsRelations = relations(userInterests, ({one}) => ({
 
 export const interestsRelations = relations(interests, ({many}) => ({
 	userInterests: many(userInterests),
-}));
-
-export const userPhotosRelations = relations(userPhotos, ({one}) => ({
-	user: one(users, {
-		fields: [userPhotos.userId],
-		references: [users.id]
-	}),
 }));
