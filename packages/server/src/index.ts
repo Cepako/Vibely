@@ -31,7 +31,7 @@ server.register(fastifyCookie, {
 
 server.register(multipart, {
     limits: {
-        fileSize: 10 * 1024 * 1024, // max 10MB
+        fileSize: 100 * 1024 * 1024, // max 100MB
     },
 });
 
