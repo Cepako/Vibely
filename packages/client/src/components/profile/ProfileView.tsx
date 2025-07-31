@@ -8,6 +8,7 @@ import PostsList from './PostsList';
 import FriendsList from './FriendsList';
 import EditProfileForm from './EditProfileForm';
 import ProfileImage from './ProfileImage';
+import { cn } from '../../utils/utils';
 
 export default function ProfileView() {
     const params = useParams({ from: '/profile/$id' });
@@ -135,26 +136,32 @@ export default function ProfileView() {
                         {/* Stats */}
                         <div className='mt-2 flex space-x-8'>
                             <div
-                                className='cursor-pointer text-center'
+                                className={cn(
+                                    'cursor-pointer text-center',
+                                    selectedView === 'posts'
+                                        ? 'text-slate-800'
+                                        : 'text-slate-500'
+                                )}
                                 onClick={() => setSelectedView('posts')}
                             >
-                                <div className='text-lg font-bold text-slate-600'>
+                                <div className='text-lg font-bold'>
                                     {formatNumber(89)}
                                 </div>
-                                <div className='text-sm text-gray-600'>
-                                    Posts
-                                </div>
+                                <div className='text-sm'>Posts</div>
                             </div>
                             <div
-                                className='cursor-pointer text-center'
+                                className={cn(
+                                    'cursor-pointer text-center',
+                                    selectedView === 'friends'
+                                        ? 'text-slate-800'
+                                        : 'text-slate-500'
+                                )}
                                 onClick={() => setSelectedView('friends')}
                             >
-                                <div className='text-lg font-bold text-slate-600'>
+                                <div className='text-lg font-bold'>
                                     {formatNumber(1234)}
                                 </div>
-                                <div className='text-sm text-gray-600'>
-                                    Friends
-                                </div>
+                                <div className='text-sm'>Friends</div>
                             </div>
                         </div>
                     </div>
@@ -171,7 +178,11 @@ export default function ProfileView() {
                     </div>
                 )}
             </div>
-            {selectedView === 'posts' ? <PostsList /> : <FriendsList />}
+            {selectedView === 'posts' ? (
+                <PostsList profileId={userProfile.id} />
+            ) : (
+                <FriendsList />
+            )}
         </div>
     );
 }

@@ -30,7 +30,8 @@
         "paths": {
             "@/types/*": ["./types/*"],
             "@/services/*": ["./services/*"],
-            "@/routes/*": ["./routes/*"]
+            "@/routes/*": ["./routes/*"],
+            "@/*": ["./*"]
         },
         "types": ["node"],
         "typeRoots": [

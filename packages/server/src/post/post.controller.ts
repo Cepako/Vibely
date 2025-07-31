@@ -33,30 +33,59 @@ export default class PostController {
         return reply.status(200).send(posts);
     }
 
-    async createPost(
-        req: FastifyRequest<{
-            Body: {
-                content: string;
-                contentType: ContentType;
-                privacyLevel: PrivacyLevel;
-            };
-        }>,
-        reply: FastifyReply
-    ) {
+    async createPost(req: FastifyRequest, reply: FastifyReply) {
         try {
             const { id: userId } = req.user;
-            const { content, contentType, privacyLevel } = req.body;
-
+            let content: string = '';
+            let contentType: ContentType = 'photo';
+            let privacyLevel: PrivacyLevel = 'public';
             let file = null;
+
             if (req.isMultipart()) {
-                const data = await req.file();
-                if (data) {
-                    file = {
-                        buffer: await data.toBuffer(),
-                        filename: data.filename,
-                        mimetype: data.mimetype,
-                    };
+                const parts = req.parts();
+
+                for await (const part of parts) {
+                    if (part.type === 'field') {
+                        switch (part.fieldname) {
+                            case 'content':
+                                content = part.value as string;
+                                break;
+                            case 'contentType':
+                                contentType = part.value as ContentType;
+                                break;
+                            case 'privacyLevel':
+                                privacyLevel = part.value as PrivacyLevel;
+                                break;
+                        }
+                    } else if (
+                        part.type === 'file' &&
+                        part.fieldname === 'file'
+                    ) {
+                        file = {
+                            buffer: await part.toBuffer(),
+                            filename: part.filename,
+                            mimetype: part.mimetype,
+                        };
+                    }
                 }
+            }
+
+            if (!content || content.length === 0 || content.length > 2000) {
+                return reply.status(400).send({
+                    error: 'Content must be between 1 and 2000 characters',
+                });
+            }
+
+            if (!['photo', 'video'].includes(contentType)) {
+                return reply.status(400).send({
+                    error: 'Invalid content type',
+                });
+            }
+
+            if (!['public', 'friends', 'private'].includes(privacyLevel)) {
+                return reply.status(400).send({
+                    error: 'Invalid privacy level',
+                });
             }
 
             const post = await this.postService.createPost(userId, {
@@ -72,7 +101,7 @@ export default class PostController {
             });
         } catch (error) {
             return reply.status(400).send({
-                error,
+                error: error || 'Failed to create post',
             });
         }
     }

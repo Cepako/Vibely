@@ -19,7 +19,7 @@ export interface UpdatePostData {
 
 const postsApi = {
     async getPosts(profileId: number): Promise<Post[]> {
-        const response = await fetch(`/api/posts/${profileId}`, {
+        const response = await fetch(`/api/post/${profileId}`, {
             credentials: 'include',
         });
 
@@ -42,7 +42,7 @@ const postsApi = {
             formData.append('file', data.file);
         }
 
-        const response = await fetch('/api/posts/create', {
+        const response = await fetch('/api/post/create', {
             method: 'POST',
             credentials: 'include',
             body: formData,
@@ -75,7 +75,7 @@ const postsApi = {
             formData.append('file', data.file);
         }
 
-        const response = await fetch(`/api/posts/${postId}/edit`, {
+        const response = await fetch(`/api/post/${postId}/edit`, {
             method: 'PUT',
             credentials: 'include',
             body: formData,
@@ -90,7 +90,7 @@ const postsApi = {
     },
 
     async deletePost(postId: number): Promise<{ message: string }> {
-        const response = await fetch(`/api/posts/${postId}`, {
+        const response = await fetch(`/api/post/${postId}`, {
             method: 'DELETE',
             credentials: 'include',
         });

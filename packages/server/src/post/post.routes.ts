@@ -5,7 +5,12 @@ import PostController from './post.controller';
 import { AuthService } from '../auth/auth.service';
 import UserService from '../user/user.service';
 import { createAuthGuard } from '../hooks/authGuard';
-import { ContentTypeSchema, PrivacyLevelSchema } from './post.schema';
+import {
+    ContentType,
+    ContentTypeSchema,
+    PrivacyLevel,
+    PrivacyLevelSchema,
+} from './post.schema';
 
 export default async function postRoutes(fastify: FastifyInstance) {
     const authService = new AuthService();
@@ -37,23 +42,10 @@ export default async function postRoutes(fastify: FastifyInstance) {
         {
             schema: {
                 consumes: ['multipart/form-data'],
-                body: Type.Object({
-                    content: Type.String({ minLength: 1, maxLength: 2000 }),
-                    contentType: ContentTypeSchema,
-                    privacyLevel: PrivacyLevelSchema,
-                }),
             },
         },
-        async (
-            req: FastifyRequest<{
-                Body: {
-                    content: string;
-                    contentType: 'photo' | 'video' | 'album';
-                    privacyLevel: 'public' | 'friends' | 'private';
-                };
-            }>,
-            reply: FastifyReply
-        ) => postController.createPost(req, reply)
+        async (req: FastifyRequest, reply: FastifyReply) =>
+            postController.createPost(req, reply)
     );
 
     fastify.put(
@@ -79,8 +71,8 @@ export default async function postRoutes(fastify: FastifyInstance) {
                 Params: { postId: number };
                 Body: {
                     content?: string;
-                    contentType?: 'photo' | 'video' | 'album';
-                    privacyLevel?: 'public' | 'friends' | 'private';
+                    contentType?: ContentType;
+                    privacyLevel?: PrivacyLevel;
                     removeFile?: boolean;
                 };
             }>,

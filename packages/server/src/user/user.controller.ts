@@ -3,7 +3,7 @@ import UserService from './user.service';
 import { RegisterUser, RegisterUserSchema } from './user.schema';
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
-import { handleFileUpload } from 'utils/handleFileUpload';
+import { handleFileUpload } from '../utils/handleFileUpload';
 
 export default class UserController {
     private userService: UserService;

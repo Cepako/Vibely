@@ -2,9 +2,9 @@ import { and, asc, desc, eq, or } from 'drizzle-orm';
 import { db } from '../db';
 import { comments, posts } from '../db/schema';
 import { FriendshipStatus } from 'user/user.schema';
-import { FileInput, handleFileUpload } from 'utils/handleFileUpload';
+import { FileInput, handleFileUpload } from '../utils/handleFileUpload';
 import { ContentType, PrivacyLevel } from './post.schema';
-import { deleteFile } from 'utils/deleteFile';
+import { deleteFile } from '../utils/deleteFile';
 import { Comment, Post } from './post.model';
 
 interface IPostService {
@@ -16,8 +16,8 @@ interface IPostService {
         Array<
             Post & {
                 user: UserInfo;
-                comments: Array<Comment & UserInfo>;
-                postReactions: Array<UserInfo>;
+                comments: Array<Comment & { user: UserInfo }>;
+                postReactions: Array<{ user: UserInfo }>;
             }
         >
     >;
@@ -41,8 +41,8 @@ export class PostService implements IPostService {
         Array<
             Post & {
                 user: UserInfo;
-                comments: Array<Comment & UserInfo>;
-                postReactions: Array<UserInfo>;
+                comments: Array<Comment & { user: UserInfo }>;
+                postReactions: Array<{ user: UserInfo }>;
             }
         >
     > {
@@ -71,8 +71,8 @@ export class PostService implements IPostService {
                 user: {
                     columns: {
                         id: true,
-                        firstName: true,
-                        lastName: true,
+                        name: true,
+                        surname: true,
                         profilePictureUrl: true,
                     },
                 },
@@ -81,8 +81,8 @@ export class PostService implements IPostService {
                         user: {
                             columns: {
                                 id: true,
-                                firstName: true,
-                                lastName: true,
+                                name: true,
+                                surname: true,
                                 profilePictureUrl: true,
                             },
                         },
@@ -94,8 +94,8 @@ export class PostService implements IPostService {
                         user: {
                             columns: {
                                 id: true,
-                                firstName: true,
-                                lastName: true,
+                                name: true,
+                                surname: true,
                                 profilePictureUrl: true,
                             },
                         },
@@ -255,5 +255,5 @@ interface UserInfo {
     id: number;
     name: string;
     surname: string;
-    profilePictureUrl?: string;
+    profilePictureUrl?: string | null;
 }

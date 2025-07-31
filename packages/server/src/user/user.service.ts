@@ -4,8 +4,8 @@ import { and, eq, or } from 'drizzle-orm';
 import { FriendshipStatus, RegisterUser } from './user.schema';
 import bcrypt from 'bcrypt';
 import createError from '@fastify/error';
-import { handleFileUpload } from 'utils/handleFileUpload';
-import { deleteFile } from 'utils/deleteFile';
+import { handleFileUpload } from '../utils/handleFileUpload';
+import { deleteFile } from '../utils/deleteFile';
 
 interface IUserService {
     createUser: (user: RegisterUser) => Promise<void>;
