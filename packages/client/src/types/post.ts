@@ -16,8 +16,8 @@ export type Comment = {
 };
 export type UserInfo = {
     id: number;
-    firstName: string;
-    lastName: string;
+    name: string;
+    surname: string;
     profilePictureUrl?: string | null;
 };
 export type Post = {
@@ -26,7 +26,7 @@ export type Post = {
     content: string;
     contentType: ContentType;
     privacyLevel: PrivacyLevel;
-    contentUrl?: string | null;
+    contentUrl: string;
     createdAt: string;
     updatedAt: string;
     user: UserInfo;

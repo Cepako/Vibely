@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Post } from '../../../types/post';
 import toast from 'react-hot-toast';
+import { useAuth } from '../../auth/AuthProvider';
 
 export interface CreatePostData {
     content: string;
@@ -105,8 +106,9 @@ const postsApi = {
 };
 
 export const usePosts = (profileId: number) => {
+    const { user } = useAuth();
     return useQuery({
-        queryKey: ['posts', profileId],
+        queryKey: ['posts', user?.id, profileId],
         queryFn: () => postsApi.getPosts(profileId),
         staleTime: 5 * 60 * 1000,
     });

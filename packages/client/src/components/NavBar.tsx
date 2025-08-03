@@ -29,7 +29,7 @@ export default function NavBar({ view }: NavBarProps) {
     const userId = user?.id ? user.id.toString() : '1';
 
     return (
-        <div className='flex h-screen min-w-[260px] flex-col border-r border-slate-300 bg-white p-5'>
+        <div className='flex h-screen min-w-[270px] flex-col border-r border-slate-300 bg-white p-5'>
             <h1
                 className='text-primary-500 flex cursor-pointer items-center text-5xl font-bold'
                 onClick={() => handleNavigate('home')}

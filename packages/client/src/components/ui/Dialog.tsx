@@ -102,7 +102,7 @@ export const Dialog: React.FC<DialogProps> = ({
         lg: 'max-w-lg',
         xl: 'max-w-xl',
         '2xl': 'max-w-2xl',
-        full: 'max-w-full mx-4',
+        full: 'max-w-[90vw]',
     };
 
     const handleOverlayClick = (e: React.MouseEvent) => {

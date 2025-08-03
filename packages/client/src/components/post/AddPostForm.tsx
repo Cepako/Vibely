@@ -251,9 +251,9 @@ function AddPostForm({ profileId, onClose }: AddPostFormProps) {
                                     <button
                                         type='button'
                                         onClick={removeFile}
-                                        className='absolute top-2 right-2 rounded-full bg-red-500 p-1 text-white transition-colors hover:bg-red-600'
+                                        className='absolute top-2 right-2 cursor-pointer rounded-full bg-red-500 p-1 text-white transition-colors hover:bg-red-600'
                                     >
-                                        <IconX className='h-4 w-4 cursor-pointer' />
+                                        <IconX className='h-4 w-4' />
                                     </button>
                                 </div>
                             )}
