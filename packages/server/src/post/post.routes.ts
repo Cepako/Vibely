@@ -5,12 +5,7 @@ import PostController from './post.controller';
 import { AuthService } from '../auth/auth.service';
 import UserService from '../user/user.service';
 import { createAuthGuard } from '../hooks/authGuard';
-import {
-    ContentType,
-    ContentTypeSchema,
-    PrivacyLevel,
-    PrivacyLevelSchema,
-} from './post.schema';
+import { PrivacyLevel, PrivacyLevelSchema } from './post.schema';
 
 export default async function postRoutes(fastify: FastifyInstance) {
     const authService = new AuthService();
@@ -52,7 +47,6 @@ export default async function postRoutes(fastify: FastifyInstance) {
         '/:postId/edit',
         {
             schema: {
-                consumes: ['multipart/form-data'],
                 params: Type.Object({
                     postId: Type.Number(),
                 }),
@@ -60,9 +54,7 @@ export default async function postRoutes(fastify: FastifyInstance) {
                     content: Type.Optional(
                         Type.String({ minLength: 1, maxLength: 2000 })
                     ),
-                    contentType: Type.Optional(ContentTypeSchema),
                     privacyLevel: Type.Optional(PrivacyLevelSchema),
-                    removeFile: Type.Optional(Type.Boolean()),
                 }),
             },
         },
@@ -70,10 +62,8 @@ export default async function postRoutes(fastify: FastifyInstance) {
             req: FastifyRequest<{
                 Params: { postId: number };
                 Body: {
-                    content?: string;
-                    contentType?: ContentType;
-                    privacyLevel?: PrivacyLevel;
-                    removeFile?: boolean;
+                    content: string;
+                    privacyLevel: PrivacyLevel;
                 };
             }>,
             reply: FastifyReply

@@ -87,6 +87,10 @@ export default class PostController {
                     error: 'Invalid privacy level',
                 });
             }
+            if (!file)
+                return reply.status(400).send({
+                    error: 'Missing file',
+                });
 
             const post = await this.postService.createPost(userId, {
                 content,
@@ -110,10 +114,8 @@ export default class PostController {
         req: FastifyRequest<{
             Params: { postId: number };
             Body: {
-                content?: string;
-                contentType?: ContentType;
-                privacyLevel?: PrivacyLevel;
-                removeFile?: boolean;
+                content: string;
+                privacyLevel: PrivacyLevel;
             };
         }>,
         reply: FastifyReply
@@ -121,34 +123,14 @@ export default class PostController {
         try {
             const { id: userId } = req.user;
             const { postId } = req.params;
-            const { content, contentType, privacyLevel, removeFile } = req.body;
+            const { content, privacyLevel } = req.body;
 
-            let file = null;
-            if (req.isMultipart()) {
-                const data = await req.file();
-                if (data) {
-                    file = {
-                        buffer: await data.toBuffer(),
-                        filename: data.filename,
-                        mimetype: data.mimetype,
-                    };
-                }
-            }
-            const updateData: UpdatePostData = {};
-
-            if (content !== undefined) updateData.content = content;
-            if (contentType !== undefined) updateData.contentType = contentType;
-            if (privacyLevel !== undefined)
-                updateData.privacyLevel = privacyLevel;
-            if (removeFile !== undefined) updateData.removeFile = removeFile;
-            if (file) updateData.file = file;
+            const updateData: UpdatePostData = { content, privacyLevel };
 
             const updatedPost = await this.postService.editPost(
                 postId,
                 userId,
-                {
-                    ...updateData,
-                }
+                updateData
             );
 
             return reply.status(200).send({

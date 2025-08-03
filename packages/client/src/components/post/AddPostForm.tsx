@@ -1,15 +1,9 @@
-import {
-    IconLock,
-    IconPhoto,
-    IconUpload,
-    IconUsers,
-    IconVideo,
-    IconWorld,
-    IconX,
-} from '@tabler/icons-react';
+import { IconUpload, IconX } from '@tabler/icons-react';
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useCreatePost, type CreatePostData } from './hooks/usePosts';
+import PrivacyLevelSelect from './PrivacyLevelSelect';
+import ContentTypeSelector from './ContentTypeSelector';
 
 interface AddPostFormProps {
     profileId: number;
@@ -83,7 +77,7 @@ function AddPostForm({ profileId, onClose }: AddPostFormProps) {
     };
 
     const onSubmit = (data: CreatePostData) => {
-        if (fileTypeError) {
+        if (fileTypeError || !selectedFile) {
             return;
         }
 
@@ -122,50 +116,10 @@ function AddPostForm({ profileId, onClose }: AddPostFormProps) {
             </div>
 
             <div>
-                <div className='mb-4'>
-                    <label className='mb-2 block text-sm font-medium text-slate-700'>
-                        Post Type
-                    </label>
-                    <div className='flex space-x-3'>
-                        <label className='flex items-center'>
-                            <input
-                                {...register('contentType')}
-                                type='radio'
-                                value='photo'
-                                className='sr-only'
-                            />
-                            <div
-                                className={`flex cursor-pointer items-center space-x-2 rounded-lg border px-3 py-2 transition-colors ${
-                                    contentType === 'photo'
-                                        ? 'border-primary-500 bg-primary-50 text-primary-700'
-                                        : 'border-slate-300 hover:bg-slate-50'
-                                }`}
-                            >
-                                <IconPhoto className='h-4 w-4' />
-                                <span className='text-sm'>Photo</span>
-                            </div>
-                        </label>
-
-                        <label className='flex items-center'>
-                            <input
-                                {...register('contentType')}
-                                type='radio'
-                                value='video'
-                                className='sr-only'
-                            />
-                            <div
-                                className={`flex cursor-pointer items-center space-x-2 rounded-lg border px-3 py-2 transition-colors ${
-                                    contentType === 'video'
-                                        ? 'border-primary-500 bg-primary-50 text-primary-700'
-                                        : 'border-slate-300 hover:bg-slate-50'
-                                }`}
-                            >
-                                <IconVideo className='h-4 w-4' />
-                                <span className='text-sm'>Video</span>
-                            </div>
-                        </label>
-                    </div>
-                </div>
+                <ContentTypeSelector
+                    register={register}
+                    selectedContentType={contentType}
+                />
 
                 <div className='mb-4'>
                     <label
@@ -275,90 +229,10 @@ function AddPostForm({ profileId, onClose }: AddPostFormProps) {
                     )}
                 </div>
 
-                <div className='mb-6'>
-                    <label className='mb-2 block text-sm font-medium text-slate-700'>
-                        Privacy
-                    </label>
-                    <div className='space-y-2'>
-                        <label className='flex items-center'>
-                            <input
-                                {...register('privacyLevel')}
-                                type='radio'
-                                value='public'
-                                className='sr-only'
-                            />
-                            <div
-                                className={`flex w-full cursor-pointer items-center space-x-3 rounded-lg border px-3 py-2 transition-colors ${
-                                    privacyLevel === 'public'
-                                        ? 'border-primary-500 bg-primary-50'
-                                        : 'border-slate-300 hover:bg-slate-50'
-                                }`}
-                            >
-                                <IconWorld className='h-4 w-4 text-slate-600' />
-                                <div>
-                                    <p className='text-sm font-medium'>
-                                        Public
-                                    </p>
-                                    <p className='text-xs text-slate-500'>
-                                        Anyone can see this post
-                                    </p>
-                                </div>
-                            </div>
-                        </label>
-
-                        <label className='flex items-center'>
-                            <input
-                                {...register('privacyLevel')}
-                                type='radio'
-                                value='friends'
-                                className='sr-only'
-                            />
-                            <div
-                                className={`flex w-full cursor-pointer items-center space-x-3 rounded-lg border px-3 py-2 transition-colors ${
-                                    privacyLevel === 'friends'
-                                        ? 'border-primary-500 bg-primary-50'
-                                        : 'border-slate-300 hover:bg-slate-50'
-                                }`}
-                            >
-                                <IconUsers className='h-4 w-4 text-slate-600' />
-                                <div>
-                                    <p className='text-sm font-medium'>
-                                        Friends
-                                    </p>
-                                    <p className='text-xs text-slate-500'>
-                                        Only friends can see this post
-                                    </p>
-                                </div>
-                            </div>
-                        </label>
-
-                        <label className='flex items-center'>
-                            <input
-                                {...register('privacyLevel')}
-                                type='radio'
-                                value='private'
-                                className='sr-only'
-                            />
-                            <div
-                                className={`flex w-full cursor-pointer items-center space-x-3 rounded-lg border px-3 py-2 transition-colors ${
-                                    privacyLevel === 'private'
-                                        ? 'border-primary-500 bg-primary-50'
-                                        : 'border-slate-300 hover:bg-slate-50'
-                                }`}
-                            >
-                                <IconLock className='h-4 w-4 text-slate-600' />
-                                <div>
-                                    <p className='text-sm font-medium'>
-                                        Private
-                                    </p>
-                                    <p className='text-xs text-slate-500'>
-                                        Only you can see this post
-                                    </p>
-                                </div>
-                            </div>
-                        </label>
-                    </div>
-                </div>
+                <PrivacyLevelSelect
+                    register={register}
+                    selectedPrivacy={privacyLevel}
+                />
 
                 <div className='flex space-x-3'>
                     <button

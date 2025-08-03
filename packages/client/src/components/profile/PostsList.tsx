@@ -13,7 +13,7 @@ interface PostsListProps {
 }
 
 export default function PostsList({ profileId, posts }: PostsListProps) {
-    const dialog = useDialog(false);
+    const addPostDialog = useDialog(false);
     const postDialog = useDialog(false);
     const [selectedPost, setSelectedPost] = useState<Post | null>(null);
     const [selectedPostIndex, setSelectedPostIndex] = useState<number>(0);
@@ -56,7 +56,7 @@ export default function PostsList({ profileId, posts }: PostsListProps) {
                 {isOwnProfile && (
                     <div
                         className='bg-primary-50 text-primary-600 border-primary-400 hover:text-primary-700 hover:bg-primary-100 flex cursor-pointer items-center gap-1 rounded-3xl border px-3 py-1 duration-200'
-                        onClick={dialog.openDialog}
+                        onClick={addPostDialog.openDialog}
                     >
                         Add post <IconCalendarPlus size={18} />
                     </div>
@@ -99,13 +99,13 @@ export default function PostsList({ profileId, posts }: PostsListProps) {
             </Dialog>
 
             <Dialog
-                isOpen={dialog.isOpen}
-                onClose={dialog.closeDialog}
+                isOpen={addPostDialog.isOpen}
+                onClose={addPostDialog.closeDialog}
                 size='xl'
             >
                 <AddPostForm
                     profileId={profileId}
-                    onClose={dialog.closeDialog}
+                    onClose={addPostDialog.closeDialog}
                 />
             </Dialog>
         </div>

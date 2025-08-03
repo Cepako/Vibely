@@ -2,11 +2,9 @@ import {
     IconChevronLeft,
     IconChevronRight,
     IconDots,
-    IconEdit,
     IconHeart,
     IconMessageCircle,
     IconMessageReport,
-    IconTrash,
     IconX,
 } from '@tabler/icons-react';
 import type { Post } from '../../types/post';
@@ -15,7 +13,6 @@ import { cn, formatTimeAgo } from '../../utils/utils';
 import { useState, type ReactNode } from 'react';
 import PrivacyIcon from './PrivacyIcon';
 import DropdownMenu, { type DropdownMenuItem } from '../ui/DropdownMenu';
-import { useAuth } from '../auth/AuthProvider';
 
 interface PostDetailsProps {
     post: Post;
@@ -36,7 +33,6 @@ export default function PostDetails({
 }: PostDetailsProps) {
     const [newComment, setNewComment] = useState('');
     const [isLiked, setIsLiked] = useState(false);
-    const { user } = useAuth();
 
     const postMenuItems: DropdownMenuItem[] = [
         {
@@ -47,26 +43,6 @@ export default function PostDetails({
             className: 'p-2',
         },
     ];
-
-    if (user?.id === post.userId)
-        postMenuItems.push(
-            ...[
-                {
-                    id: 'edit',
-                    label: 'Edit',
-                    icon: <IconEdit />,
-                    onClick: () => console.log('Edit post', post.id),
-                    className: 'p-2',
-                },
-                {
-                    id: 'delete',
-                    label: 'Delete',
-                    icon: <IconTrash />,
-                    onClick: () => console.log('Delete post', post.id),
-                    className: 'p-2',
-                },
-            ]
-        );
 
     return (
         <div className='relative flex h-full overflow-hidden rounded-lg'>

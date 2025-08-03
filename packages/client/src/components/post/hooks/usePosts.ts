@@ -1,21 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { Post } from '../../../types/post';
+import type { ContentType, Post, PrivacyLevel } from '../../../types/post';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../auth/AuthProvider';
 
 export interface CreatePostData {
     content: string;
-    contentType: 'photo' | 'video' | 'album';
-    privacyLevel: 'public' | 'friends' | 'private';
-    file?: File | null;
+    contentType: ContentType;
+    privacyLevel: PrivacyLevel;
+    file: File;
 }
 
 export interface UpdatePostData {
-    content?: string;
-    contentType?: 'photo' | 'video' | 'album';
-    privacyLevel?: 'public' | 'friends' | 'private';
-    removeFile?: boolean;
-    file?: File | null;
+    content: string;
+    privacyLevel: PrivacyLevel;
 }
 
 const postsApi = {
@@ -61,25 +58,13 @@ const postsApi = {
         postId: number,
         data: UpdatePostData
     ): Promise<{ message: string; post: Post }> {
-        const formData = new FormData();
-
-        if (data.content !== undefined)
-            formData.append('content', data.content);
-        if (data.contentType !== undefined)
-            formData.append('contentType', data.contentType);
-        if (data.privacyLevel !== undefined)
-            formData.append('privacyLevel', data.privacyLevel);
-        if (data.removeFile !== undefined)
-            formData.append('removeFile', data.removeFile.toString());
-
-        if (data.file) {
-            formData.append('file', data.file);
-        }
-
         const response = await fetch(`/api/post/${postId}/edit`, {
             method: 'PUT',
             credentials: 'include',
-            body: formData,
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
         });
 
         if (!response.ok) {
@@ -116,11 +101,14 @@ export const usePosts = (profileId: number) => {
 
 export const useCreatePost = (profileId: number) => {
     const queryClient = useQueryClient();
+    const { user } = useAuth();
 
     return useMutation({
         mutationFn: postsApi.createPost,
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['posts', profileId] });
+            queryClient.invalidateQueries({
+                queryKey: ['posts', user?.id, profileId],
+            });
             toast.success('Post created successfully!');
         },
         onError: (error: Error) => {
@@ -131,6 +119,7 @@ export const useCreatePost = (profileId: number) => {
 
 export const useUpdatePost = (profileId: number) => {
     const queryClient = useQueryClient();
+    const { user } = useAuth();
 
     return useMutation({
         mutationFn: ({
@@ -141,7 +130,9 @@ export const useUpdatePost = (profileId: number) => {
             data: UpdatePostData;
         }) => postsApi.updatePost(postId, data),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['posts', profileId] });
+            queryClient.invalidateQueries({
+                queryKey: ['posts', user?.id, profileId],
+            });
             toast.success('Post updated successfully!');
         },
         onError: (error: Error) => {
@@ -152,11 +143,13 @@ export const useUpdatePost = (profileId: number) => {
 
 export const useDeletePost = (profileId: number) => {
     const queryClient = useQueryClient();
-
+    const { user } = useAuth();
     return useMutation({
         mutationFn: postsApi.deletePost,
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['posts', profileId] });
+            queryClient.invalidateQueries({
+                queryKey: ['posts', user?.id, profileId],
+            });
             toast.success('Post deleted successfully!');
         },
         onError: (error: Error) => {

@@ -161,38 +161,11 @@ export class PostService implements IPostService {
 
             let contentUrl = existingPost.contentUrl;
 
-            if (data.removeFile && existingPost.contentUrl) {
-                await deleteFile(existingPost.contentUrl);
-                contentUrl = null;
-            } else if (data.file) {
-                const allowedTypes =
-                    (data.contentType || existingPost.contentType) === 'photo'
-                        ? ['image/']
-                        : (data.contentType || existingPost.contentType) ===
-                            'video'
-                          ? ['video/']
-                          : ['image/', 'video/'];
-
-                contentUrl = await handleFileUpload(data.file, {
-                    allowedTypes,
-                    maxSizeInMB:
-                        (data.contentType || existingPost.contentType) ===
-                        'video'
-                            ? 100
-                            : 50,
-                    subFolder: 'posts',
-                    oldFileUrl: existingPost.contentUrl,
-                });
-            }
-
             const [updatedPost] = await db
                 .update(posts)
                 .set({
                     ...(data.content && {
                         content: data.content,
-                    }),
-                    ...(data.contentType && {
-                        contentType: data.contentType,
                     }),
                     ...(data.privacyLevel && {
                         privacyLevel: data.privacyLevel,
@@ -240,15 +213,12 @@ interface CreatePostData {
     content: string;
     contentType: ContentType;
     privacyLevel: PrivacyLevel;
-    file?: FileInput | null;
+    file: FileInput;
 }
 
 export interface UpdatePostData {
-    content?: string;
-    contentType?: ContentType;
-    privacyLevel?: PrivacyLevel;
-    file?: FileInput | null;
-    removeFile?: boolean;
+    content: string;
+    privacyLevel: PrivacyLevel;
 }
 
 interface UserInfo {
