@@ -1,11 +1,13 @@
 import { db } from '../db';
 import { friendships, SafeUser, UserProfile, users } from './user.model';
 import { and, eq, or } from 'drizzle-orm';
-import { FriendshipStatus, RegisterUser } from './user.schema';
+import { RegisterUser } from './user.schema';
 import bcrypt from 'bcrypt';
 import createError from '@fastify/error';
 import { handleFileUpload } from '../utils/handleFileUpload';
 import { deleteFile } from '../utils/deleteFile';
+import { FriendshipStatus } from '@/friendship/friendship.schema';
+import { userBlocks } from '@/db/schema';
 
 interface IUserService {
     createUser: (user: RegisterUser) => Promise<void>;
@@ -31,6 +33,14 @@ interface IUserService {
         profileId: number,
         viewerId: number
     ) => Promise<FriendshipStatus | null>;
+    isUserBlocked(
+        userId: number,
+        targetUserId: number
+    ): Promise<{
+        isBlocked: boolean;
+        blockedBy: 'user' | 'admin' | null;
+        reason?: string | null;
+    }>;
 }
 
 export default class UserService implements IUserService {
@@ -134,6 +144,25 @@ export default class UserService implements IUserService {
         const user = await this.findUserById(profileId);
         if (!user) return null;
 
+        if (user.status !== 'active') {
+            const UserUnavailable = createError(
+                'USER_UNAVAILABLE',
+                'User profile is not available',
+                403
+            );
+            throw new UserUnavailable();
+        }
+
+        const isBlocked = await this.checkUserBlocked(viewerId, profileId);
+        if (isBlocked) {
+            const UserBlocked = createError(
+                'USER_BLOCKED',
+                'Unable to view this profile',
+                403
+            );
+            throw new UserBlocked();
+        }
+
         const friendshipStatus = await this.getFriendshipStatus(
             viewerId,
             profileId
@@ -157,5 +186,88 @@ export default class UserService implements IUserService {
         });
 
         return friendship?.status ?? null;
+    }
+
+    private async checkUserBlocked(
+        viewerId: number,
+        profileId: number
+    ): Promise<boolean> {
+        const userBlock = await db.query.friendships.findFirst({
+            where: and(
+                or(
+                    and(
+                        eq(friendships.userId, viewerId),
+                        eq(friendships.friendId, profileId)
+                    ),
+                    and(
+                        eq(friendships.userId, profileId),
+                        eq(friendships.friendId, viewerId)
+                    )
+                ),
+                eq(friendships.status, 'blocked')
+            ),
+        });
+
+        if (userBlock) return true;
+
+        const viewerAdminBlock = await db.query.userBlocks.findFirst({
+            where: eq(userBlocks.userId, viewerId),
+        });
+
+        if (viewerAdminBlock) return true;
+
+        return false;
+    }
+
+    async isUserBlocked(
+        userId: number,
+        targetUserId: number
+    ): Promise<{
+        isBlocked: boolean;
+        blockedBy: 'user' | 'admin' | null;
+        reason?: string | null;
+    }> {
+        const userBlock = await db.query.friendships.findFirst({
+            where: and(
+                or(
+                    and(
+                        eq(friendships.userId, userId),
+                        eq(friendships.friendId, targetUserId)
+                    ),
+                    and(
+                        eq(friendships.userId, targetUserId),
+                        eq(friendships.friendId, userId)
+                    )
+                ),
+                eq(friendships.status, 'blocked')
+            ),
+        });
+
+        if (userBlock) {
+            return {
+                isBlocked: true,
+                blockedBy: 'user',
+            };
+        }
+
+        const adminBlock = await db.query.userBlocks.findFirst({
+            where: or(
+                eq(userBlocks.userId, userId),
+                eq(userBlocks.userId, targetUserId)
+            ),
+        });
+
+        if (adminBlock) {
+            return {
+                isBlocked: true,
+                blockedBy: 'admin',
+                reason: adminBlock.reason,
+            };
+        }
+
+        return {
+            isBlocked: false,
+            blockedBy: null,
+        };
     }
 }

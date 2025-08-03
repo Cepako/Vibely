@@ -1,11 +1,11 @@
 import { and, asc, desc, eq, or } from 'drizzle-orm';
 import { db } from '../db';
 import { comments, posts } from '../db/schema';
-import { FriendshipStatus } from 'user/user.schema';
 import { FileInput, handleFileUpload } from '../utils/handleFileUpload';
 import { ContentType, PrivacyLevel } from './post.schema';
 import { deleteFile } from '../utils/deleteFile';
 import { Comment, Post } from './post.model';
+import { FriendshipStatus } from '@/friendship/friendship.schema';
 
 interface IPostService {
     getPosts: (

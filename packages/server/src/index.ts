@@ -13,6 +13,7 @@ import authRoutes from './auth/auth.routes';
 import userRoutes from './user/user.routes';
 import postRoutes from './post/post.routes';
 import { Payload } from 'auth/auth.schema';
+import { friendshipRoutes } from './friendship/friendship.routes';
 
 const server = Fastify({
     logger: true,
@@ -64,6 +65,7 @@ server.register(
         api.register(authRoutes, { prefix: '/auth' });
         api.register(userRoutes, { prefix: '/user' });
         api.register(postRoutes, { prefix: '/post' });
+        api.register(friendshipRoutes, { prefix: '/friendship' });
     },
     { prefix: '/api' }
 );

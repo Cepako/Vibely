@@ -1,5 +1,5 @@
+import { FriendshipStatus } from '@/friendship/friendship.schema';
 import { users, friendships } from '../db/schema';
-import { FriendshipStatus } from './user.schema';
 export { users, friendships };
 
 export type User = typeof users.$inferSelect;

@@ -27,16 +27,33 @@ export default class UserController {
         req: FastifyRequest<{ Params: { profileId: number } }>,
         reply: FastifyReply
     ) {
-        const { id: viewerId } = req.user;
+        try {
+            const { id: viewerId } = req.user;
+            const { profileId } = req.params;
 
-        const { profileId } = req.params;
+            const userProfile = await this.userService.getProfile(
+                profileId,
+                viewerId
+            );
 
-        const userProfile = await this.userService.getProfile(
-            profileId,
-            viewerId
-        );
+            return reply.status(200).send(userProfile);
+        } catch (error: any) {
+            if (error.name === 'USER_UNAVAILABLE') {
+                return reply.status(403).send({
+                    error: 'This user profile is not available',
+                });
+            }
 
-        return reply.status(200).send(userProfile);
+            if (error.name === 'USER_BLOCKED') {
+                return reply.status(403).send({
+                    error: 'Unable to view this profile',
+                });
+            }
+
+            return reply.status(500).send({
+                error: error.message || 'Failed to fetch profile',
+            });
+        }
     }
 
     async editProfile(
@@ -174,5 +191,26 @@ export default class UserController {
         const available = await this.userService.checkIsEmailAvailable(email);
 
         return reply.code(200).send({ available });
+    }
+
+    async checkUserBlockStatus(
+        req: FastifyRequest<{ Params: { userId: number } }>,
+        reply: FastifyReply
+    ) {
+        try {
+            const { id: viewerId } = req.user;
+            const { userId } = req.params;
+
+            const blockStatus = await this.userService.isUserBlocked(
+                viewerId,
+                userId
+            );
+
+            return reply.status(200).send(blockStatus);
+        } catch (error: any) {
+            return reply.status(500).send({
+                error: error.message || 'Failed to check block status',
+            });
+        }
     }
 }
