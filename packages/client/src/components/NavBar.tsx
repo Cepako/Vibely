@@ -2,6 +2,7 @@ import { useNavigate } from '@tanstack/react-router';
 import VibelyIcon from './ui/VibelyIcon';
 import { cn } from '../utils/utils';
 import {
+    IconBell,
     IconCalendarWeek,
     IconCompass,
     IconHome,
@@ -11,18 +12,27 @@ import {
 } from '@tabler/icons-react';
 import { useAuth } from './auth/AuthProvider';
 import { useCurrentUser } from './hooks/useCurrentUser';
+import { useNotifications } from './notificaitons/hooks/useNotifications';
+import { useEffect } from 'react';
 
 interface NavBarProps {
-    view?: 'home' | 'messages' | 'events' | 'explore' | 'me';
+    view?: 'home' | 'messages' | 'events' | 'explore' | 'me' | 'notifications';
 }
 
 export default function NavBar({ view }: NavBarProps) {
     const navigate = useNavigate();
     const { logout, user } = useAuth();
     const { data, isLoading } = useCurrentUser();
+    const { unreadCount, fetchUnreadCount } = useNotifications();
+
+    useEffect(() => {
+        if (user?.id) {
+            fetchUnreadCount();
+        }
+    }, [user?.id, fetchUnreadCount]);
 
     const defaultStyles =
-        'rounded-lg px-3 py-4 cursor-pointer hover:bg-slate-200 duration-200 flex items-center gap-2';
+        'relative rounded-lg px-3 py-4 cursor-pointer hover:bg-slate-200 duration-200 flex items-center gap-2';
     const activeStyles = 'text-primary-500 bg-slate-200';
 
     const handleNavigate = (view: string) => navigate({ to: `/${view}` });
@@ -56,6 +66,21 @@ export default function NavBar({ view }: NavBarProps) {
                 >
                     <IconMessages />
                     Messages
+                </div>
+                <div
+                    className={cn(
+                        defaultStyles,
+                        view === 'notifications' && activeStyles
+                    )}
+                    onClick={() => handleNavigate('notifications')}
+                >
+                    <IconBell />
+                    Notifications
+                    {unreadCount > 0 && (
+                        <span className='bg-primary-500 absolute top-[50%] right-2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-xs text-white'>
+                            {unreadCount > 99 ? '99+' : unreadCount}
+                        </span>
+                    )}
                 </div>
                 <div
                     className={cn(

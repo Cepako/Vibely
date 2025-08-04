@@ -6,6 +6,7 @@ import {
     CreateNotificationType,
     NotificationType,
 } from './notification.schema';
+import WebSocket from 'ws';
 
 export class NotificationService {
     constructor(private server: FastifyInstance) {}
@@ -146,13 +147,14 @@ export class NotificationService {
         userId: number,
         notification: NotificationType
     ): void {
-        const wsClients = (this.server as any).websocketClients || new Map();
-        const userConnections = wsClients.get(userId) || [];
+        const wsClients =
+            (this.server as any).websocketClients ||
+            new Map<number, WebSocket[]>();
+        const userConnections: WebSocket[] = wsClients.get(userId) || [];
 
-        userConnections.forEach((client: any) => {
-            if (client.readyState === 1) {
-                // WebSocket.OPEN
-                client.send(
+        userConnections.forEach((socket: WebSocket) => {
+            if (socket.readyState === WebSocket.OPEN) {
+                socket.send(
                     JSON.stringify({
                         type: 'notification',
                         data: notification,
