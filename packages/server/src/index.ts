@@ -14,6 +14,8 @@ import userRoutes from './user/user.routes';
 import postRoutes from './post/post.routes';
 import { Payload } from 'auth/auth.schema';
 import { friendshipRoutes } from './friendship/friendship.routes';
+import websocketPlugin from './plugins/websocket';
+import notificationRoutes from './notification/notification.routes';
 
 const server = Fastify({
     logger: true,
@@ -41,6 +43,8 @@ server.register(fastifyStatic, {
     prefix: '/uploads/',
 });
 
+server.register(websocketPlugin);
+
 server.register(swagger, {
     openapi: {
         info: {
@@ -66,6 +70,7 @@ server.register(
         api.register(userRoutes, { prefix: '/user' });
         api.register(postRoutes, { prefix: '/post' });
         api.register(friendshipRoutes, { prefix: '/friendship' });
+        api.register(notificationRoutes, { prefix: '/notification' });
     },
     { prefix: '/api' }
 );

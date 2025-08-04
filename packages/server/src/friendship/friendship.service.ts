@@ -2,6 +2,8 @@ import { db } from '@/db';
 import { friendships, users } from '@/db/schema';
 import { and, eq, or } from 'drizzle-orm';
 import { FriendshipStatus } from './friendship.schema';
+import { FastifyInstance } from 'fastify';
+import { NotificationService } from '@/notification/notification.service';
 
 interface IFriendshipService {
     getFriends(userId: number): Promise<any[]>;
@@ -25,7 +27,11 @@ interface IFriendshipService {
 }
 
 export class FriendshipService implements IFriendshipService {
-    constructor() {}
+    private notificationService: NotificationService;
+
+    constructor(server: FastifyInstance) {
+        this.notificationService = new NotificationService(server);
+    }
 
     async getFriends(userId: number) {
         const friendshipData = await db.query.friendships.findMany({
@@ -121,11 +127,30 @@ export class FriendshipService implements IFriendshipService {
             throw new Error('Cannot send friend request to blocked user');
         }
 
+        const senderUser = await db.query.users.findFirst({
+            where: eq(users.id, userId),
+            columns: {
+                name: true,
+                surname: true,
+            },
+        });
+
+        if (!senderUser) {
+            throw new Error('Sender user not found');
+        }
+
         await db.insert(friendships).values({
             userId,
             friendId,
             status: 'pending',
         });
+
+        const senderFullName = `${senderUser.name} ${senderUser.surname}`;
+        await this.notificationService.notifyFriendRequest(
+            userId,
+            friendId,
+            senderFullName
+        );
     }
 
     async respondToFriendRequest(
@@ -152,6 +177,25 @@ export class FriendshipService implements IFriendshipService {
                 updatedAt: new Date().toISOString(),
             })
             .where(eq(friendships.id, friendshipId));
+
+        if (status === 'accepted') {
+            const responderUser = await db.query.users.findFirst({
+                where: eq(users.id, userId),
+                columns: {
+                    name: true,
+                    surname: true,
+                },
+            });
+
+            if (responderUser) {
+                const responderFullName = `${responderUser.name} ${responderUser.surname}`;
+                await this.notificationService.notifyFriendRequestAccepted(
+                    userId,
+                    friendship.userId,
+                    responderFullName
+                );
+            }
+        }
     }
 
     async blockUser(userId: number, userToBlock: number) {

@@ -8,7 +8,7 @@ import { AuthService } from '@/auth/auth.service';
 
 export async function friendshipRoutes(fastify: FastifyInstance) {
     const authService = new AuthService();
-    const friendshipService = new FriendshipService();
+    const friendshipService = new FriendshipService(fastify);
     const friendshipController = new FriendshipController(friendshipService);
 
     const authGuard = createAuthGuard(authService);
