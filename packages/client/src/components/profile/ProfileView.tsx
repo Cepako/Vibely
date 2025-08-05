@@ -10,6 +10,7 @@ import EditProfileForm from './EditProfileForm';
 import ProfileImage from './ProfileImage';
 import { cn } from '../../utils/utils';
 import { usePosts } from '../post/hooks/usePosts';
+import { useFriends } from './hooks/useFriendship';
 
 export default function ProfileView() {
     const params = useParams({ from: '/profile/$id' });
@@ -20,6 +21,10 @@ export default function ProfileView() {
     const { user } = useAuth();
     const { data, isLoading } = useProfile(Number(params.id));
     const userProfile = data;
+
+    // Fetch friends count
+    const { data: friends } = useFriends(Number(params.id));
+    const friendsCount = friends?.length || 0;
 
     const postsData = useMemo(() => {
         if (!posts.data) return [];
@@ -68,6 +73,7 @@ export default function ProfileView() {
 
         return age;
     };
+
     if (isLoading) {
         return <div>Loading...</div>; //TODO: Loader
     }
@@ -170,7 +176,7 @@ export default function ProfileView() {
                                     onClick={() => setSelectedView('friends')}
                                 >
                                     <div className='text-lg font-bold'>
-                                        {formatNumber(1234)}
+                                        {formatNumber(friendsCount)}
                                     </div>
                                     <div className='text-sm'>Friends</div>
                                 </div>
@@ -192,7 +198,7 @@ export default function ProfileView() {
                 {selectedView === 'posts' ? (
                     <PostsList profileId={userProfile.id} posts={postsData} />
                 ) : (
-                    <FriendsList />
+                    <FriendsList userId={userProfile.id} />
                 )}
             </div>
         </div>
