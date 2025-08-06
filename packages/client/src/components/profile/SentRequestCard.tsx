@@ -38,7 +38,7 @@ export default function SentRequestCard({ request }: SentRequestCardProps) {
     };
 
     return (
-        <div className='rounded-lg border border-gray-200 bg-white p-4'>
+        <div className='rounded-lg border border-slate-200 bg-white p-4'>
             <div className='flex items-center justify-between'>
                 <Link
                     to='/profile/$id'
@@ -54,24 +54,24 @@ export default function SentRequestCard({ request }: SentRequestCardProps) {
                         className='h-12 w-12 rounded-full object-cover'
                     />
                     <div>
-                        <p className='font-semibold text-gray-900'>
+                        <p className='font-semibold text-slate-900'>
                             {request.user_friendId.name}{' '}
                             {request.user_friendId.surname}
                         </p>
-                        <p className='text-sm text-gray-500'>
+                        <p className='text-sm text-slate-500'>
                             Sent {formatTime(request.createdAt)}
                         </p>
                     </div>
                 </Link>
 
                 <div className='ml-4 flex items-center space-x-3'>
-                    <span className='rounded-full bg-yellow-50 px-2 py-1 text-sm text-yellow-600'>
+                    <span className='rounded-full bg-amber-50 px-2 py-1 text-sm text-amber-600'>
                         Pending
                     </span>
                     <button
                         onClick={handleCancel}
                         disabled={cancelMutation.isPending}
-                        className='flex items-center justify-center rounded-md bg-red-50 px-3 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-100 disabled:opacity-50'
+                        className='flex cursor-pointer items-center justify-center rounded-md bg-rose-50 px-3 py-2 text-sm font-medium text-rose-600 transition-colors hover:bg-rose-100 disabled:opacity-50'
                     >
                         <IconX size={16} className='mr-1' />
                         {cancelMutation.isPending ? 'Canceling...' : 'Cancel'}

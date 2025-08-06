@@ -1,7 +1,6 @@
 export type Gender = 'male' | 'female';
 export type Role = 'admin' | 'user';
 export type Status = 'active' | 'inactive' | 'suspended' | 'banned';
-export type FriendshipStatus = 'pending' | 'accepted' | 'rejected' | 'blocked';
 
 export type User = {
     id: number;

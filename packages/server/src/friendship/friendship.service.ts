@@ -170,15 +170,15 @@ export class FriendshipService implements IFriendshipService {
             throw new Error('Friend request not found or unauthorized');
         }
 
-        await db
-            .update(friendships)
-            .set({
-                status,
-                updatedAt: new Date().toISOString(),
-            })
-            .where(eq(friendships.id, friendshipId));
-
         if (status === 'accepted') {
+            await db
+                .update(friendships)
+                .set({
+                    status: 'accepted',
+                    updatedAt: new Date().toISOString(),
+                })
+                .where(eq(friendships.id, friendshipId));
+
             const responderUser = await db.query.users.findFirst({
                 where: eq(users.id, userId),
                 columns: {
@@ -195,6 +195,10 @@ export class FriendshipService implements IFriendshipService {
                     responderFullName
                 );
             }
+        } else if (status === 'rejected') {
+            await db
+                .delete(friendships)
+                .where(eq(friendships.id, friendshipId));
         }
     }
 
@@ -222,19 +226,15 @@ export class FriendshipService implements IFriendshipService {
 
         if (existingFriendship) {
             await db
-                .update(friendships)
-                .set({
-                    status: 'blocked',
-                    updatedAt: new Date().toISOString(),
-                })
+                .delete(friendships)
                 .where(eq(friendships.id, existingFriendship.id));
-        } else {
-            await db.insert(friendships).values({
-                userId,
-                friendId: userToBlock,
-                status: 'blocked',
-            });
         }
+
+        await db.insert(friendships).values({
+            userId,
+            friendId: userToBlock,
+            status: 'blocked',
+        });
     }
 
     async unblockUser(userId: number, userToUnblock: number) {

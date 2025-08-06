@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
-import { type FriendshipStatus, type User } from '../../types/user';
+import { type User } from '../../types/user';
+import type { FriendshipStatus } from '../profile/hooks/useFriendship';
 
-export type UserProfile = User & { friendshipStatus: FriendshipStatus | null };
+export type UserProfile = User & { friendshipStatus: FriendshipStatus };
 
 export function useProfile(profileId: number) {
     return useQuery<UserProfile>({

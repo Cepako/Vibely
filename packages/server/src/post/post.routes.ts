@@ -3,15 +3,15 @@ import { Type } from '@sinclair/typebox';
 import { PostService } from './post.service';
 import PostController from './post.controller';
 import { AuthService } from '../auth/auth.service';
-import UserService from '../user/user.service';
 import { createAuthGuard } from '../hooks/authGuard';
 import { PrivacyLevel, PrivacyLevelSchema } from './post.schema';
+import { FriendshipService } from '@/friendship/friendship.service';
 
 export default async function postRoutes(fastify: FastifyInstance) {
     const authService = new AuthService();
-    const userService = new UserService();
+    const friendshipService = new FriendshipService(fastify);
     const postService = new PostService();
-    const postController = new PostController(postService, userService);
+    const postController = new PostController(postService, friendshipService);
 
     const authGuard = createAuthGuard(authService);
 

@@ -1,15 +1,18 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { PostService, UpdatePostData } from './post.service';
-import UserService from '../user/user.service';
 import { ContentType, PrivacyLevel } from './post.schema';
+import { FriendshipService } from '@/friendship/friendship.service';
 
 export default class PostController {
     private postService: PostService;
-    private userService: UserService;
+    private friendshipService: FriendshipService;
 
-    constructor(postService: PostService, userService: UserService) {
+    constructor(
+        postService: PostService,
+        friendshipService: FriendshipService
+    ) {
         this.postService = postService;
-        this.userService = userService;
+        this.friendshipService = friendshipService;
     }
 
     async getPosts(
@@ -19,10 +22,8 @@ export default class PostController {
         const { id: userId } = req.user;
         const { profileId } = req.params;
 
-        const friendshipStatus = await this.userService.getFriendshipStatus(
-            userId,
-            profileId
-        );
+        const friendshipStatus =
+            await this.friendshipService.getFriendshipStatus(userId, profileId);
 
         const posts = await this.postService.getPosts(
             profileId,

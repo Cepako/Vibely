@@ -31,7 +31,6 @@ export default function FriendsList({ userId }: FriendsListProps) {
     const targetUserId = userId || user?.id;
     const isOwnProfile = !userId || userId === user?.id;
 
-    // Only fetch data for own profile features, and ensure targetUserId is defined
     const { data: friends, isLoading: friendsLoading } = useFriends(
         targetUserId!
     );
@@ -41,7 +40,6 @@ export default function FriendsList({ userId }: FriendsListProps) {
         useSentFriendRequests();
     const { data: blockedUsers, isLoading: blockedLoading } = useBlockedUsers();
 
-    // Don't render if we don't have a valid user ID
     if (!targetUserId) {
         return <div>Loading...</div>;
     }
@@ -52,32 +50,31 @@ export default function FriendsList({ userId }: FriendsListProps) {
             label: 'Friends',
             icon: IconUsers,
             count: friends?.length || 0,
-            show: true, // Always show friends tab
+            show: true,
         },
         {
             key: 'requests' as FriendsTab,
             label: 'Requests',
             icon: IconUserPlus,
             count: friendRequests?.length || 0,
-            show: isOwnProfile, // Only show for own profile
+            show: isOwnProfile,
         },
         {
             key: 'sent' as FriendsTab,
             label: 'Sent',
             icon: IconUserMinus,
             count: sentRequests?.length || 0,
-            show: isOwnProfile, // Only show for own profile
+            show: isOwnProfile,
         },
         {
             key: 'blocked' as FriendsTab,
             label: 'Blocked',
             icon: IconUserX,
             count: blockedUsers?.length || 0,
-            show: isOwnProfile, // Only show for own profile
+            show: isOwnProfile,
         },
     ];
 
-    // Reset to friends tab if viewing someone else's profile
     if (!isOwnProfile && activeTab !== 'friends') {
         setActiveTab('friends');
     }
@@ -103,6 +100,7 @@ export default function FriendsList({ userId }: FriendsListProps) {
                             <FriendCard
                                 key={friend.id}
                                 friend={friend}
+                                isFriendMe={friend.id === user?.id}
                                 isOwnProfile={isOwnProfile}
                             />
                         ))}
@@ -161,8 +159,7 @@ export default function FriendsList({ userId }: FriendsListProps) {
 
     return (
         <div className='w-full'>
-            {/* Tabs */}
-            <div className='mb-6 flex border-b border-gray-200'>
+            <div className='mb-6 flex border-b border-slate-200'>
                 {tabs
                     .filter((tab) => tab.show)
                     .map((tab) => {
@@ -172,10 +169,10 @@ export default function FriendsList({ userId }: FriendsListProps) {
                                 key={tab.key}
                                 onClick={() => setActiveTab(tab.key)}
                                 className={cn(
-                                    'flex items-center space-x-2 border-b-2 px-4 py-2 text-sm font-medium transition-colors',
+                                    'flex cursor-pointer items-center space-x-2 border-b-2 px-4 py-2 text-sm font-medium transition-colors',
                                     activeTab === tab.key
                                         ? 'border-primary-500 text-primary-600'
-                                        : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                                        : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700'
                                 )}
                             >
                                 <Icon size={18} />
@@ -183,10 +180,10 @@ export default function FriendsList({ userId }: FriendsListProps) {
                                 {tab.count > 0 && (
                                     <span
                                         className={cn(
-                                            'rounded-full px-2 py-1 text-xs font-semibold',
+                                            'flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold',
                                             activeTab === tab.key
                                                 ? 'bg-primary-100 text-primary-600'
-                                                : 'bg-gray-100 text-gray-600'
+                                                : 'bg-slate-100 text-slate-600'
                                         )}
                                     >
                                         {tab.count}
@@ -197,7 +194,6 @@ export default function FriendsList({ userId }: FriendsListProps) {
                     })}
             </div>
 
-            {/* Content */}
             <div className='px-6'>{renderContent()}</div>
         </div>
     );
@@ -214,10 +210,10 @@ function LoadingState() {
 function EmptyState({ message }: { message: string }) {
     return (
         <div className='py-12 text-center'>
-            <div className='mb-2 text-gray-400'>
+            <div className='mb-2 text-slate-400'>
                 <IconUsers size={48} className='mx-auto' />
             </div>
-            <p className='text-gray-500'>{message}</p>
+            <p className='text-slate-500'>{message}</p>
         </div>
     );
 }

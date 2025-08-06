@@ -5,9 +5,11 @@ import { Type } from '@sinclair/typebox';
 import { RegisterUser } from './user.schema';
 import { AuthService } from '../auth/auth.service';
 import { createAuthGuard } from '../hooks/authGuard';
+import { FriendshipService } from '@/friendship/friendship.service';
 
 export default async function userRoutes(fastify: FastifyInstance) {
-    const userService = new UserService();
+    const friendshipService = new FriendshipService(fastify);
+    const userService = new UserService(friendshipService);
     const authService = new AuthService();
     const userController = new UserController(userService);
 

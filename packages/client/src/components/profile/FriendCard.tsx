@@ -4,27 +4,31 @@ import {
     IconUserX,
     IconDots,
 } from '@tabler/icons-react';
-import { useState } from 'react';
 import {
     useRemoveFriend,
     useBlockUser,
     type Friend,
 } from './hooks/useFriendship';
 import { Link } from '@tanstack/react-router';
+import DropdownMenu, { type DropdownMenuItem } from '../ui/DropdownMenu';
 
 interface FriendCardProps {
     friend: Friend;
+    isFriendMe: boolean;
+    isOwnProfile: boolean;
 }
 
-export default function FriendCard({ friend }: FriendCardProps) {
-    const [showMenu, setShowMenu] = useState(false);
+export default function FriendCard({
+    friend,
+    isFriendMe,
+    isOwnProfile,
+}: FriendCardProps) {
     const removeFriendMutation = useRemoveFriend();
     const blockUserMutation = useBlockUser();
 
     const handleRemoveFriend = async () => {
         try {
             await removeFriendMutation.mutateAsync(friend.id);
-            setShowMenu(false);
         } catch (error) {
             console.error('Failed to remove friend:', error);
         }
@@ -33,7 +37,6 @@ export default function FriendCard({ friend }: FriendCardProps) {
     const handleBlockUser = async () => {
         try {
             await blockUserMutation.mutateAsync(friend.id);
-            setShowMenu(false);
         } catch (error) {
             console.error('Failed to block user:', error);
         }
@@ -46,8 +49,27 @@ export default function FriendCard({ friend }: FriendCardProps) {
         });
     };
 
+    const friendMenuItems: DropdownMenuItem[] = [
+        {
+            id: 'remove',
+            label: removeFriendMutation.isPending
+                ? 'Removing...'
+                : 'Remove Friend',
+            icon: <IconUserMinus />,
+            onClick: handleRemoveFriend,
+            className: 'p-2',
+        },
+        {
+            id: 'block',
+            label: blockUserMutation.isPending ? 'Blocking...' : 'Block User',
+            icon: <IconUserX />,
+            onClick: handleBlockUser,
+            className: 'p-2 text-rose-600',
+        },
+    ];
+
     return (
-        <div className='rounded-lg border border-gray-200 bg-white p-4 transition-shadow hover:shadow-md'>
+        <div className='rounded-lg border border-slate-200 bg-white p-4 transition-shadow hover:shadow-md'>
             <div className='mb-3 flex items-start justify-between'>
                 <Link
                     to='/profile/$id'
@@ -68,66 +90,39 @@ export default function FriendCard({ friend }: FriendCardProps) {
                         )}
                     </div>
                     <div className='min-w-0 flex-1'>
-                        <p className='truncate font-semibold text-gray-900'>
+                        <p className='truncate font-semibold text-slate-900'>
                             {friend.name} {friend.surname}
                         </p>
-                        <p className='text-sm text-gray-500'>
+                        <p className='text-sm text-slate-500'>
                             Friends since {formatSince(friend.since)}
                         </p>
                     </div>
                 </Link>
 
                 <div className='relative'>
-                    <button
-                        onClick={() => setShowMenu(!showMenu)}
-                        className='rounded-full p-1 transition-colors hover:bg-gray-100'
-                    >
-                        <IconDots size={20} className='text-gray-400' />
-                    </button>
-
-                    {showMenu && (
-                        <div className='absolute top-8 right-0 z-10 w-48 rounded-md border border-gray-200 bg-white py-1 shadow-lg'>
-                            <button
-                                onClick={handleRemoveFriend}
-                                disabled={removeFriendMutation.isPending}
-                                className='flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50'
-                            >
-                                <IconUserMinus size={16} className='mr-2' />
-                                {removeFriendMutation.isPending
-                                    ? 'Removing...'
-                                    : 'Remove Friend'}
-                            </button>
-                            <button
-                                onClick={handleBlockUser}
-                                disabled={blockUserMutation.isPending}
-                                className='flex w-full items-center px-4 py-2 text-sm text-red-600 hover:bg-gray-50 disabled:opacity-50'
-                            >
-                                <IconUserX size={16} className='mr-2' />
-                                {blockUserMutation.isPending
-                                    ? 'Blocking...'
-                                    : 'Block User'}
-                            </button>
-                        </div>
+                    {isOwnProfile && (
+                        <DropdownMenu
+                            trigger={
+                                <IconDots className='cursor-pointer rounded-full p-1 duration-200 hover:bg-slate-100 hover:text-slate-500' />
+                            }
+                            items={friendMenuItems}
+                            placement='bottom-start'
+                            className='border-slate-300 shadow-lg'
+                        />
                     )}
                 </div>
             </div>
 
-            <div className='flex space-x-2'>
-                <Link
-                    to='/messages' // Adjust to your messages route
-                    className='bg-primary-600 hover:bg-primary-700 flex flex-1 items-center justify-center rounded-md px-3 py-2 text-sm font-medium text-white transition-colors'
-                >
-                    <IconMessage size={16} className='mr-2' />
-                    Message
-                </Link>
-            </div>
-
-            {/* Click overlay to close menu */}
-            {showMenu && (
-                <div
-                    className='fixed inset-0 z-0'
-                    onClick={() => setShowMenu(false)}
-                />
+            {!isFriendMe && (
+                <div className='flex space-x-2'>
+                    <Link
+                        to='/messages'
+                        className='bg-primary-600 hover:bg-primary-700 flex flex-1 items-center justify-center rounded-md px-3 py-2 text-sm font-medium text-white transition-colors'
+                    >
+                        <IconMessage size={16} className='mr-2' />
+                        Message
+                    </Link>
+                </div>
             )}
         </div>
     );

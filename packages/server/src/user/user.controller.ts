@@ -192,25 +192,4 @@ export default class UserController {
 
         return reply.code(200).send({ available });
     }
-
-    async checkUserBlockStatus(
-        req: FastifyRequest<{ Params: { userId: number } }>,
-        reply: FastifyReply
-    ) {
-        try {
-            const { id: viewerId } = req.user;
-            const { userId } = req.params;
-
-            const blockStatus = await this.userService.isUserBlocked(
-                viewerId,
-                userId
-            );
-
-            return reply.status(200).send(blockStatus);
-        } catch (error: any) {
-            return reply.status(500).send({
-                error: error.message || 'Failed to check block status',
-            });
-        }
-    }
 }

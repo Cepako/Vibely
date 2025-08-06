@@ -264,7 +264,6 @@ export function useFriendshipStatus(userId: number) {
     });
 }
 
-// Mutation hooks
 export function useSendFriendRequest() {
     const queryClient = useQueryClient();
 
@@ -293,6 +292,7 @@ export function useRespondToFriendRequest() {
             queryClient.invalidateQueries({ queryKey: ['friendRequests'] });
             queryClient.invalidateQueries({ queryKey: ['friends'] });
             queryClient.invalidateQueries({ queryKey: ['friendshipStatus'] });
+            queryClient.invalidateQueries({ queryKey: ['profile'] });
         },
     });
 }

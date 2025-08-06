@@ -52,7 +52,7 @@ export default function FriendRequestCard({ request }: FriendRequestCardProps) {
     };
 
     return (
-        <div className='rounded-lg border border-gray-200 bg-white p-4'>
+        <div className='rounded-lg border border-slate-200 bg-white p-4'>
             <div className='flex items-center justify-between'>
                 <Link
                     to='/profile/$id'
@@ -68,11 +68,11 @@ export default function FriendRequestCard({ request }: FriendRequestCardProps) {
                         className='h-12 w-12 rounded-full object-cover'
                     />
                     <div>
-                        <p className='font-semibold text-gray-900'>
+                        <p className='font-semibold text-slate-900'>
                             {request.user_userId.name}{' '}
                             {request.user_userId.surname}
                         </p>
-                        <p className='text-sm text-gray-500'>
+                        <p className='text-sm text-slate-500'>
                             {formatTime(request.createdAt)}
                         </p>
                     </div>
@@ -82,7 +82,7 @@ export default function FriendRequestCard({ request }: FriendRequestCardProps) {
                     <button
                         onClick={handleAccept}
                         disabled={respondMutation.isPending}
-                        className='bg-primary-600 hover:bg-primary-700 flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium text-white transition-colors disabled:opacity-50'
+                        className='bg-primary-600 hover:bg-primary-700 flex cursor-pointer items-center justify-center rounded-md px-4 py-2 text-sm font-medium text-white transition-colors disabled:opacity-50'
                     >
                         <IconCheck size={16} className='mr-1' />
                         Accept
@@ -90,7 +90,7 @@ export default function FriendRequestCard({ request }: FriendRequestCardProps) {
                     <button
                         onClick={handleReject}
                         disabled={respondMutation.isPending}
-                        className='flex items-center justify-center rounded-md bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200 disabled:opacity-50'
+                        className='flex cursor-pointer items-center justify-center rounded-md bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-200 disabled:opacity-50'
                     >
                         <IconX size={16} className='mr-1' />
                         Reject

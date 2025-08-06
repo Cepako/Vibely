@@ -6,8 +6,8 @@ import bcrypt from 'bcrypt';
 import createError from '@fastify/error';
 import { handleFileUpload } from '../utils/handleFileUpload';
 import { deleteFile } from '../utils/deleteFile';
-import { FriendshipStatus } from '@/friendship/friendship.schema';
 import { userBlocks } from '@/db/schema';
+import { FriendshipService } from '@/friendship/friendship.service';
 
 interface IUserService {
     createUser: (user: RegisterUser) => Promise<void>;
@@ -29,24 +29,15 @@ interface IUserService {
             mimetype: string;
         } | null
     ) => Promise<void>;
-    getFriendshipStatus: (
-        profileId: number,
-        viewerId: number
-    ) => Promise<FriendshipStatus | null>;
-    isUserBlocked(
-        userId: number,
-        targetUserId: number
-    ): Promise<{
-        isBlocked: boolean;
-        blockedBy: 'user' | 'admin' | null;
-        reason?: string | null;
-    }>;
 }
 
 export default class UserService implements IUserService {
     private saltRounds: number;
-    constructor() {
+    private friendshipService: FriendshipService;
+
+    constructor(friendshipService: FriendshipService) {
         this.saltRounds = 10;
+        this.friendshipService = friendshipService;
     }
 
     async createUser(user: RegisterUser) {
@@ -163,29 +154,13 @@ export default class UserService implements IUserService {
             throw new UserBlocked();
         }
 
-        const friendshipStatus = await this.getFriendshipStatus(
-            viewerId,
-            profileId
-        );
+        const friendshipStatus =
+            await this.friendshipService.getFriendshipStatus(
+                viewerId,
+                profileId
+            );
 
         return { ...user, friendshipStatus };
-    }
-
-    public async getFriendshipStatus(userId: number, profileId: number) {
-        const friendship = await db.query.friendships.findFirst({
-            where: or(
-                and(
-                    eq(friendships.userId, userId),
-                    eq(friendships.friendId, profileId)
-                ),
-                and(
-                    eq(friendships.userId, profileId),
-                    eq(friendships.friendId, userId)
-                )
-            ),
-        });
-
-        return friendship?.status ?? null;
     }
 
     private async checkUserBlocked(
@@ -217,57 +192,5 @@ export default class UserService implements IUserService {
         if (viewerAdminBlock) return true;
 
         return false;
-    }
-
-    async isUserBlocked(
-        userId: number,
-        targetUserId: number
-    ): Promise<{
-        isBlocked: boolean;
-        blockedBy: 'user' | 'admin' | null;
-        reason?: string | null;
-    }> {
-        const userBlock = await db.query.friendships.findFirst({
-            where: and(
-                or(
-                    and(
-                        eq(friendships.userId, userId),
-                        eq(friendships.friendId, targetUserId)
-                    ),
-                    and(
-                        eq(friendships.userId, targetUserId),
-                        eq(friendships.friendId, userId)
-                    )
-                ),
-                eq(friendships.status, 'blocked')
-            ),
-        });
-
-        if (userBlock) {
-            return {
-                isBlocked: true,
-                blockedBy: 'user',
-            };
-        }
-
-        const adminBlock = await db.query.userBlocks.findFirst({
-            where: or(
-                eq(userBlocks.userId, userId),
-                eq(userBlocks.userId, targetUserId)
-            ),
-        });
-
-        if (adminBlock) {
-            return {
-                isBlocked: true,
-                blockedBy: 'admin',
-                reason: adminBlock.reason,
-            };
-        }
-
-        return {
-            isBlocked: false,
-            blockedBy: null,
-        };
     }
 }
