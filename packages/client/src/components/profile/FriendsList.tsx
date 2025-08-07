@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
     IconUsers,
     IconUserPlus,
     IconUserMinus,
     IconUserX,
+    IconSearch,
+    IconX,
 } from '@tabler/icons-react';
 import {
     useFriends,
@@ -27,6 +29,7 @@ interface FriendsListProps {
 export default function FriendsList({ userId }: FriendsListProps) {
     const { user } = useAuth();
     const [activeTab, setActiveTab] = useState<FriendsTab>('friends');
+    const [searchQuery, setSearchQuery] = useState('');
 
     const targetUserId = userId || user?.id;
     const isOwnProfile = !userId || userId === user?.id;
@@ -40,6 +43,62 @@ export default function FriendsList({ userId }: FriendsListProps) {
         useSentFriendRequests();
     const { data: blockedUsers, isLoading: blockedLoading } = useBlockedUsers();
 
+    function compareSearch(name: string, surname: string, query: string) {
+        return (
+            `${name} ${surname}`.toLowerCase().includes(query) ||
+            name.toLowerCase().includes(query) ||
+            surname.toLowerCase().includes(query)
+        );
+    }
+
+    const filteredFriends = useMemo(() => {
+        if (!friends || !searchQuery.trim()) return friends;
+
+        const query = searchQuery.toLowerCase().trim();
+        return friends.filter((friend) =>
+            compareSearch(friend.name, friend.surname, query)
+        );
+    }, [friends, searchQuery]);
+
+    const filteredFriendRequests = useMemo(() => {
+        if (!friendRequests || !searchQuery.trim()) return friendRequests;
+
+        const query = searchQuery.toLowerCase().trim();
+        return friendRequests.filter((request) =>
+            compareSearch(
+                request.user_userId.name,
+                request.user_userId.surname,
+                query
+            )
+        );
+    }, [friendRequests, searchQuery]);
+
+    const filteredSentRequests = useMemo(() => {
+        if (!sentRequests || !searchQuery.trim()) return sentRequests;
+
+        const query = searchQuery.toLowerCase().trim();
+        return sentRequests.filter((request) =>
+            compareSearch(
+                request.user_friendId.name,
+                request.user_friendId.surname,
+                query
+            )
+        );
+    }, [sentRequests, searchQuery]);
+
+    const filteredBlockedUsers = useMemo(() => {
+        if (!blockedUsers || !searchQuery.trim()) return blockedUsers;
+
+        const query = searchQuery.toLowerCase().trim();
+        return blockedUsers.filter((blockedUser) =>
+            compareSearch(
+                blockedUser.user_friendId.name,
+                blockedUser.user_friendId.surname,
+                query
+            )
+        );
+    }, [blockedUsers, searchQuery]);
+
     if (!targetUserId) {
         return <div>Loading...</div>;
     }
@@ -50,6 +109,7 @@ export default function FriendsList({ userId }: FriendsListProps) {
             label: 'Friends',
             icon: IconUsers,
             count: friends?.length || 0,
+            filteredCount: filteredFriends?.length || 0,
             show: true,
         },
         {
@@ -57,6 +117,7 @@ export default function FriendsList({ userId }: FriendsListProps) {
             label: 'Requests',
             icon: IconUserPlus,
             count: friendRequests?.length || 0,
+            filteredCount: filteredFriendRequests?.length || 0,
             show: isOwnProfile,
         },
         {
@@ -64,6 +125,7 @@ export default function FriendsList({ userId }: FriendsListProps) {
             label: 'Sent',
             icon: IconUserMinus,
             count: sentRequests?.length || 0,
+            filteredCount: filteredSentRequests?.length || 0,
             show: isOwnProfile,
         },
         {
@@ -71,6 +133,7 @@ export default function FriendsList({ userId }: FriendsListProps) {
             label: 'Blocked',
             icon: IconUserX,
             count: blockedUsers?.length || 0,
+            filteredCount: filteredBlockedUsers?.length || 0,
             show: isOwnProfile,
         },
     ];
@@ -83,7 +146,7 @@ export default function FriendsList({ userId }: FriendsListProps) {
         switch (activeTab) {
             case 'friends':
                 if (friendsLoading) return <LoadingState />;
-                if (!friends?.length) {
+                if (!filteredFriends?.length) {
                     return (
                         <EmptyState
                             message={
@@ -96,7 +159,7 @@ export default function FriendsList({ userId }: FriendsListProps) {
                 }
                 return (
                     <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3'>
-                        {friends.map((friend) => (
+                        {filteredFriends.map((friend) => (
                             <FriendCard
                                 key={friend.id}
                                 friend={friend}
@@ -109,11 +172,11 @@ export default function FriendsList({ userId }: FriendsListProps) {
 
             case 'requests':
                 if (requestsLoading) return <LoadingState />;
-                if (!friendRequests?.length)
+                if (!filteredFriendRequests?.length)
                     return <EmptyState message='No friend requests' />;
                 return (
                     <div className='space-y-4'>
-                        {friendRequests.map((request) => (
+                        {filteredFriendRequests.map((request) => (
                             <FriendRequestCard
                                 key={request.id}
                                 request={request}
@@ -124,11 +187,11 @@ export default function FriendsList({ userId }: FriendsListProps) {
 
             case 'sent':
                 if (sentLoading) return <LoadingState />;
-                if (!sentRequests?.length)
+                if (!filteredSentRequests?.length)
                     return <EmptyState message='No sent requests' />;
                 return (
                     <div className='space-y-4'>
-                        {sentRequests.map((request) => (
+                        {filteredSentRequests.map((request) => (
                             <SentRequestCard
                                 key={request.id}
                                 request={request}
@@ -139,11 +202,11 @@ export default function FriendsList({ userId }: FriendsListProps) {
 
             case 'blocked':
                 if (blockedLoading) return <LoadingState />;
-                if (!blockedUsers?.length)
+                if (!filteredBlockedUsers?.length)
                     return <EmptyState message='No blocked users' />;
                 return (
                     <div className='space-y-4'>
-                        {blockedUsers.map((blockedUser) => (
+                        {filteredBlockedUsers.map((blockedUser) => (
                             <BlockedUserCard
                                 key={blockedUser.user_friendId.id}
                                 user={blockedUser}
@@ -159,15 +222,68 @@ export default function FriendsList({ userId }: FriendsListProps) {
 
     return (
         <div className='w-full'>
+            <div className='mb-4 px-6'>
+                <div className='relative'>
+                    <div className='pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3'>
+                        <IconSearch size={18} className='text-slate-400' />
+                    </div>
+                    <input
+                        type='text'
+                        placeholder={`Search ${tabs.find((t) => t.key === activeTab)?.label.toLowerCase() || 'friends'}...`}
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className='focus:ring-primary-500 focus:border-primary-500 block w-full rounded-lg border border-slate-300 py-2 pr-10 pl-10 text-sm outline-none'
+                    />
+                    {searchQuery && (
+                        <button
+                            onClick={() => setSearchQuery('')}
+                            className='absolute inset-y-0 right-0 flex cursor-pointer items-center pr-3 transition-colors'
+                        >
+                            <IconX
+                                size={18}
+                                className='text-slate-400 hover:text-rose-500'
+                            />
+                        </button>
+                    )}
+                </div>
+
+                {searchQuery && (
+                    <div className='mt-2 text-sm text-slate-600'>
+                        {(() => {
+                            const activeTabData = tabs.find(
+                                (t) => t.key === activeTab
+                            );
+                            const filteredCount =
+                                activeTabData?.filteredCount || 0;
+                            const totalCount = activeTabData?.count || 0;
+
+                            if (filteredCount === 0 && totalCount > 0) {
+                                return `No results found for "${searchQuery}"`;
+                            } else if (filteredCount > 0) {
+                                return `Showing ${filteredCount} of ${totalCount} ${activeTab}`;
+                            }
+                            return '';
+                        })()}
+                    </div>
+                )}
+            </div>
+
             <div className='mb-6 flex border-b border-slate-200'>
                 {tabs
                     .filter((tab) => tab.show)
                     .map((tab) => {
                         const Icon = tab.icon;
+                        const displayCount = searchQuery
+                            ? tab.filteredCount
+                            : tab.count;
+
                         return (
                             <button
                                 key={tab.key}
-                                onClick={() => setActiveTab(tab.key)}
+                                onClick={() => {
+                                    setActiveTab(tab.key);
+                                    setSearchQuery('');
+                                }}
                                 className={cn(
                                     'flex cursor-pointer items-center space-x-2 border-b-2 px-4 py-2 text-sm font-medium transition-colors',
                                     activeTab === tab.key
@@ -177,7 +293,7 @@ export default function FriendsList({ userId }: FriendsListProps) {
                             >
                                 <Icon size={18} />
                                 <span>{tab.label}</span>
-                                {tab.count > 0 && (
+                                {displayCount > 0 && (
                                     <span
                                         className={cn(
                                             'flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold',
@@ -186,7 +302,7 @@ export default function FriendsList({ userId }: FriendsListProps) {
                                                 : 'bg-slate-100 text-slate-600'
                                         )}
                                     >
-                                        {tab.count}
+                                        {displayCount}
                                     </span>
                                 )}
                             </button>
