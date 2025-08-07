@@ -10,9 +10,12 @@ import {
 import type { Post } from '../../types/post';
 import UserAvatar from '../ui/UserAvatar';
 import { cn, formatTimeAgo } from '../../utils/utils';
-import { useState, type ReactNode } from 'react';
+import { type ReactNode } from 'react';
 import PrivacyIcon from './PrivacyIcon';
 import DropdownMenu, { type DropdownMenuItem } from '../ui/DropdownMenu';
+import CommentsSection from '../comment/CommentsSection';
+import { useTogglePostLike } from '../comment/hooks/useComments';
+import { useAuth } from '../auth/AuthProvider';
 
 interface PostDetailsProps {
     post: Post;
@@ -31,8 +34,16 @@ export default function PostDetails({
     hasPrevious,
     hasNext,
 }: PostDetailsProps) {
-    const [newComment, setNewComment] = useState('');
-    const [isLiked, setIsLiked] = useState(false);
+    const { user } = useAuth();
+    const togglePostLike = useTogglePostLike();
+
+    const isLiked = post.postReactions.some(
+        (reaction) => reaction.userId === user?.id
+    );
+
+    const handleLike = () => {
+        togglePostLike.mutate(post.id);
+    };
 
     const postMenuItems: DropdownMenuItem[] = [
         {
@@ -97,8 +108,8 @@ export default function PostDetails({
                 )}
             </div>
 
-            <div className='flex w-[30%] flex-col'>
-                <div className='flex items-center justify-between p-4 shadow'>
+            <div className='flex w-[40%] flex-col bg-white'>
+                <div className='flex items-center justify-between border-b border-slate-200 p-4 shadow-sm'>
                     <div className='flex items-center space-x-3'>
                         <UserAvatar user={post.user} size='md' />
                         <div>
@@ -131,51 +142,26 @@ export default function PostDetails({
                 </div>
 
                 {post.content && post.contentUrl && (
-                    <div className='p-4'>
+                    <div className='border-b border-slate-100 p-4'>
                         <div className='text-slate-800'>{post.content}</div>
                     </div>
                 )}
 
-                <div className='flex-1 overflow-y-auto'>
-                    {post.comments.map((comment) => (
-                        <div
-                            key={comment.id}
-                            className='border-b border-slate-100 p-4'
-                        >
-                            <div className='flex space-x-3'>
-                                <UserAvatar user={comment.user} size='sm' />
-                                <div className='flex-1'>
-                                    <div className='text-sm'>
-                                        <span className='font-semibold text-slate-900'>
-                                            {comment.user.name}{' '}
-                                            {comment.user.surname}
-                                        </span>{' '}
-                                        <span className='text-slate-800'>
-                                            {comment.content}
-                                        </span>
-                                    </div>
-                                    <div className='mt-2 flex items-center space-x-4 text-xs text-slate-500'>
-                                        <span>
-                                            {formatTimeAgo(comment.createdAt)}
-                                        </span>
-                                        <button className='hover:text-slate-700'>
-                                            Like
-                                        </button>
-                                        <button className='hover:text-slate-700'>
-                                            Reply
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
+                <CommentsSection
+                    postId={post.id}
+                    initialCommentsCount={post.comments.length}
+                />
 
-                <div className='border-t border-slate-200'>
+                <div className='border-t border-slate-200 bg-white'>
                     <div className='flex items-center space-x-4 p-4'>
                         <button
-                            onClick={() => setIsLiked(!isLiked)}
-                            className={`transition-colors ${isLiked ? 'text-red-500' : 'text-slate-600 hover:text-red-500'}`}
+                            onClick={handleLike}
+                            className={`transition-colors ${
+                                isLiked
+                                    ? 'text-red-500'
+                                    : 'text-slate-600 hover:text-red-500'
+                            }`}
+                            disabled={togglePostLike.isPending}
                         >
                             <IconHeart
                                 size={24}
@@ -197,26 +183,6 @@ export default function PostDetails({
                             </span>
                         </div>
                     )}
-
-                    <div className='border-t border-slate-100 p-4'>
-                        <div className='flex space-x-3'>
-                            <input
-                                type='text'
-                                value={newComment}
-                                onChange={(e) => setNewComment(e.target.value)}
-                                placeholder='Add a comment...'
-                                className='flex-1 border-none bg-transparent text-sm placeholder-slate-500 outline-none'
-                            />
-                            {newComment && (
-                                <button
-                                    onClick={() => setNewComment('')}
-                                    className='text-sm font-semibold text-blue-500 hover:text-blue-700'
-                                >
-                                    Post
-                                </button>
-                            )}
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>

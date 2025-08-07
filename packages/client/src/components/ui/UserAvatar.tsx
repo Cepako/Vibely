@@ -1,10 +1,10 @@
-import type { UserInfo } from '../../types/post';
+import type { User } from '../../types/user';
 
 export default function UserAvatar({
     user,
     size = 'md',
 }: {
-    user: UserInfo;
+    user: User;
     size?: 'sm' | 'md' | 'lg';
 }) {
     const sizeClasses = {

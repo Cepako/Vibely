@@ -16,6 +16,7 @@ import { Payload } from 'auth/auth.schema';
 import { friendshipRoutes } from './friendship/friendship.routes';
 import websocketPlugin from './plugins/websocket';
 import notificationRoutes from './notification/notification.routes';
+import { commentReactionRoutes } from './commentReaction/commentReaction.routes';
 
 const server = Fastify({
     logger: true,
@@ -71,6 +72,7 @@ server.register(
         api.register(postRoutes, { prefix: '/post' });
         api.register(friendshipRoutes, { prefix: '/friendship' });
         api.register(notificationRoutes, { prefix: '/notification' });
+        api.register(commentReactionRoutes, { prefix: '/comment-reaction' });
     },
     { prefix: '/api' }
 );

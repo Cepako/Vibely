@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm/relations";
-import { users, friendships, conversations, messages, notifications, posts, postReactions, conversationParticipants, comments, eventCategories, events, eventParticipants, messageAttachments, userReports, userBlocks, interests, userInterests } from "./schema";
+import { users, friendships, conversations, messages, notifications, posts, postReactions, conversationParticipants, comments, eventCategories, events, eventParticipants, messageAttachments, userReports, userBlocks, interests, userInterests, commentReactions } from "./schema";
 
 export const friendshipsRelations = relations(friendships, ({one}) => ({
 	user_friendId: one(users, {
@@ -42,6 +42,7 @@ export const usersRelations = relations(users, ({many}) => ({
 		relationName: "userBlocks_userId_users_id"
 	}),
 	userInterests: many(userInterests),
+	commentReactions: many(commentReactions),
 }));
 
 export const messagesRelations = relations(messages, ({one, many}) => ({
@@ -99,7 +100,7 @@ export const conversationParticipantsRelations = relations(conversationParticipa
 	}),
 }));
 
-export const commentsRelations = relations(comments, ({one}) => ({
+export const commentsRelations = relations(comments, ({one, many}) => ({
 	post: one(posts, {
 		fields: [comments.postId],
 		references: [posts.id]
@@ -108,6 +109,15 @@ export const commentsRelations = relations(comments, ({one}) => ({
 		fields: [comments.userId],
 		references: [users.id]
 	}),
+	comment: one(comments, {
+		fields: [comments.parentId],
+		references: [comments.id],
+		relationName: "comments_parentId_comments_id"
+	}),
+	comments: many(comments, {
+		relationName: "comments_parentId_comments_id"
+	}),
+	commentReactions: many(commentReactions),
 }));
 
 export const eventsRelations = relations(events, ({one, many}) => ({
@@ -183,4 +193,15 @@ export const userInterestsRelations = relations(userInterests, ({one}) => ({
 
 export const interestsRelations = relations(interests, ({many}) => ({
 	userInterests: many(userInterests),
+}));
+
+export const commentReactionsRelations = relations(commentReactions, ({one}) => ({
+	comment: one(comments, {
+		fields: [commentReactions.commentId],
+		references: [comments.id]
+	}),
+	user: one(users, {
+		fields: [commentReactions.userId],
+		references: [users.id]
+	}),
 }));

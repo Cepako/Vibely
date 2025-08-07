@@ -147,8 +147,10 @@ export const comments = pgTable("comments", {
 	content: text().notNull(),
 	createdAt: timestamp("created_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
 	updatedAt: timestamp("updated_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
+	parentId: integer("parent_id"),
 }, (table) => [
 	index("idx_comments_created_at").using("btree", table.createdAt.asc().nullsLast().op("timestamp_ops")),
+	index("idx_comments_parent_id").using("btree", table.parentId.asc().nullsLast().op("int4_ops")),
 	index("idx_comments_post_id").using("btree", table.postId.asc().nullsLast().op("int4_ops")),
 	index("idx_comments_user_id").using("btree", table.userId.asc().nullsLast().op("int4_ops")),
 	foreignKey({
@@ -160,6 +162,11 @@ export const comments = pgTable("comments", {
 			columns: [table.userId],
 			foreignColumns: [users.id],
 			name: "comments_user_id_fkey"
+		}).onDelete("cascade"),
+	foreignKey({
+			columns: [table.parentId],
+			foreignColumns: [table.id],
+			name: "comments_parent_id_fkey"
 		}).onDelete("cascade"),
 ]);
 
@@ -250,7 +257,7 @@ export const posts = pgTable("posts", {
 	privacyLevel: privacyLevelType("privacy_level").default('public'),
 	createdAt: timestamp("created_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
 	updatedAt: timestamp("updated_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
-	contentUrl: varchar("content_url", { length: 255 }),
+	contentUrl: varchar("content_url", { length: 255 }).notNull(),
 }, (table) => [
 	index("idx_posts_created_at").using("btree", table.createdAt.asc().nullsLast().op("timestamp_ops")),
 	index("idx_posts_privacy_level").using("btree", table.privacyLevel.asc().nullsLast().op("enum_ops")),
@@ -355,4 +362,25 @@ export const users = pgTable("users", {
 	index("idx_users_email").using("btree", table.email.asc().nullsLast().op("text_ops")),
 	index("idx_users_status").using("btree", table.status.asc().nullsLast().op("enum_ops")),
 	unique("users_email_key").on(table.email),
+]);
+
+export const commentReactions = pgTable("comment_reactions", {
+	id: serial().primaryKey().notNull(),
+	commentId: integer("comment_id").notNull(),
+	userId: integer("user_id").notNull(),
+	createdAt: timestamp("created_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+	index("idx_comment_reactions_comment_id").using("btree", table.commentId.asc().nullsLast().op("int4_ops")),
+	index("idx_comment_reactions_user_id").using("btree", table.userId.asc().nullsLast().op("int4_ops")),
+	foreignKey({
+			columns: [table.commentId],
+			foreignColumns: [comments.id],
+			name: "comment_reactions_comment_id_fkey"
+		}).onDelete("cascade"),
+	foreignKey({
+			columns: [table.userId],
+			foreignColumns: [users.id],
+			name: "comment_reactions_user_id_fkey"
+		}).onDelete("cascade"),
+	unique("comment_reactions_comment_id_user_id_key").on(table.commentId, table.userId),
 ]);
