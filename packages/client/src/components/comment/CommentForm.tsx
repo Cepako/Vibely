@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { IconSend, IconX } from '@tabler/icons-react';
 import type { Comment } from '../../types/comment';
 import UserAvatar from '../ui/UserAvatar';
@@ -23,6 +23,27 @@ export default function CommentForm({
     const [content, setContent] = useState('');
     const createComment = useCreateComment(postId);
     const currentUser = useCurrentUser();
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+    const adjustTextareaHeight = () => {
+        const textarea = textareaRef.current;
+        if (textarea) {
+            textarea.style.height = 'auto';
+            const scrollHeight = textarea.scrollHeight;
+            const maxHeight = 60;
+            textarea.style.height = `${Math.min(scrollHeight, maxHeight)}px`;
+        }
+    };
+
+    useEffect(() => {
+        adjustTextareaHeight();
+    }, [content]);
+
+    useEffect(() => {
+        if (autoFocus && textareaRef.current) {
+            textareaRef.current.focus();
+        }
+    }, [autoFocus]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -52,11 +73,15 @@ export default function CommentForm({
         }
     };
 
+    const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        setContent(e.target.value);
+    };
+
     if (!currentUser.data) return null;
 
     return (
         <div
-            className={`${parentComment ? 'ml-8 bg-slate-50 p-4' : 'border-t border-slate-100 p-4'}`}
+            className={`${parentComment ? 'ml-8 rounded-lg bg-slate-50 p-4' : 'border-t border-slate-100 p-4'}`}
         >
             {parentComment && (
                 <div className='mb-3 text-xs text-slate-600'>
@@ -71,13 +96,16 @@ export default function CommentForm({
                 <UserAvatar user={currentUser.data} size='sm' />
                 <div className='flex-1'>
                     <textarea
+                        ref={textareaRef}
                         value={content}
-                        onChange={(e) => setContent(e.target.value)}
+                        onChange={handleContentChange}
                         onKeyDown={handleKeyDown}
                         placeholder={placeholder}
-                        className='w-full resize-none border-none bg-transparent text-sm placeholder-slate-500 outline-none'
-                        rows={parentComment ? 2 : 1}
-                        autoFocus={autoFocus}
+                        className='w-full resize-none overflow-y-auto border-none bg-transparent text-sm placeholder-slate-500 outline-none'
+                        style={{
+                            minHeight: '24px', // 1 row height
+                            maxHeight: '60px',
+                        }}
                         disabled={createComment.isPending}
                     />
 
@@ -93,7 +121,7 @@ export default function CommentForm({
                                     <button
                                         type='button'
                                         onClick={onCancel}
-                                        className='flex items-center space-x-1 px-3 py-1 text-xs text-slate-600 transition-colors hover:text-slate-800'
+                                        className='flex cursor-pointer items-center space-x-1 rounded-md px-3 py-1 text-xs text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-800'
                                     >
                                         <IconX size={14} />
                                         <span>Cancel</span>
@@ -105,7 +133,7 @@ export default function CommentForm({
                                         !content.trim() ||
                                         createComment.isPending
                                     }
-                                    className='flex items-center space-x-1 rounded-md bg-blue-500 px-3 py-1 text-xs text-white transition-colors hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50'
+                                    className='bg-primary-500 hover:bg-primary-600 flex cursor-pointer items-center space-x-1 rounded-md px-3 py-1 text-xs text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50'
                                 >
                                     <IconSend size={14} />
                                     <span>

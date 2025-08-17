@@ -6,8 +6,8 @@ import bcrypt from 'bcrypt';
 import createError from '@fastify/error';
 import { handleFileUpload } from '../utils/handleFileUpload';
 import { deleteFile } from '../utils/deleteFile';
-import { userBlocks } from '@/db/schema';
-import { FriendshipService } from '@/friendship/friendship.service';
+import { userBlocks } from '../db/schema';
+import { FriendshipService } from '../friendship/friendship.service';
 
 interface IUserService {
     createUser: (user: RegisterUser) => Promise<void>;

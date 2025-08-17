@@ -1,11 +1,14 @@
 import type { User } from '../../types/user';
+import { cn } from '../../utils/utils';
 
 export default function UserAvatar({
     user,
     size = 'md',
+    onClick,
 }: {
     user: User;
     size?: 'sm' | 'md' | 'lg';
+    onClick?: () => void;
 }) {
     const sizeClasses = {
         sm: 'w-8 h-8 text-xs',
@@ -15,7 +18,11 @@ export default function UserAvatar({
 
     return (
         <div
-            className={`${sizeClasses[size]} flex flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-400 to-purple-500 font-semibold text-white`}
+            className={cn(
+                `${sizeClasses[size]} from-primary-400 flex flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br to-purple-500 font-semibold text-white`,
+                onClick && 'cursor-pointer'
+            )}
+            onClick={() => (onClick ? onClick() : '')}
         >
             {user.profilePictureUrl ? (
                 <img

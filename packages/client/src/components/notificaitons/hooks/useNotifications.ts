@@ -13,6 +13,7 @@ export const useNotifications = () => {
         unreadCount,
         setUnreadCount,
         updateNotifications,
+        setNotifications,
     } = useWebSocketContext();
 
     const fetchNotifications = useCallback(
@@ -35,7 +36,7 @@ export const useNotifications = () => {
                 const data = await response.json();
 
                 if (offset === 0) {
-                    updateNotifications(() => data.notifications || []);
+                    setNotifications(data.notifications || []);
                 } else {
                     updateNotifications((prev) => [
                         ...prev,
@@ -48,7 +49,7 @@ export const useNotifications = () => {
                 setLoading(false);
             }
         },
-        [user?.id, updateNotifications]
+        [user?.id, updateNotifications, setNotifications]
     );
 
     const fetchUnreadCount = useCallback(async () => {
@@ -65,7 +66,6 @@ export const useNotifications = () => {
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-
             const data = await response.json();
             setUnreadCount(data.unreadCount || 0);
         } catch (error) {
@@ -95,12 +95,18 @@ export const useNotifications = () => {
                             : notification
                     )
                 );
-                setUnreadCount((prev) => Math.max(0, prev - 1));
+
+                const notification = notifications.find(
+                    (n) => n.id === notificationId
+                );
+                if (notification && !notification.isRead) {
+                    setUnreadCount((prev) => Math.max(0, prev - 1));
+                }
             } catch (error) {
                 console.error('Error marking notification as read:', error);
             }
         },
-        [updateNotifications, setUnreadCount]
+        [updateNotifications, setUnreadCount, notifications]
     );
 
     const markAllAsRead = useCallback(async () => {

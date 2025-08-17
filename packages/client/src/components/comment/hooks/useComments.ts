@@ -5,6 +5,7 @@ import type {
     CommentLikeInfo,
 } from '../../../types/comment';
 import toast from 'react-hot-toast';
+import { useAuth } from '../../auth/AuthProvider';
 
 const commentsApi = {
     async getPostComments(postId: number): Promise<Comment[]> {
@@ -298,50 +299,73 @@ export const useToggleCommentLike = (postId: number) => {
         },
     });
 };
-
-export const useTogglePostLike = () => {
+export const useTogglePostLike = (profileId: number) => {
     const queryClient = useQueryClient();
+    const { user } = useAuth();
 
     return useMutation({
         mutationFn: commentsApi.togglePostLike,
-        onSuccess: (data, postId) => {
-            queryClient.setQueryData(['posts'], (oldPosts: any[]) => {
-                if (!oldPosts) return oldPosts;
-
-                return oldPosts.map((post) => {
-                    if (post.id === postId) {
-                        const currentUser = queryClient.getQueryData([
-                            'currentUser',
-                        ]);
-                        const userId = (currentUser as any)?.id;
-
-                        if (data.liked) {
-                            return {
-                                ...post,
-                                postReactions: [
-                                    ...post.postReactions,
-                                    { userId, postId },
-                                ],
-                            };
-                        } else {
-                            return {
-                                ...post,
-                                postReactions: post.postReactions.filter(
-                                    (reaction: any) =>
-                                        reaction.userId !== userId
-                                ),
-                            };
-                        }
-                    }
-                    return post;
-                });
+        onMutate: async (postId: number) => {
+            await queryClient.cancelQueries({
+                queryKey: ['posts', user?.id, profileId],
             });
 
-            queryClient.invalidateQueries({ queryKey: ['posts'] });
+            const previousPosts = queryClient.getQueryData([
+                'posts',
+                user?.id,
+                profileId,
+            ]);
+
+            queryClient.setQueryData(
+                ['posts', user?.id, profileId],
+                (oldPosts: any[]) => {
+                    if (!oldPosts) return oldPosts;
+
+                    return oldPosts.map((post) => {
+                        if (post.id === postId) {
+                            const isCurrentlyLiked = post.postReactions.some(
+                                (reaction: any) => reaction.userId === user?.id
+                            );
+
+                            if (isCurrentlyLiked) {
+                                return {
+                                    ...post,
+                                    postReactions: post.postReactions.filter(
+                                        (reaction: any) =>
+                                            reaction.userId !== user?.id
+                                    ),
+                                };
+                            } else {
+                                return {
+                                    ...post,
+                                    postReactions: [
+                                        ...post.postReactions,
+                                        { userId: user?.id, postId },
+                                    ],
+                                };
+                            }
+                        }
+                        return post;
+                    });
+                }
+            );
+
+            return { previousPosts };
         },
-        onError: (error: Error) => {
+        onError: (error: Error, postId, context) => {
+            if (context?.previousPosts) {
+                queryClient.setQueryData(
+                    ['posts', user?.id, profileId],
+                    context.previousPosts
+                );
+            }
             console.error('Toggle post like error:', error);
             toast.error(error.message || 'Failed to toggle like');
+        },
+        onSettled: () => {
+            queryClient.invalidateQueries({
+                queryKey: ['posts', user?.id, profileId],
+            });
         },
     });
 };

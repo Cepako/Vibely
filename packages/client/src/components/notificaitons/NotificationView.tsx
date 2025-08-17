@@ -28,7 +28,7 @@ export const NotificationView: React.FC = () => {
     const hasUnreadNotifications = notifications.some((n) => !n.isRead);
 
     return (
-        <div className='mx-auto min-h-screen w-[800px] bg-white'>
+        <div className='mx-auto min-h-screen w-[800px] overflow-y-auto bg-white'>
             <div className='sticky top-0 z-10 border-b border-gray-200 bg-white p-4'>
                 <div className='flex items-center justify-between'>
                     <div className='flex items-center space-x-3'>
@@ -45,7 +45,7 @@ export const NotificationView: React.FC = () => {
                     {hasUnreadNotifications && (
                         <button
                             onClick={markAllAsRead}
-                            className='flex items-center space-x-1 text-sm text-blue-600 transition-colors hover:text-blue-800'
+                            className='text-primary-600 hover:text-primary-800 flex cursor-pointer items-center space-x-1 text-sm transition-colors'
                         >
                             <IconCheck size={16} />
                             <span>Mark all as read</span>
@@ -80,7 +80,7 @@ export const NotificationView: React.FC = () => {
                     </div>
                 ) : (
                     <>
-                        <div className='divide-y divide-gray-100'>
+                        <div className='divide-y divide-gray-100 overflow-y-auto'>
                             {notifications.map((notification) => (
                                 <NotificationItem
                                     key={notification.id}
@@ -95,7 +95,7 @@ export const NotificationView: React.FC = () => {
                                 <button
                                     onClick={handleLoadMore}
                                     disabled={loadingMore}
-                                    className='px-4 py-2 text-sm text-blue-600 transition-colors hover:text-blue-800 disabled:text-gray-400'
+                                    className='text-primary-600 hover:text-primary-800 px-4 py-2 text-sm transition-colors disabled:text-gray-400'
                                 >
                                     {loadingMore
                                         ? 'Loading...'

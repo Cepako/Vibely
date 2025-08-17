@@ -17,6 +17,7 @@ import {
 } from './hooks/useComments';
 import DropdownMenu, { type DropdownMenuItem } from '../ui/DropdownMenu';
 import { Dialog, useDialog } from '../ui/Dialog';
+import { useNavigate } from '@tanstack/react-router';
 
 interface CommentItemProps {
     comment: Comment;
@@ -34,6 +35,7 @@ export default function CommentItem({
     const { user } = useAuth();
     const [isEditing, setIsEditing] = useState(false);
     const [editContent, setEditContent] = useState(comment.content);
+    const navigate = useNavigate();
 
     const deleteComment = useDeleteComment(postId);
     const toggleCommentLike = useToggleCommentLike(postId);
@@ -80,6 +82,14 @@ export default function CommentItem({
         });
     };
 
+    const handleProfileClick = () => {
+        navigate({
+            to: '/profile/$id',
+            params: { id: comment.userId.toString() },
+            reloadDocument: true,
+        });
+    };
+
     const commentMenuItems: DropdownMenuItem[] = [];
 
     if (canEdit) {
@@ -98,7 +108,7 @@ export default function CommentItem({
             label: 'Delete',
             icon: <IconTrash size={16} />,
             onClick: deleteDialog.openDialog,
-            className: 'p-2 text-red-600 hover:text-red-700',
+            className: 'p-2 text-rose-600 hover:text-rose-700',
         });
     }
 
@@ -108,12 +118,19 @@ export default function CommentItem({
                 className={`${isReply ? 'ml-8' : ''} border-b border-slate-100 p-4`}
             >
                 <div className='flex space-x-3'>
-                    <UserAvatar user={comment.user} size='sm' />
+                    <UserAvatar
+                        user={comment.user}
+                        size='sm'
+                        onClick={handleProfileClick}
+                    />
                     <div className='flex-1'>
                         <div className='flex items-start justify-between'>
                             <div className='flex-1'>
                                 <div className='text-sm'>
-                                    <span className='font-semibold text-slate-900'>
+                                    <span
+                                        className='cursor-pointer font-semibold text-slate-900'
+                                        onClick={() => handleProfileClick()}
+                                    >
                                         {comment.user.name}{' '}
                                         {comment.user.surname}
                                     </span>
@@ -130,14 +147,14 @@ export default function CommentItem({
                                             onChange={(e) =>
                                                 setEditContent(e.target.value)
                                             }
-                                            className='w-full resize-none rounded-md border border-slate-300 p-2 text-sm focus:border-blue-500 focus:outline-none'
+                                            className='focus:border-primary-500 w-full resize-none rounded-md border border-slate-300 p-2 text-sm focus:outline-none'
                                             rows={3}
                                             autoFocus
                                         />
                                         <div className='flex space-x-2'>
                                             <button
                                                 onClick={handleSaveEdit}
-                                                className='rounded-md bg-blue-500 px-3 py-1 text-xs text-white transition-colors hover:bg-blue-600'
+                                                className='bg-primary-500 hover:bg-primary-600 cursor-pointer rounded-md px-3 py-1 text-xs text-white transition-colors'
                                                 disabled={
                                                     updateComment.isPending
                                                 }
@@ -148,7 +165,7 @@ export default function CommentItem({
                                             </button>
                                             <button
                                                 onClick={handleCancelEdit}
-                                                className='rounded-md bg-slate-200 px-3 py-1 text-xs text-slate-700 transition-colors hover:bg-slate-300'
+                                                className='cursor-pointer rounded-md bg-slate-200 px-3 py-1 text-xs text-slate-700 transition-colors hover:bg-slate-300'
                                             >
                                                 Cancel
                                             </button>
@@ -177,8 +194,8 @@ export default function CommentItem({
                             <div className='mt-2 flex items-center space-x-4 text-xs text-slate-500'>
                                 <button
                                     onClick={handleLike}
-                                    className={`flex items-center space-x-1 transition-colors hover:text-red-500 ${
-                                        comment.isLiked ? 'text-red-500' : ''
+                                    className={`flex cursor-pointer items-center space-x-1 transition-colors hover:text-rose-500 ${
+                                        comment.isLiked ? 'text-rose-500' : ''
                                     }`}
                                     disabled={toggleCommentLike.isPending}
                                 >
@@ -200,7 +217,7 @@ export default function CommentItem({
                                 {!isReply && (
                                     <button
                                         onClick={() => onReply(comment)}
-                                        className='flex items-center space-x-1 transition-colors hover:text-blue-500'
+                                        className='hover:text-primary-500 flex cursor-pointer items-center space-x-1 transition-colors'
                                     >
                                         <IconMessageCircle size={14} />
                                         <span>Reply</span>
@@ -247,7 +264,7 @@ export default function CommentItem({
                             Cancel
                         </button>
                         <button
-                            className='flex-1 cursor-pointer rounded-lg bg-red-500 px-4 py-2 text-white transition-colors hover:bg-red-600'
+                            className='flex-1 cursor-pointer rounded-lg bg-rose-500 px-4 py-2 text-white transition-colors hover:bg-rose-600'
                             onClick={handleDelete}
                             disabled={deleteComment.isPending}
                         >

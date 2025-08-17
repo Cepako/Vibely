@@ -2,15 +2,10 @@ import { FastifyPluginAsync, FastifyRequest } from 'fastify';
 import fastifyWebsocket from '@fastify/websocket';
 import { Type } from '@sinclair/typebox';
 import WebSocket from 'ws';
+import { websocketManager } from '../ws/websocketManager';
 
 const websocketPlugin: FastifyPluginAsync = async (fastify) => {
     await fastify.register(fastifyWebsocket);
-
-    const websocketClients = new Map<number, WebSocket[]>();
-    (fastify as any).websocketClients = websocketClients;
-
-    const chatClients = new Map<number, any[]>();
-    (fastify as any).chatClients = chatClients;
 
     fastify.register(async function (fastify) {
         fastify.get(
@@ -35,28 +30,44 @@ const websocketPlugin: FastifyPluginAsync = async (fastify) => {
                     return;
                 }
 
-                if (!websocketClients.has(userId)) {
-                    websocketClients.set(userId, []);
+                websocketManager.addNotificationConnection(userId, socket);
+
+                if (socket.readyState === WebSocket.OPEN) {
+                    socket.send(
+                        JSON.stringify({
+                            type: 'connected',
+                            message: 'Successfully connected to notifications',
+                        })
+                    );
                 }
-                websocketClients.get(userId)!.push(socket);
 
-                fastify.log.info(
-                    `User ${userId} connected to notifications. Total connections: ${websocketClients.get(userId)?.length}`
-                );
-
-                socket.on('close', () => {
-                    const userConnections = websocketClients.get(userId) || [];
-                    const index = userConnections.indexOf(socket);
-                    if (index > -1) {
-                        userConnections.splice(index, 1);
+                socket.on('ping', () => {
+                    if (socket.readyState === WebSocket.OPEN) {
+                        socket.pong();
                     }
+                });
 
-                    if (userConnections.length === 0) {
-                        websocketClients.delete(userId);
+                socket.on('message', (message: any) => {
+                    try {
+                        const data = JSON.parse(message.toString());
+                        fastify.log.info(`Message from user ${userId}:`, data);
+
+                        if (data.type === 'ping') {
+                            socket.send(JSON.stringify({ type: 'pong' }));
+                        }
+                    } catch (error) {
+                        fastify.log.error('Invalid message format:', error);
                     }
+                });
+
+                socket.on('close', (code: number, reason: string) => {
+                    websocketManager.removeNotificationConnection(
+                        userId,
+                        socket
+                    );
 
                     fastify.log.info(
-                        `User ${userId} disconnected from notifications. Remaining connections: ${websocketClients.get(userId)?.length || 0}`
+                        `User ${userId} disconnected from notifications. Code: ${code}, Reason: ${reason}`
                     );
                 });
 
@@ -65,36 +76,23 @@ const websocketPlugin: FastifyPluginAsync = async (fastify) => {
                         `WebSocket error for user ${userId}:`,
                         error
                     );
-
-                    const userConnections = websocketClients.get(userId) || [];
-                    const index = userConnections.indexOf(socket);
-                    if (index > -1) {
-                        userConnections.splice(index, 1);
-                    }
-                });
-
-                socket.on('ping', () => {
-                    socket.pong();
-                });
-
-                socket.on('message', (message: any) => {
-                    fastify.log.info(
-                        `Message from user ${userId}:`,
-                        message.toString()
+                    websocketManager.removeNotificationConnection(
+                        userId,
+                        socket
                     );
                 });
 
-                setTimeout(() => {
+                const pingInterval = setInterval(() => {
                     if (socket.readyState === WebSocket.OPEN) {
-                        socket.send(
-                            JSON.stringify({
-                                type: 'connected',
-                                message:
-                                    'Successfully connected to notifications',
-                            })
-                        );
+                        socket.ping();
+                    } else {
+                        clearInterval(pingInterval);
                     }
-                }, 100);
+                }, 30000);
+
+                socket.on('close', () => {
+                    clearInterval(pingInterval);
+                });
             }
         );
 
@@ -131,19 +129,28 @@ const websocketPlugin: FastifyPluginAsync = async (fastify) => {
                     return;
                 }
 
-                if (!chatClients.has(conversationId)) {
-                    chatClients.set(conversationId, []);
-                }
-
                 const connectionData = {
                     socket: socket,
                     userId: userId,
                 };
-                chatClients.get(conversationId)!.push(connectionData);
+
+                websocketManager.addChatConnection(
+                    conversationId,
+                    connectionData
+                );
 
                 fastify.log.info(
                     `User ${userId} connected to chat ${conversationId}`
                 );
+
+                if (socket.readyState === WebSocket.OPEN) {
+                    socket.send(
+                        JSON.stringify({
+                            type: 'connected',
+                            message: `Connected to chat ${conversationId}`,
+                        })
+                    );
+                }
 
                 socket.on('message', (message: Buffer) => {
                     try {
@@ -151,7 +158,7 @@ const websocketPlugin: FastifyPluginAsync = async (fastify) => {
                         fastify.log.info('Chat message received:', data);
 
                         const conversationConnections =
-                            chatClients.get(conversationId) || [];
+                            websocketManager.getChatConnections(conversationId);
                         conversationConnections.forEach((conn: any) => {
                             if (
                                 conn.userId !== userId &&
@@ -175,19 +182,10 @@ const websocketPlugin: FastifyPluginAsync = async (fastify) => {
                 });
 
                 socket.on('close', () => {
-                    const conversationConnections =
-                        chatClients.get(conversationId) || [];
-                    const index = conversationConnections.findIndex(
-                        (conn) => conn.socket === socket
+                    websocketManager.removeChatConnection(
+                        conversationId,
+                        socket
                     );
-                    if (index > -1) {
-                        conversationConnections.splice(index, 1);
-                    }
-
-                    if (conversationConnections.length === 0) {
-                        chatClients.delete(conversationId);
-                    }
-
                     fastify.log.info(
                         `User ${userId} disconnected from chat ${conversationId}`
                     );
@@ -198,20 +196,18 @@ const websocketPlugin: FastifyPluginAsync = async (fastify) => {
                         `Chat WebSocket error for user ${userId}:`,
                         error
                     );
+                    websocketManager.removeChatConnection(
+                        conversationId,
+                        socket
+                    );
                 });
-
-                setTimeout(() => {
-                    if (socket.readyState === WebSocket.OPEN) {
-                        socket.send(
-                            JSON.stringify({
-                                type: 'connected',
-                                message: `Connected to chat ${conversationId}`,
-                            })
-                        );
-                    }
-                }, 100);
             }
         );
+    });
+
+    fastify.get('/ws/status', async (_, reply) => {
+        const stats = websocketManager.getNotificationStats();
+        return reply.send(stats);
     });
 };
 

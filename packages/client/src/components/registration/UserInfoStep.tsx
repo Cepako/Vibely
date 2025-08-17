@@ -114,7 +114,7 @@ export const UserInfoStep: React.FC = () => {
                                 {...register('gender', {
                                     required: 'Gender is required',
                                 })}
-                                className='h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500'
+                                className='text-primary-600 focus:ring-primary-500 h-4 w-4 border-gray-300'
                             />
                             <span className='text-sm text-slate-700'>Male</span>
                         </label>
@@ -125,7 +125,7 @@ export const UserInfoStep: React.FC = () => {
                                 {...register('gender', {
                                     required: 'Gender is required',
                                 })}
-                                className='h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500'
+                                className='text-primary-600 focus:ring-primary-500 h-4 w-4 border-gray-300'
                             />
                             <span className='text-sm text-slate-700'>
                                 Female

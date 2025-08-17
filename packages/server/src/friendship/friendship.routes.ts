@@ -3,12 +3,12 @@ import { Type } from '@sinclair/typebox';
 import FriendshipController from './friendship.controller';
 import { FriendshipService } from './friendship.service';
 import { FriendshipStatus, FriendshipStatusSchema } from './friendship.schema';
-import { createAuthGuard } from '@/hooks/authGuard';
-import { AuthService } from '@/auth/auth.service';
+import { createAuthGuard } from '../hooks/authGuard';
+import { AuthService } from '../auth/auth.service';
 
 export async function friendshipRoutes(fastify: FastifyInstance) {
     const authService = new AuthService();
-    const friendshipService = new FriendshipService(fastify);
+    const friendshipService = new FriendshipService();
     const friendshipController = new FriendshipController(friendshipService);
 
     const authGuard = createAuthGuard(authService);

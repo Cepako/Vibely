@@ -1,9 +1,8 @@
-import { db } from '@/db';
-import { friendships, users } from '@/db/schema';
+import { db } from '../db';
+import { friendships, users } from '../db/schema';
 import { and, eq, or } from 'drizzle-orm';
 import { FriendshipStatus } from './friendship.schema';
-import { FastifyInstance } from 'fastify';
-import { NotificationService } from '@/notification/notification.service';
+import { NotificationService } from '../notification/notification.service';
 
 interface IFriendshipService {
     getFriends(userId: number): Promise<any[]>;
@@ -29,8 +28,8 @@ interface IFriendshipService {
 export class FriendshipService implements IFriendshipService {
     private notificationService: NotificationService;
 
-    constructor(server: FastifyInstance) {
-        this.notificationService = new NotificationService(server);
+    constructor() {
+        this.notificationService = new NotificationService();
     }
 
     async getFriends(userId: number) {
@@ -97,166 +96,9 @@ export class FriendshipService implements IFriendshipService {
     }
 
     async sendFriendRequest(userId: number, friendId: number) {
-        const existingFriendship = await db.query.friendships.findFirst({
-            where: or(
-                and(
-                    eq(friendships.userId, userId),
-                    eq(friendships.friendId, friendId)
-                ),
-                and(
-                    eq(friendships.userId, friendId),
-                    eq(friendships.friendId, userId)
-                )
-            ),
-        });
-
-        if (existingFriendship) {
-            throw new Error('Friendship relationship already exists');
-        }
-
-        const friendUser = await db.query.users.findFirst({
-            where: eq(users.id, friendId),
-        });
-
-        if (!friendUser) {
-            throw new Error('User not found');
-        }
-
-        const isBlocked = await this.isUserBlocked(userId, friendId);
-        if (isBlocked) {
-            throw new Error('Cannot send friend request to blocked user');
-        }
-
-        const senderUser = await db.query.users.findFirst({
-            where: eq(users.id, userId),
-            columns: {
-                name: true,
-                surname: true,
-            },
-        });
-
-        if (!senderUser) {
-            throw new Error('Sender user not found');
-        }
-
-        await db.insert(friendships).values({
-            userId,
-            friendId,
-            status: 'pending',
-        });
-
-        const senderFullName = `${senderUser.name} ${senderUser.surname}`;
-        await this.notificationService.notifyFriendRequest(
-            userId,
-            friendId,
-            senderFullName
-        );
-    }
-
-    async respondToFriendRequest(
-        userId: number,
-        friendshipId: number,
-        status: FriendshipStatus
-    ) {
-        const friendship = await db.query.friendships.findFirst({
-            where: and(
-                eq(friendships.id, friendshipId),
-                eq(friendships.friendId, userId),
-                eq(friendships.status, 'pending')
-            ),
-        });
-
-        if (!friendship) {
-            throw new Error('Friend request not found or unauthorized');
-        }
-
-        if (status === 'accepted') {
-            await db
-                .update(friendships)
-                .set({
-                    status: 'accepted',
-                    updatedAt: new Date().toISOString(),
-                })
-                .where(eq(friendships.id, friendshipId));
-
-            const responderUser = await db.query.users.findFirst({
-                where: eq(users.id, userId),
-                columns: {
-                    name: true,
-                    surname: true,
-                },
-            });
-
-            if (responderUser) {
-                const responderFullName = `${responderUser.name} ${responderUser.surname}`;
-                await this.notificationService.notifyFriendRequestAccepted(
-                    userId,
-                    friendship.userId,
-                    responderFullName
-                );
-            }
-        } else if (status === 'rejected') {
-            await db
-                .delete(friendships)
-                .where(eq(friendships.id, friendshipId));
-        }
-    }
-
-    async blockUser(userId: number, userToBlock: number) {
-        const userExists = await db.query.users.findFirst({
-            where: eq(users.id, userToBlock),
-        });
-
-        if (!userExists) {
-            throw new Error('User not found');
-        }
-
-        const existingFriendship = await db.query.friendships.findFirst({
-            where: or(
-                and(
-                    eq(friendships.userId, userId),
-                    eq(friendships.friendId, userToBlock)
-                ),
-                and(
-                    eq(friendships.userId, userToBlock),
-                    eq(friendships.friendId, userId)
-                )
-            ),
-        });
-
-        if (existingFriendship) {
-            await db
-                .delete(friendships)
-                .where(eq(friendships.id, existingFriendship.id));
-        }
-
-        await db.insert(friendships).values({
-            userId,
-            friendId: userToBlock,
-            status: 'blocked',
-        });
-    }
-
-    async unblockUser(userId: number, userToUnblock: number) {
-        const friendship = await db.query.friendships.findFirst({
-            where: and(
-                eq(friendships.userId, userId),
-                eq(friendships.friendId, userToUnblock),
-                eq(friendships.status, 'blocked')
-            ),
-        });
-
-        if (!friendship) {
-            throw new Error('Block relationship not found');
-        }
-
-        await db.delete(friendships).where(eq(friendships.id, friendship.id));
-    }
-
-    async removeFriend(userId: number, friendId: number) {
-        const friendship = await db.query.friendships.findFirst({
-            where: and(
-                or(
+        try {
+            const existingFriendship = await db.query.friendships.findFirst({
+                where: or(
                     and(
                         eq(friendships.userId, userId),
                         eq(friendships.friendId, friendId)
@@ -266,15 +108,196 @@ export class FriendshipService implements IFriendshipService {
                         eq(friendships.friendId, userId)
                     )
                 ),
-                eq(friendships.status, 'accepted')
-            ),
-        });
+            });
 
-        if (!friendship) {
-            throw new Error('Friendship not found');
+            if (existingFriendship) {
+                throw new Error('Friendship relationship already exists');
+            }
+
+            const friendUser = await db.query.users.findFirst({
+                where: eq(users.id, friendId),
+            });
+
+            if (!friendUser) {
+                throw new Error('User not found');
+            }
+
+            const isBlocked = await this.isUserBlocked(userId, friendId);
+            if (isBlocked) {
+                throw new Error('Cannot send friend request to blocked user');
+            }
+
+            const senderUser = await db.query.users.findFirst({
+                where: eq(users.id, userId),
+                columns: {
+                    name: true,
+                    surname: true,
+                },
+            });
+
+            if (!senderUser) {
+                throw new Error('Sender user not found');
+            }
+
+            await db.insert(friendships).values({
+                userId,
+                friendId,
+                status: 'pending',
+            });
+
+            const senderFullName = `${senderUser.name} ${senderUser.surname}`;
+            await this.notificationService.notifyFriendRequest(
+                userId,
+                friendId,
+                senderFullName
+            );
+        } catch (error) {
+            throw error;
         }
+    }
 
-        await db.delete(friendships).where(eq(friendships.id, friendship.id));
+    async respondToFriendRequest(
+        userId: number,
+        friendshipId: number,
+        status: FriendshipStatus
+    ) {
+        try {
+            const friendship = await db.query.friendships.findFirst({
+                where: and(
+                    eq(friendships.id, friendshipId),
+                    eq(friendships.friendId, userId),
+                    eq(friendships.status, 'pending')
+                ),
+            });
+
+            if (!friendship) {
+                throw new Error('Friend request not found or unauthorized');
+            }
+
+            if (status === 'accepted') {
+                await db
+                    .update(friendships)
+                    .set({
+                        status: 'accepted',
+                        updatedAt: new Date().toISOString(),
+                    })
+                    .where(eq(friendships.id, friendshipId));
+
+                const responderUser = await db.query.users.findFirst({
+                    where: eq(users.id, userId),
+                    columns: {
+                        name: true,
+                        surname: true,
+                    },
+                });
+
+                if (responderUser) {
+                    const responderFullName = `${responderUser.name} ${responderUser.surname}`;
+                    await this.notificationService.notifyFriendRequestAccepted(
+                        userId,
+                        friendship.userId,
+                        responderFullName
+                    );
+                }
+            } else if (status === 'rejected') {
+                await db
+                    .delete(friendships)
+                    .where(eq(friendships.id, friendshipId));
+            }
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async blockUser(userId: number, userToBlock: number) {
+        try {
+            const userExists = await db.query.users.findFirst({
+                where: eq(users.id, userToBlock),
+            });
+
+            if (!userExists) {
+                throw new Error('User not found');
+            }
+
+            const existingFriendship = await db.query.friendships.findFirst({
+                where: or(
+                    and(
+                        eq(friendships.userId, userId),
+                        eq(friendships.friendId, userToBlock)
+                    ),
+                    and(
+                        eq(friendships.userId, userToBlock),
+                        eq(friendships.friendId, userId)
+                    )
+                ),
+            });
+
+            if (existingFriendship) {
+                await db
+                    .delete(friendships)
+                    .where(eq(friendships.id, existingFriendship.id));
+            }
+
+            await db.insert(friendships).values({
+                userId,
+                friendId: userToBlock,
+                status: 'blocked',
+            });
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async unblockUser(userId: number, userToUnblock: number) {
+        try {
+            const friendship = await db.query.friendships.findFirst({
+                where: and(
+                    eq(friendships.userId, userId),
+                    eq(friendships.friendId, userToUnblock),
+                    eq(friendships.status, 'blocked')
+                ),
+            });
+
+            if (!friendship) {
+                throw new Error('Block relationship not found');
+            }
+
+            await db
+                .delete(friendships)
+                .where(eq(friendships.id, friendship.id));
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async removeFriend(userId: number, friendId: number) {
+        try {
+            const friendship = await db.query.friendships.findFirst({
+                where: and(
+                    or(
+                        and(
+                            eq(friendships.userId, userId),
+                            eq(friendships.friendId, friendId)
+                        ),
+                        and(
+                            eq(friendships.userId, friendId),
+                            eq(friendships.friendId, userId)
+                        )
+                    ),
+                    eq(friendships.status, 'accepted')
+                ),
+            });
+
+            if (!friendship) {
+                throw new Error('Friendship not found');
+            }
+
+            await db
+                .delete(friendships)
+                .where(eq(friendships.id, friendship.id));
+        } catch (error) {
+            throw error;
+        }
     }
 
     async getBlockedUsers(userId: number) {
@@ -380,18 +403,24 @@ export class FriendshipService implements IFriendshipService {
     }
 
     async cancelFriendRequest(userId: number, friendshipId: number) {
-        const friendship = await db.query.friendships.findFirst({
-            where: and(
-                eq(friendships.id, friendshipId),
-                eq(friendships.userId, userId),
-                eq(friendships.status, 'pending')
-            ),
-        });
+        try {
+            const friendship = await db.query.friendships.findFirst({
+                where: and(
+                    eq(friendships.id, friendshipId),
+                    eq(friendships.userId, userId),
+                    eq(friendships.status, 'pending')
+                ),
+            });
 
-        if (!friendship) {
-            throw new Error('Friend request not found or unauthorized');
+            if (!friendship) {
+                throw new Error('Friend request not found or unauthorized');
+            }
+
+            await db
+                .delete(friendships)
+                .where(eq(friendships.id, friendshipId));
+        } catch (error) {
+            throw error;
         }
-
-        await db.delete(friendships).where(eq(friendships.id, friendshipId));
     }
 }

@@ -5,10 +5,10 @@ import { Type } from '@sinclair/typebox';
 import { RegisterUser } from './user.schema';
 import { AuthService } from '../auth/auth.service';
 import { createAuthGuard } from '../hooks/authGuard';
-import { FriendshipService } from '@/friendship/friendship.service';
+import { FriendshipService } from '../friendship/friendship.service';
 
 export default async function userRoutes(fastify: FastifyInstance) {
-    const friendshipService = new FriendshipService(fastify);
+    const friendshipService = new FriendshipService();
     const userService = new UserService(friendshipService);
     const authService = new AuthService();
     const userController = new UserController(userService);
@@ -64,66 +64,68 @@ export default async function userRoutes(fastify: FastifyInstance) {
         ) => userController.checkIsEmailAvailable(req, reply)
     );
 
-    fastify.addHook('preHandler', authGuard);
+    await fastify.register(async function protectedRoutes(fastify) {
+        fastify.addHook('preHandler', authGuard);
 
-    fastify.get('/me', async (req: FastifyRequest, reply: FastifyReply) =>
-        userController.me(req, reply)
-    );
+        fastify.get('/me', async (req: FastifyRequest, reply: FastifyReply) =>
+            userController.me(req, reply)
+        );
 
-    fastify.get(
-        '/profile/:profileId',
-        {
-            schema: {
-                params: Type.Object({
-                    profileId: Type.Number(),
-                }),
+        fastify.get(
+            '/profile/:profileId',
+            {
+                schema: {
+                    params: Type.Object({
+                        profileId: Type.Number(),
+                    }),
+                },
             },
-        },
-        async (
-            req: FastifyRequest<{ Params: { profileId: number } }>,
-            reply: FastifyReply
-        ) => userController.getProfile(req, reply)
-    );
+            async (
+                req: FastifyRequest<{ Params: { profileId: number } }>,
+                reply: FastifyReply
+            ) => userController.getProfile(req, reply)
+        );
 
-    fastify.post(
-        '/profile/edit/:profileId',
-        {
-            schema: {
-                params: Type.Object({
-                    profileId: Type.Number(),
-                }),
-                body: Type.Object({
-                    city: Type.String(),
-                    region: Type.String(),
-                    bio: Type.String(),
-                }),
+        fastify.post(
+            '/profile/edit/:profileId',
+            {
+                schema: {
+                    params: Type.Object({
+                        profileId: Type.Number(),
+                    }),
+                    body: Type.Object({
+                        city: Type.String(),
+                        region: Type.String(),
+                        bio: Type.String(),
+                    }),
+                },
             },
-        },
 
-        async (
-            req: FastifyRequest<{
-                Body: { city: string; region: string; bio: string };
-                Params: { profileId: number };
-            }>,
-            reply: FastifyReply
-        ) => userController.editProfile(req, reply)
-    );
+            async (
+                req: FastifyRequest<{
+                    Body: { city: string; region: string; bio: string };
+                    Params: { profileId: number };
+                }>,
+                reply: FastifyReply
+            ) => userController.editProfile(req, reply)
+        );
 
-    fastify.post(
-        '/profile/edit/picture/:profileId',
-        {
-            schema: {
-                params: Type.Object({
-                    profileId: Type.Number(),
-                }),
+        fastify.post(
+            '/profile/edit/picture/:profileId',
+            {
+                schema: {
+                    params: Type.Object({
+                        profileId: Type.Number(),
+                    }),
+                },
             },
-        },
 
-        async (
-            req: FastifyRequest<{
-                Params: { profileId: number };
-            }>,
-            reply: FastifyReply
-        ) => userController.updateProfilePicture(req, reply)
-    );
+            async (
+                req: FastifyRequest<{
+                    Params: { profileId: number };
+                }>,
+                reply: FastifyReply
+            ) => userController.updateProfilePicture(req, reply)
+        );
+    });
 }

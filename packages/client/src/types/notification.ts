@@ -1,6 +1,7 @@
 export type NotificationType =
     | 'posts'
     | 'comments'
+    | 'comment_reactions'
     | 'friendships'
     | 'messages'
     | 'events'

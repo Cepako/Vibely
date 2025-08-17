@@ -1,4 +1,3 @@
-import { FastifyInstance } from 'fastify';
 import { db } from '../db/';
 import { notifications } from '../db/schema';
 import { eq, desc, and, sql } from 'drizzle-orm';
@@ -6,10 +5,10 @@ import {
     CreateNotificationType,
     NotificationType,
 } from './notification.schema';
-import WebSocket from 'ws';
+import { websocketManager } from '../ws/websocketManager';
 
 export class NotificationService {
-    constructor(private server: FastifyInstance) {}
+    constructor() {}
 
     private async createNotificationInDB(
         data: CreateNotificationType
@@ -147,21 +146,7 @@ export class NotificationService {
         userId: number,
         notification: NotificationType
     ): void {
-        const wsClients =
-            (this.server as any).websocketClients ||
-            new Map<number, WebSocket[]>();
-        const userConnections: WebSocket[] = wsClients.get(userId) || [];
-
-        userConnections.forEach((socket: WebSocket) => {
-            if (socket.readyState === WebSocket.OPEN) {
-                socket.send(
-                    JSON.stringify({
-                        type: 'notification',
-                        data: notification,
-                    })
-                );
-            }
-        });
+        websocketManager.emitNotificationToUser(userId, notification);
     }
 
     async createNotification(
@@ -261,6 +246,9 @@ export class NotificationService {
         reactorName: string,
         postId: number
     ): Promise<void> {
+        // Don't notify if user likes their own post
+        if (postOwnerId === reactorId) return;
+
         await this.createNotification({
             userId: postOwnerId,
             type: 'post_reactions',
@@ -275,6 +263,9 @@ export class NotificationService {
         commenterName: string,
         postId: number
     ): Promise<void> {
+        // Don't notify if user comments on their own post
+        if (postOwnerId === commenterId) return;
+
         await this.createNotification({
             userId: postOwnerId,
             type: 'comments',

@@ -8,12 +8,12 @@ import {
     UnreadCountResponseSchema,
     SuccessResponseSchema,
 } from './notification.schema';
-import { createAuthGuard } from '@/hooks/authGuard';
-import { AuthService } from '@/auth/auth.service';
+import { createAuthGuard } from '../hooks/authGuard';
+import { AuthService } from '../auth/auth.service';
 
 export default async function notificationRoutes(fastify: FastifyInstance) {
     const authService = new AuthService();
-    const notificationService = new NotificationService(fastify);
+    const notificationService = new NotificationService();
     const notificationController = new NotificationController(
         notificationService
     );

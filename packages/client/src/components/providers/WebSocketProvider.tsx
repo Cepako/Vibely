@@ -19,6 +19,7 @@ interface WebSocketContextType {
     updateNotifications: (
         updater: (prev: NotificationData[]) => NotificationData[]
     ) => void;
+    setNotifications: (notifications: NotificationData[]) => void;
 }
 
 const WebSocketContext = createContext<WebSocketContextType | null>(null);
@@ -59,7 +60,10 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
 
                 if (message.type === 'notification') {
                     setNotifications((prev) => [message.data, ...prev]);
-                    setUnreadCount((prev) => prev + 1);
+
+                    if (!message.data.isRead) {
+                        setUnreadCount((prev) => prev + 1);
+                    }
 
                     if (Notification.permission === 'granted') {
                         new Notification(message.data.content, {
@@ -105,11 +109,21 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
 
     const addNotification = useCallback((notification: NotificationData) => {
         setNotifications((prev) => [notification, ...prev]);
+        if (!notification.isRead) {
+            setUnreadCount((prev) => prev + 1);
+        }
     }, []);
 
     const updateNotifications = useCallback(
         (updater: (prev: NotificationData[]) => NotificationData[]) => {
             setNotifications(updater);
+        },
+        []
+    );
+
+    const setNotificationsMethod = useCallback(
+        (newNotifications: NotificationData[]) => {
+            setNotifications(newNotifications);
         },
         []
     );
@@ -122,6 +136,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
             addNotification,
             setUnreadCount,
             updateNotifications,
+            setNotifications: setNotificationsMethod,
         }),
         [
             isConnected,
@@ -129,6 +144,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
             unreadCount,
             addNotification,
             updateNotifications,
+            setNotificationsMethod,
         ]
     );
 

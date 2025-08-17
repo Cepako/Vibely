@@ -1,14 +1,13 @@
-import { db } from '@/db';
+import { db } from '../db';
 import {
     comments,
     posts,
     postReactions,
     commentReactions,
     users,
-} from '@/db/schema';
-import { NotificationService } from '@/notification/notification.service';
+} from '../db/schema';
+import { NotificationService } from '../notification/notification.service';
 import { and, eq, asc, inArray } from 'drizzle-orm';
-import { FastifyInstance } from 'fastify';
 
 export interface CreateCommentData {
     postId: number;
@@ -38,8 +37,8 @@ export interface CommentWithReplies {
 export class CommentReactionService {
     private notificationService: NotificationService;
 
-    constructor(server: FastifyInstance) {
-        this.notificationService = new NotificationService(server);
+    constructor() {
+        this.notificationService = new NotificationService();
     }
 
     async createComment(userId: number, data: CreateCommentData) {
@@ -109,6 +108,10 @@ export class CommentReactionService {
                     parentId: data.parentId || null,
                 })
                 .returning();
+
+            if (!newComment) {
+                throw new Error('Failed to create comment');
+            }
 
             const commenterFullName = `${commenter.name} ${commenter.surname}`;
 
@@ -299,7 +302,7 @@ export class CommentReactionService {
                     userId,
                 });
 
-                if (this.notificationService && comment.user.id !== userId) {
+                if (comment.user.id !== userId) {
                     const liker = await db.query.users.findFirst({
                         where: eq(users.id, userId),
                         columns: {
@@ -312,7 +315,7 @@ export class CommentReactionService {
                         const likerFullName = `${liker.name} ${liker.surname}`;
                         await this.notificationService.createNotification({
                             userId: comment.user.id,
-                            type: 'post_reactions',
+                            type: 'comment_reactions',
                             content: `${likerFullName} liked your comment`,
                             relatedId: comment.postId,
                         });
@@ -394,7 +397,7 @@ export class CommentReactionService {
                     userId,
                 });
 
-                if (this.notificationService && post.user.id !== userId) {
+                if (post.user.id !== userId) {
                     const liker = await db.query.users.findFirst({
                         where: eq(users.id, userId),
                         columns: {

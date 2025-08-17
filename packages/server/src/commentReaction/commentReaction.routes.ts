@@ -2,12 +2,12 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { Type } from '@sinclair/typebox';
 import { CommentReactionController } from './commentReaction.controller';
 import { CommentReactionService } from './commentReaction.service';
-import { AuthService } from '@/auth/auth.service';
-import { createAuthGuard } from '@/hooks/authGuard';
+import { AuthService } from '../auth/auth.service';
+import { createAuthGuard } from '../hooks/authGuard';
 
 export async function commentReactionRoutes(fastify: FastifyInstance) {
     const authService = new AuthService();
-    const commentReactionService = new CommentReactionService(fastify);
+    const commentReactionService = new CommentReactionService();
     const commentReactionController = new CommentReactionController(
         commentReactionService
     );

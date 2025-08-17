@@ -8,6 +8,7 @@ import {
     IconMessageCircle,
     IconPhoto,
     IconBell,
+    IconMessageCircleHeart,
 } from '@tabler/icons-react';
 import { useNavigate } from '@tanstack/react-router';
 
@@ -19,11 +20,18 @@ interface NotificationItemProps {
 const getNotificationIcon = (type: NotificationData['type']) => {
     switch (type) {
         case 'friendships':
-            return <IconUsers className='text-blue-500' size={20} />;
+            return <IconUsers className='text-primary-500' size={20} />;
         case 'messages':
             return <IconMessage className='text-green-500' size={20} />;
         case 'post_reactions':
             return <IconHeart className='text-red-500' size={20} />;
+        case 'comment_reactions':
+            return (
+                <IconMessageCircleHeart
+                    className='text-fuchsia-500'
+                    size={20}
+                />
+            );
         case 'comments':
             return <IconMessageCircle className='text-purple-500' size={20} />;
         case 'events':
@@ -31,7 +39,7 @@ const getNotificationIcon = (type: NotificationData['type']) => {
         case 'posts':
             return <IconPhoto className='text-indigo-500' size={20} />;
         default:
-            return <IconBell className='text-gray-500' size={20} />;
+            return <IconBell className='text-slate-500' size={20} />;
     }
 };
 
@@ -70,22 +78,26 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
                     navigate({ to: '/messages' });
                     break;
                 case 'post_reactions':
+                case 'comment_reactions':
                 case 'comments':
                 case 'posts':
-                    navigate({ to: `/post/${notification.relatedId}` });
+                    // For now, navigate to home since we don't have individual post pages
+                    navigate({ to: '/home' });
                     break;
                 case 'events':
                     navigate({ to: `/events/${notification.relatedId}` });
                     break;
+                default:
+                    navigate({ to: '/home' });
             }
         }
     };
 
     return (
         <div
-            className={`cursor-pointer border-b border-gray-100 p-4 transition-colors hover:bg-gray-50 ${
+            className={`cursor-pointer border-b border-slate-100 p-4 transition-colors hover:bg-slate-50 ${
                 !notification.isRead
-                    ? 'border-l-4 border-l-blue-500 bg-blue-50'
+                    ? 'border-l-primary-500 bg-primary-50 border-l-4'
                     : ''
             }`}
             onClick={handleClick}
@@ -97,17 +109,21 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
 
                 <div className='min-w-0 flex-1'>
                     <p
-                        className={`text-sm ${notification.isRead ? 'text-gray-600' : 'font-medium text-gray-900'}`}
+                        className={`text-sm ${
+                            notification.isRead
+                                ? 'text-slate-600'
+                                : 'font-medium text-slate-900'
+                        }`}
                     >
                         {notification.content}
                     </p>
-                    <p className='mt-1 text-xs text-gray-500'>
+                    <p className='mt-1 text-xs text-slate-500'>
                         {getRelativeTime(notification.createdAt)}
                     </p>
                 </div>
 
                 {!notification.isRead && (
-                    <div className='h-2 w-2 flex-shrink-0 rounded-full bg-blue-500'></div>
+                    <div className='bg-primary-500 h-2 w-2 flex-shrink-0 rounded-full'></div>
                 )}
             </div>
         </div>

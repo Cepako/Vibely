@@ -1,44 +1,56 @@
-import { Type, Static } from '@sinclair/typebox';
+import { Type } from '@sinclair/typebox';
 
-export const NotificationTypeSchema = Type.Union([
-    Type.Literal('posts'),
-    Type.Literal('comments'),
-    Type.Literal('friendships'),
-    Type.Literal('messages'),
-    Type.Literal('events'),
-    Type.Literal('post_reactions'),
-]);
+export const NotificationTypeEnum = [
+    'friendships',
+    'messages',
+    'post_reactions',
+    'comment_reactions',
+    'comments',
+    'events',
+    'posts',
+] as const;
 
-export const NotificationSchema = Type.Object({
+export type NotificationTypeType = (typeof NotificationTypeEnum)[number];
+
+export const NotificationType = Type.Object({
     id: Type.Number(),
     userId: Type.Number(),
-    type: NotificationTypeSchema,
+    type: Type.Union(NotificationTypeEnum.map((type) => Type.Literal(type))),
     content: Type.String(),
-    relatedId: Type.Optional(Type.Number()),
     isRead: Type.Boolean(),
     createdAt: Type.String(),
+    relatedId: Type.Optional(Type.Number()),
 });
 
-export const CreateNotificationSchema = Type.Object({
+export type NotificationType = typeof NotificationType.static;
+
+export const CreateNotificationType = Type.Object({
     userId: Type.Number(),
-    type: NotificationTypeSchema,
+    type: Type.Union(NotificationTypeEnum.map((type) => Type.Literal(type))),
     content: Type.String(),
     relatedId: Type.Optional(Type.Number()),
 });
+
+export type CreateNotificationType = typeof CreateNotificationType.static;
 
 export const GetNotificationsQuerySchema = Type.Object({
     limit: Type.Optional(
-        Type.Number({ default: 20, minimum: 1, maximum: 100 })
+        Type.Number({ minimum: 1, maximum: 100, default: 20 })
     ),
-    offset: Type.Optional(Type.Number({ default: 0, minimum: 0 })),
+    offset: Type.Optional(Type.Number({ minimum: 0, default: 0 })),
 });
+
+export type GetNotificationsQueryType =
+    typeof GetNotificationsQuerySchema.static;
 
 export const NotificationParamsSchema = Type.Object({
     id: Type.Number(),
 });
 
+export type NotificationParamsType = typeof NotificationParamsSchema.static;
+
 export const NotificationResponseSchema = Type.Object({
-    notifications: Type.Array(NotificationSchema),
+    notifications: Type.Array(NotificationType),
 });
 
 export const UnreadCountResponseSchema = Type.Object({
@@ -48,10 +60,3 @@ export const UnreadCountResponseSchema = Type.Object({
 export const SuccessResponseSchema = Type.Object({
     success: Type.Boolean(),
 });
-
-export type NotificationType = Static<typeof NotificationSchema>;
-export type CreateNotificationType = Static<typeof CreateNotificationSchema>;
-export type GetNotificationsQueryType = Static<
-    typeof GetNotificationsQuerySchema
->;
-export type NotificationParamsType = Static<typeof NotificationParamsSchema>;

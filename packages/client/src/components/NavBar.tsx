@@ -23,13 +23,11 @@ export default function NavBar({ view }: NavBarProps) {
     const navigate = useNavigate();
     const { logout, user } = useAuth();
     const { data, isLoading } = useCurrentUser();
-    const { unreadCount, fetchUnreadCount } = useNotifications();
+    const { fetchUnreadCount, unreadCount } = useNotifications();
 
     useEffect(() => {
-        if (user?.id) {
-            fetchUnreadCount();
-        }
-    }, [user?.id, fetchUnreadCount]);
+        fetchUnreadCount();
+    }, [fetchUnreadCount]);
 
     const defaultStyles =
         'relative rounded-lg px-3 py-4 cursor-pointer hover:bg-slate-200 duration-200 flex items-center gap-2';

@@ -5,11 +5,11 @@ import PostController from './post.controller';
 import { AuthService } from '../auth/auth.service';
 import { createAuthGuard } from '../hooks/authGuard';
 import { PrivacyLevel, PrivacyLevelSchema } from './post.schema';
-import { FriendshipService } from '@/friendship/friendship.service';
+import { FriendshipService } from '../friendship/friendship.service';
 
 export default async function postRoutes(fastify: FastifyInstance) {
     const authService = new AuthService();
-    const friendshipService = new FriendshipService(fastify);
+    const friendshipService = new FriendshipService();
     const postService = new PostService();
     const postController = new PostController(postService, friendshipService);
 
