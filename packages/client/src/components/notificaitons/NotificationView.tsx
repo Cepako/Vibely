@@ -95,7 +95,7 @@ export const NotificationView: React.FC = () => {
                                 <button
                                     onClick={handleLoadMore}
                                     disabled={loadingMore}
-                                    className='text-primary-600 hover:text-primary-800 px-4 py-2 text-sm transition-colors disabled:text-gray-400'
+                                    className='text-primary-600 hover:text-primary-800 cursor-pointer px-4 py-2 text-sm transition-colors disabled:text-gray-400'
                                 >
                                     {loadingMore
                                         ? 'Loading...'

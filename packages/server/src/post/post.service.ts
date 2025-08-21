@@ -1,6 +1,6 @@
-import { and, asc, desc, eq, or } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, or } from 'drizzle-orm';
 import { db } from '../db';
-import { comments, posts } from '../db/schema';
+import { comments, friendships, posts } from '../db/schema';
 import { FileInput, handleFileUpload } from '../utils/handleFileUpload';
 import { ContentType, PrivacyLevel } from './post.schema';
 import { deleteFile } from '../utils/deleteFile';
@@ -127,6 +127,7 @@ export class PostService implements IPostService {
                     subFolder: 'posts',
                 });
             }
+            if (!contentUrl) return null;
 
             const [newPost] = await db
                 .insert(posts)
@@ -205,6 +206,97 @@ export class PostService implements IPostService {
                 .where(and(eq(posts.id, postId), eq(posts.userId, userId)));
         } catch (error) {
             throw new Error(`Failed to delete post: ${error}`);
+        }
+    }
+    async getHomeFeed(
+        userId: number,
+        limit: number = 20,
+        offset: number = 0
+    ): Promise<
+        Array<
+            Post & {
+                user: UserInfo;
+                comments: Array<Comment & { user: UserInfo }>;
+                postReactions: Array<{ user: UserInfo }>;
+            }
+        >
+    > {
+        try {
+            const friendRelations = await db.query.friendships.findMany({
+                where: and(
+                    or(
+                        eq(friendships.userId, userId),
+                        eq(friendships.friendId, userId)
+                    ),
+                    eq(friendships.status, 'accepted')
+                ),
+            });
+
+            const friendIds = friendRelations.map((friendship) =>
+                friendship.userId === userId
+                    ? friendship.friendId
+                    : friendship.userId
+            );
+
+            const allUserIds = [userId, ...friendIds];
+
+            if (allUserIds.length === 0) {
+                return [];
+            }
+
+            return await db.query.posts.findMany({
+                where: and(
+                    inArray(posts.userId, allUserIds),
+                    or(
+                        eq(posts.privacyLevel, 'public'),
+                        and(
+                            eq(posts.privacyLevel, 'friends'),
+                            inArray(posts.userId, friendIds)
+                        ),
+                        eq(posts.userId, userId)
+                    )
+                ),
+                with: {
+                    user: {
+                        columns: {
+                            id: true,
+                            name: true,
+                            surname: true,
+                            profilePictureUrl: true,
+                        },
+                    },
+                    comments: {
+                        with: {
+                            user: {
+                                columns: {
+                                    id: true,
+                                    name: true,
+                                    surname: true,
+                                    profilePictureUrl: true,
+                                },
+                            },
+                        },
+                        orderBy: [asc(comments.createdAt)],
+                    },
+                    postReactions: {
+                        with: {
+                            user: {
+                                columns: {
+                                    id: true,
+                                    name: true,
+                                    surname: true,
+                                    profilePictureUrl: true,
+                                },
+                            },
+                        },
+                    },
+                },
+                orderBy: [desc(posts.createdAt)],
+                limit,
+                offset,
+            });
+        } catch (error) {
+            throw new Error(`Failed to get home feed: ${error}`);
         }
     }
 }

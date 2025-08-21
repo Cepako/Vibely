@@ -176,4 +176,49 @@ export default class PostController {
             });
         }
     }
+    async getHomeFeed(
+        req: FastifyRequest<{
+            Querystring: {
+                limit?: number;
+                offset?: number;
+            };
+        }>,
+        reply: FastifyReply
+    ) {
+        try {
+            const { id: userId } = req.user;
+            const { limit = 20, offset = 0 } = req.query;
+
+            if (limit < 1 || limit > 50) {
+                return reply.status(400).send({
+                    error: 'Limit must be between 1 and 50',
+                });
+            }
+
+            if (offset < 0) {
+                return reply.status(400).send({
+                    error: 'Offset must be non-negative',
+                });
+            }
+
+            const posts = await this.postService.getHomeFeed(
+                userId,
+                limit,
+                offset
+            );
+
+            return reply.status(200).send({
+                posts,
+                pagination: {
+                    limit,
+                    offset,
+                    hasMore: posts.length === limit,
+                },
+            });
+        } catch (error: any) {
+            return reply.status(500).send({
+                error: error.message || 'Failed to fetch home feed',
+            });
+        }
+    }
 }

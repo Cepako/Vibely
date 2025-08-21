@@ -184,6 +184,10 @@ export const useCreateComment = (postId: number) => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['comments', postId] });
             queryClient.invalidateQueries({ queryKey: ['posts'] });
+            queryClient.invalidateQueries({
+                queryKey: ['homeFeed', 'infinite'],
+                exact: false,
+            });
             toast.success('Comment added!');
         },
         onError: (error: Error) => {
@@ -223,6 +227,10 @@ export const useDeleteComment = (postId: number) => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['comments', postId] });
             queryClient.invalidateQueries({ queryKey: ['posts'] });
+            queryClient.invalidateQueries({
+                queryKey: ['homeFeed', 'infinite'],
+                exact: false,
+            });
             toast.success('Comment deleted!');
         },
         onError: (error: Error) => {
@@ -365,6 +373,10 @@ export const useTogglePostLike = (profileId: number) => {
         onSettled: () => {
             queryClient.invalidateQueries({
                 queryKey: ['posts', user?.id, profileId],
+            });
+            queryClient.invalidateQueries({
+                queryKey: ['homeFeed', 'infinite'],
+                exact: false,
             });
         },
     });

@@ -84,4 +84,27 @@ export default async function postRoutes(fastify: FastifyInstance) {
             reply: FastifyReply
         ) => postController.deletePost(req, reply)
     );
+
+    fastify.get(
+        '/home-feed',
+        {
+            schema: {
+                querystring: Type.Object({
+                    limit: Type.Optional(
+                        Type.Number({ minimum: 1, maximum: 50 })
+                    ),
+                    offset: Type.Optional(Type.Number({ minimum: 0 })),
+                }),
+            },
+        },
+        async (
+            req: FastifyRequest<{
+                Querystring: {
+                    limit?: number;
+                    offset?: number;
+                };
+            }>,
+            reply: FastifyReply
+        ) => postController.getHomeFeed(req, reply)
+    );
 }
