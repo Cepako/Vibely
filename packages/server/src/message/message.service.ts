@@ -1,0 +1,777 @@
+import { db } from '../db';
+import {
+    conversations,
+    conversationParticipants,
+    messages,
+    messageAttachments,
+    users,
+} from '../db/schema';
+import { and, eq, desc, inArray, sql, or, asc, ne } from 'drizzle-orm';
+import { CreateMessageType, CreateConversationType } from './message.schema';
+import {
+    Message,
+    MessageWithSender,
+    ConversationWithDetails,
+    MessageAttachment,
+} from './message.model';
+import { handleFileUpload, FileInput } from '../utils/handleFileUpload';
+import { NotificationService } from '../notification/notification.service';
+import { websocketManager } from '../ws/websocketManager';
+
+interface IMessageService {
+    createMessage(
+        userId: number,
+        data: CreateMessageType,
+        file?: FileInput
+    ): Promise<MessageWithSender>;
+    getMessages(
+        userId: number,
+        conversationId: number,
+        limit?: number,
+        offset?: number
+    ): Promise<MessageWithSender[]>;
+    markMessagesAsRead(userId: number, messageIds: number[]): Promise<void>;
+    createConversation(
+        userId: number,
+        data: CreateConversationType
+    ): Promise<ConversationWithDetails>;
+    getUserConversations(
+        userId: number,
+        limit?: number,
+        offset?: number
+    ): Promise<ConversationWithDetails[]>;
+    getConversationById(
+        userId: number,
+        conversationId: number
+    ): Promise<ConversationWithDetails | null>;
+    deleteMessage(userId: number, messageId: number): Promise<void>;
+    leaveConversation(userId: number, conversationId: number): Promise<void>;
+}
+
+export class MessageService implements IMessageService {
+    private notificationService: NotificationService;
+
+    constructor() {
+        this.notificationService = new NotificationService();
+    }
+
+    async createMessage(
+        userId: number,
+        data: CreateMessageType,
+        file?: FileInput
+    ): Promise<MessageWithSender> {
+        try {
+            // Verify user is participant of the conversation
+            const participation =
+                await db.query.conversationParticipants.findFirst({
+                    where: and(
+                        eq(
+                            conversationParticipants.conversationId,
+                            data.conversationId
+                        ),
+                        eq(conversationParticipants.userId, userId)
+                    ),
+                });
+
+            if (!participation) {
+                throw new Error(
+                    'User is not a participant of this conversation'
+                );
+            }
+
+            // Create the message
+            const [newMessage] = await db
+                .insert(messages)
+                .values({
+                    conversationId: data.conversationId,
+                    senderId: userId,
+                    content: data.content,
+                    contentType: data.contentType || 'text',
+                    isRead: false,
+                })
+                .returning();
+
+            if (!newMessage) {
+                throw new Error('Failed to create message');
+            }
+
+            // Handle file attachment if provided
+            let attachment: MessageAttachment | null = null;
+            if (file) {
+                const allowedTypes =
+                    data.contentType === 'image'
+                        ? ['image/']
+                        : data.contentType === 'video'
+                          ? ['video/']
+                          : ['image/', 'video/', 'application/pdf'];
+
+                const fileUrl = await handleFileUpload(file, {
+                    allowedTypes,
+                    maxSizeInMB: data.contentType === 'video' ? 100 : 10,
+                    subFolder: 'messages',
+                });
+
+                if (fileUrl) {
+                    const fileType = file.mimetype.startsWith('image/')
+                        ? 'image'
+                        : file.mimetype.startsWith('video/')
+                          ? 'video'
+                          : 'pdf';
+
+                    const [newAttachment] = await db
+                        .insert(messageAttachments)
+                        .values({
+                            messageId: newMessage.id,
+                            fileUrl,
+                            fileType,
+                            fileSize: file.buffer.length,
+                        })
+                        .returning();
+
+                    if (newAttachment) {
+                        attachment = {
+                            id: newAttachment.id,
+                            messageId: newAttachment.messageId,
+                            fileUrl: newAttachment.fileUrl,
+                            fileType: newAttachment.fileType as
+                                | 'image'
+                                | 'video'
+                                | 'pdf',
+                            fileSize: newAttachment.fileSize,
+                            createdAt:
+                                newAttachment.createdAt ||
+                                new Date().toISOString(),
+                        };
+                    }
+                }
+            }
+
+            // Get sender info
+            const sender = await db.query.users.findFirst({
+                where: eq(users.id, userId),
+                columns: {
+                    id: true,
+                    name: true,
+                    surname: true,
+                    profilePictureUrl: true,
+                },
+            });
+
+            if (!sender) {
+                throw new Error('Sender not found');
+            }
+
+            // Update conversation timestamp
+            await db
+                .update(conversations)
+                .set({
+                    updatedAt: new Date().toISOString(),
+                })
+                .where(eq(conversations.id, data.conversationId));
+
+            const messageWithSender: MessageWithSender = {
+                id: newMessage.id,
+                conversationId: newMessage.conversationId,
+                senderId: newMessage.senderId,
+                content: newMessage.content,
+                contentType: newMessage.contentType as
+                    | 'text'
+                    | 'image'
+                    | 'video',
+                isRead: newMessage.isRead || false,
+                createdAt: newMessage.createdAt || new Date().toISOString(),
+                sender,
+                ...(attachment && { attachments: [attachment] }),
+            };
+
+            // Send real-time message to conversation participants
+            this.broadcastMessageToConversation(
+                data.conversationId,
+                messageWithSender,
+                userId
+            );
+
+            // Send notifications to other participants
+            await this.notifyConversationParticipants(
+                data.conversationId,
+                userId,
+                sender,
+                messageWithSender
+            );
+
+            return messageWithSender;
+        } catch (error) {
+            throw new Error(`Failed to create message: ${error}`);
+        }
+    }
+
+    async getMessages(
+        userId: number,
+        conversationId: number,
+        limit = 50,
+        offset = 0
+    ): Promise<MessageWithSender[]> {
+        try {
+            // Verify user is participant
+            const participation =
+                await db.query.conversationParticipants.findFirst({
+                    where: and(
+                        eq(
+                            conversationParticipants.conversationId,
+                            conversationId
+                        ),
+                        eq(conversationParticipants.userId, userId)
+                    ),
+                });
+
+            if (!participation) {
+                throw new Error(
+                    'User is not a participant of this conversation'
+                );
+            }
+
+            const messagesResult = await db.query.messages.findMany({
+                where: eq(messages.conversationId, conversationId),
+                with: {
+                    user: {
+                        columns: {
+                            id: true,
+                            name: true,
+                            surname: true,
+                            profilePictureUrl: true,
+                        },
+                    },
+                    messageAttachments: true,
+                },
+                orderBy: [desc(messages.createdAt)],
+                limit,
+                offset,
+            });
+
+            return messagesResult
+                .map((msg) => ({
+                    id: msg.id,
+                    conversationId: msg.conversationId,
+                    senderId: msg.senderId,
+                    content: msg.content,
+                    contentType: msg.contentType as 'text' | 'image' | 'video',
+                    isRead: msg.isRead || false,
+                    createdAt: msg.createdAt || new Date().toISOString(),
+                    sender: msg.user,
+                    ...(msg.messageAttachments.length > 0 && {
+                        attachments: msg.messageAttachments.map((att) => ({
+                            id: att.id,
+                            messageId: att.messageId,
+                            fileUrl: att.fileUrl,
+                            fileType: att.fileType as 'image' | 'video' | 'pdf',
+                            fileSize: att.fileSize,
+                            createdAt:
+                                att.createdAt || new Date().toISOString(),
+                        })),
+                    }),
+                }))
+                .reverse(); // Return in chronological order
+        } catch (error) {
+            throw new Error(`Failed to get messages: ${error}`);
+        }
+    }
+
+    async markMessagesAsRead(
+        userId: number,
+        messageIds: number[]
+    ): Promise<void> {
+        try {
+            // Only mark messages as read if the user is the recipient
+            await db
+                .update(messages)
+                .set({
+                    isRead: true,
+                })
+                .where(
+                    and(
+                        inArray(messages.id, messageIds),
+                        ne(messages.senderId, userId) // Don't mark own messages as read
+                    )
+                );
+        } catch (error) {
+            throw new Error(`Failed to mark messages as read: ${error}`);
+        }
+    }
+
+    async createConversation(
+        userId: number,
+        data: CreateConversationType
+    ): Promise<ConversationWithDetails> {
+        try {
+            // Check if conversation already exists with same participants
+            const allParticipants = [...data.participantIds, userId];
+            const uniqueParticipants = [...new Set(allParticipants)];
+
+            // Validate all participants exist and are not blocked
+            const participantUsers = await db.query.users.findMany({
+                where: inArray(users.id, uniqueParticipants),
+                columns: {
+                    id: true,
+                    name: true,
+                    surname: true,
+                    profilePictureUrl: true,
+                    isOnline: true,
+                    status: true,
+                },
+            });
+
+            if (participantUsers.length !== uniqueParticipants.length) {
+                throw new Error('Some participants not found');
+            }
+
+            // Check for inactive users
+            const activeUsers = participantUsers.filter(
+                (user) => user.status === 'active'
+            );
+            if (activeUsers.length !== participantUsers.length) {
+                throw new Error(
+                    'Cannot create conversation with inactive users'
+                );
+            }
+
+            // For any conversation, check if one already exists with exact same participants
+            const existingConversation =
+                await this.findExistingConversationWithParticipants(
+                    uniqueParticipants
+                );
+            if (existingConversation) {
+                return existingConversation;
+            }
+
+            // Create new conversation
+            const [newConversation] = await db
+                .insert(conversations)
+                .values({})
+                .returning();
+
+            if (!newConversation) {
+                throw new Error('Failed to create conversation');
+            }
+
+            // Add participants
+            const participantValues = uniqueParticipants.map(
+                (participantId) => ({
+                    conversationId: newConversation.id,
+                    userId: participantId,
+                })
+            );
+
+            await db.insert(conversationParticipants).values(participantValues);
+
+            // Return conversation with details
+            return (await this.getConversationById(
+                userId,
+                newConversation.id
+            )) as ConversationWithDetails;
+        } catch (error) {
+            throw new Error(`Failed to create conversation: ${error}`);
+        }
+    }
+
+    async getUserConversations(
+        userId: number,
+        limit = 20,
+        offset = 0
+    ): Promise<ConversationWithDetails[]> {
+        try {
+            const userConversations =
+                await db.query.conversationParticipants.findMany({
+                    where: eq(conversationParticipants.userId, userId),
+                    with: {
+                        conversation: {
+                            with: {
+                                conversationParticipants: {
+                                    with: {
+                                        user: {
+                                            columns: {
+                                                id: true,
+                                                name: true,
+                                                surname: true,
+                                                profilePictureUrl: true,
+                                                isOnline: true,
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                    orderBy: [desc(conversationParticipants.createdAt)],
+                    limit,
+                    offset,
+                });
+
+            const conversationsWithDetails: ConversationWithDetails[] = [];
+
+            for (const userConv of userConversations) {
+                const conversation = userConv.conversation;
+
+                // Get last message
+                const lastMessage = await db.query.messages.findFirst({
+                    where: eq(messages.conversationId, conversation.id),
+                    with: {
+                        user: {
+                            columns: {
+                                id: true,
+                                name: true,
+                                surname: true,
+                                profilePictureUrl: true,
+                            },
+                        },
+                    },
+                    orderBy: [desc(messages.createdAt)],
+                });
+
+                // Get unread count
+                const unreadResult = await db
+                    .select({
+                        count: sql<number>`count(*)`,
+                    })
+                    .from(messages)
+                    .where(
+                        and(
+                            eq(messages.conversationId, conversation.id),
+                            eq(messages.isRead, false),
+                            ne(messages.senderId, userId)
+                        )
+                    );
+
+                const unreadCount = unreadResult[0]?.count || 0;
+
+                conversationsWithDetails.push({
+                    id: conversation.id,
+                    createdAt:
+                        conversation.createdAt || new Date().toISOString(),
+                    updatedAt:
+                        conversation.updatedAt || new Date().toISOString(),
+                    participants: conversation.conversationParticipants.map(
+                        (cp) => ({
+                            id: cp.id,
+                            conversationId: cp.conversationId,
+                            userId: cp.userId,
+                            createdAt: cp.createdAt || new Date().toISOString(),
+                            user: cp.user,
+                        })
+                    ),
+                    lastMessage: lastMessage
+                        ? {
+                              id: lastMessage.id,
+                              conversationId: lastMessage.conversationId,
+                              senderId: lastMessage.senderId,
+                              content: lastMessage.content,
+                              contentType: lastMessage.contentType as
+                                  | 'text'
+                                  | 'image'
+                                  | 'video',
+                              isRead: lastMessage.isRead || false,
+                              createdAt:
+                                  lastMessage.createdAt ||
+                                  new Date().toISOString(),
+                              sender: lastMessage.user,
+                          }
+                        : undefined,
+                    unreadCount,
+                });
+            }
+
+            // Sort by last message or conversation update time
+            return conversationsWithDetails.sort((a, b) => {
+                const aTime = a.lastMessage?.createdAt || a.updatedAt;
+                const bTime = b.lastMessage?.createdAt || b.updatedAt;
+                return new Date(bTime).getTime() - new Date(aTime).getTime();
+            });
+        } catch (error) {
+            throw new Error(`Failed to get user conversations: ${error}`);
+        }
+    }
+
+    async getConversationById(
+        userId: number,
+        conversationId: number
+    ): Promise<ConversationWithDetails | null> {
+        try {
+            // Verify user is participant
+            const participation =
+                await db.query.conversationParticipants.findFirst({
+                    where: and(
+                        eq(
+                            conversationParticipants.conversationId,
+                            conversationId
+                        ),
+                        eq(conversationParticipants.userId, userId)
+                    ),
+                });
+
+            if (!participation) {
+                return null;
+            }
+
+            const conversation = await db.query.conversations.findFirst({
+                where: eq(conversations.id, conversationId),
+                with: {
+                    conversationParticipants: {
+                        with: {
+                            user: {
+                                columns: {
+                                    id: true,
+                                    name: true,
+                                    surname: true,
+                                    profilePictureUrl: true,
+                                    isOnline: true,
+                                },
+                            },
+                        },
+                    },
+                },
+            });
+
+            if (!conversation) {
+                return null;
+            }
+
+            // Get last message
+            const lastMessage = await db.query.messages.findFirst({
+                where: eq(messages.conversationId, conversationId),
+                with: {
+                    user: {
+                        columns: {
+                            id: true,
+                            name: true,
+                            surname: true,
+                            profilePictureUrl: true,
+                        },
+                    },
+                },
+                orderBy: [desc(messages.createdAt)],
+            });
+
+            // Get unread count
+            const unreadResult = await db
+                .select({
+                    count: sql<number>`count(*)`,
+                })
+                .from(messages)
+                .where(
+                    and(
+                        eq(messages.conversationId, conversationId),
+                        eq(messages.isRead, false),
+                        ne(messages.senderId, userId)
+                    )
+                );
+
+            const unreadCount = unreadResult[0]?.count || 0;
+
+            return {
+                id: conversation.id,
+                createdAt: conversation.createdAt || new Date().toISOString(),
+                updatedAt: conversation.updatedAt || new Date().toISOString(),
+                participants: conversation.conversationParticipants.map(
+                    (cp) => ({
+                        id: cp.id,
+                        conversationId: cp.conversationId,
+                        userId: cp.userId,
+                        createdAt: cp.createdAt || new Date().toISOString(),
+                        user: cp.user,
+                    })
+                ),
+                lastMessage: lastMessage
+                    ? {
+                          id: lastMessage.id,
+                          conversationId: lastMessage.conversationId,
+                          senderId: lastMessage.senderId,
+                          content: lastMessage.content,
+                          contentType: lastMessage.contentType as
+                              | 'text'
+                              | 'image'
+                              | 'video',
+                          isRead: lastMessage.isRead || false,
+                          createdAt:
+                              lastMessage.createdAt || new Date().toISOString(),
+                          sender: lastMessage.user,
+                      }
+                    : undefined,
+                unreadCount,
+            };
+        } catch (error) {
+            throw new Error(`Failed to get conversation: ${error}`);
+        }
+    }
+
+    async deleteMessage(userId: number, messageId: number): Promise<void> {
+        try {
+            const message = await db.query.messages.findFirst({
+                where: and(
+                    eq(messages.id, messageId),
+                    eq(messages.senderId, userId)
+                ),
+            });
+
+            if (!message) {
+                throw new Error('Message not found or unauthorized');
+            }
+
+            await db.delete(messages).where(eq(messages.id, messageId));
+        } catch (error) {
+            throw new Error(`Failed to delete message: ${error}`);
+        }
+    }
+
+    async leaveConversation(
+        userId: number,
+        conversationId: number
+    ): Promise<void> {
+        try {
+            await db
+                .delete(conversationParticipants)
+                .where(
+                    and(
+                        eq(
+                            conversationParticipants.conversationId,
+                            conversationId
+                        ),
+                        eq(conversationParticipants.userId, userId)
+                    )
+                );
+
+            // Check if conversation has any participants left
+            const remainingParticipants =
+                await db.query.conversationParticipants.findMany({
+                    where: eq(
+                        conversationParticipants.conversationId,
+                        conversationId
+                    ),
+                });
+
+            // If no participants left, delete the conversation
+            if (remainingParticipants.length === 0) {
+                await db
+                    .delete(conversations)
+                    .where(eq(conversations.id, conversationId));
+            }
+        } catch (error) {
+            throw new Error(`Failed to leave conversation: ${error}`);
+        }
+    }
+
+    private async findExistingConversationWithParticipants(
+        participantIds: number[]
+    ): Promise<ConversationWithDetails | null> {
+        try {
+            // Get all conversations where at least one of our participants is involved
+            const potentialConversations =
+                await db.query.conversationParticipants.findMany({
+                    where: inArray(
+                        conversationParticipants.userId,
+                        participantIds
+                    ),
+                    columns: { conversationId: true },
+                });
+
+            const conversationIds = [
+                ...new Set(potentialConversations.map((p) => p.conversationId)),
+            ];
+
+            if (conversationIds.length === 0) {
+                return null;
+            }
+
+            // For each conversation, check if it has exactly the same participants
+            for (const conversationId of conversationIds) {
+                const participantsInConv =
+                    await db.query.conversationParticipants.findMany({
+                        where: eq(
+                            conversationParticipants.conversationId,
+                            conversationId
+                        ),
+                        columns: { userId: true },
+                    });
+
+                const convParticipantIds = participantsInConv
+                    .map((p) => p.userId)
+                    .sort();
+                const targetParticipantIds = [...participantIds].sort();
+
+                // Check if arrays are equal
+                if (
+                    convParticipantIds.length === targetParticipantIds.length &&
+                    convParticipantIds.every(
+                        (id, index) => id === targetParticipantIds[index]
+                    )
+                ) {
+                    // Found existing conversation with same participants
+                    return await this.getConversationById(
+                        participantIds[0],
+                        conversationId
+                    );
+                }
+            }
+
+            return null;
+        } catch (error) {
+            console.error('Error finding existing conversation:', error);
+            return null;
+        }
+    }
+
+    private broadcastMessageToConversation(
+        conversationId: number,
+        message: MessageWithSender,
+        senderId: number
+    ): void {
+        try {
+            const connections =
+                websocketManager.getChatConnections(conversationId);
+            connections.forEach((conn) => {
+                if (conn.userId !== senderId && conn.socket.readyState === 1) {
+                    // WebSocket.OPEN = 1
+                    conn.socket.send(
+                        JSON.stringify({
+                            type: 'new_message',
+                            data: message,
+                        })
+                    );
+                }
+            });
+        } catch (error) {
+            console.error('Error broadcasting message:', error);
+        }
+    }
+
+    private async notifyConversationParticipants(
+        conversationId: number,
+        senderId: number,
+        sender: { name: string; surname: string },
+        message: MessageWithSender
+    ): Promise<void> {
+        try {
+            const participants =
+                await db.query.conversationParticipants.findMany({
+                    where: and(
+                        eq(
+                            conversationParticipants.conversationId,
+                            conversationId
+                        ),
+                        ne(conversationParticipants.userId, senderId)
+                    ),
+                });
+
+            const senderFullName = `${sender.name} ${sender.surname}`;
+
+            for (const participant of participants) {
+                await this.notificationService.notifyNewMessage(
+                    senderId,
+                    participant.userId,
+                    senderFullName,
+                    conversationId
+                );
+            }
+        } catch (error) {
+            console.error('Error notifying conversation participants:', error);
+        }
+    }
+}
