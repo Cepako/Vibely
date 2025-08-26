@@ -77,14 +77,18 @@ export default function FriendCard({
                     className='flex min-w-0 flex-1 items-center space-x-3'
                 >
                     <div className='relative'>
-                        <img
-                            src={
-                                friend.profilePictureUrl ||
-                                '/default-avatar.png'
-                            }
-                            alt={`${friend.name} ${friend.surname}`}
-                            className='h-12 w-12 rounded-full object-cover'
-                        />
+                        {friend.profilePictureUrl ? (
+                            <img
+                                src={friend.profilePictureUrl}
+                                alt={`${friend.name} ${friend.surname}`}
+                                className='h-12 w-12 rounded-full object-cover'
+                            />
+                        ) : (
+                            <div className='bg-primary-200 text-primary-700 flex h-10 w-10 items-center justify-center rounded-full text-sm font-medium'>
+                                {friend.name[0]}
+                            </div>
+                        )}
+
                         {friend.isOnline && (
                             <div className='absolute right-0 bottom-0 h-3 w-3 rounded-full border-2 border-white bg-green-500'></div>
                         )}

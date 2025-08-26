@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import NavBar from '../../components/NavBar';
+import EventsView from '../../components/events/EventView';
 
 export const Route = createFileRoute('/events/')({
     beforeLoad: ({ context }) => {
@@ -14,7 +15,7 @@ function Events() {
     return (
         <div className='bg-primary-50 flex h-screen w-full overflow-hidden'>
             <NavBar view='events' />
-            Events
+            <EventsView />
         </div>
     );
 }
