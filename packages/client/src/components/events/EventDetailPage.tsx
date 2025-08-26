@@ -388,7 +388,9 @@ export default function EventDetailPage() {
                             ) : (
                                 <>
                                     {userStatus === 'not_invited' &&
-                                        event.privacyLevel === 'public' && (
+                                        (event.privacyLevel === 'public' ||
+                                            event.privacyLevel ===
+                                                'friends') && (
                                             <button
                                                 onClick={handleJoinEvent}
                                                 disabled={

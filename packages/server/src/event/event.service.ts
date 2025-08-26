@@ -1,5 +1,10 @@
 import { db } from '../db';
-import { events, eventParticipants, eventCategories } from '../db/schema';
+import {
+    events,
+    eventParticipants,
+    eventCategories,
+    friendships,
+} from '../db/schema';
 import { and, eq, or, inArray, desc, asc, gte, lte } from 'drizzle-orm';
 import createError from '@fastify/error';
 import { NotificationService } from '../notification/notification.service';
@@ -707,9 +712,39 @@ export class EventService implements IEventService {
         categoryId?: number
     ): Promise<EventWithDetails[]> {
         try {
+            const userFriends = await db.query.friendships.findMany({
+                where: or(
+                    and(
+                        eq(friendships.userId, userId),
+                        eq(friendships.status, 'accepted')
+                    ),
+                    and(
+                        eq(friendships.friendId, userId),
+                        eq(friendships.status, 'accepted')
+                    )
+                ),
+                columns: {
+                    userId: true,
+                    friendId: true,
+                },
+            });
+
+            const friendIds = userFriends.map((friendship) =>
+                friendship.userId === userId
+                    ? friendship.friendId
+                    : friendship.userId
+            );
+
             let whereCondition = and(
-                eq(events.privacyLevel, 'public'),
-                gte(events.startTime, new Date().toISOString())
+                gte(events.startTime, new Date().toISOString()),
+                or(
+                    eq(events.privacyLevel, 'public'),
+                    and(
+                        eq(events.privacyLevel, 'friends'),
+                        inArray(events.organizerId, friendIds)
+                    ),
+                    eq(events.organizerId, userId)
+                )
             );
 
             if (categoryId) {
@@ -1373,13 +1408,35 @@ export class EventService implements IEventService {
                 throw new EventNotFound();
             }
 
-            if (event.privacyLevel !== 'public') {
-                const NotPublicEvent = createError(
-                    'NOT_PUBLIC_EVENT',
-                    'This event is not public',
+            // Check if user can join this event based on privacy level
+            if (event.privacyLevel === 'private') {
+                const NotJoinableEvent = createError(
+                    'NOT_JOINABLE_EVENT',
+                    'This is a private event - you must be invited to join',
                     400
                 );
-                throw new NotPublicEvent();
+                throw new NotJoinableEvent();
+            }
+
+            // For friends events, check if user is actually a friend of the organizer
+            if (event.privacyLevel === 'friends') {
+                const friendshipStatus =
+                    await this.friendshipService.getFriendshipStatus(
+                        userId,
+                        event.organizerId
+                    );
+
+                if (
+                    friendshipStatus !== 'accepted' &&
+                    event.organizerId !== userId
+                ) {
+                    const NotFriendEvent = createError(
+                        'NOT_FRIEND_EVENT',
+                        'This is a friends-only event - you must be friends with the organizer to join',
+                        403
+                    );
+                    throw new NotFriendEvent();
+                }
             }
 
             // Check if user is already a participant
@@ -1433,7 +1490,7 @@ export class EventService implements IEventService {
                 status: 'going',
             });
         } catch (error) {
-            console.error('Join public event error:', error);
+            console.error('Join event error:', error);
             throw error;
         }
     }

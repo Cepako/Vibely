@@ -374,8 +374,8 @@ export class EventController {
         }
     }
 
-    // Join public event
-    async joinPublicEvent(request: FastifyRequest, reply: FastifyReply) {
+    // Join event
+    async joinEvent(request: FastifyRequest, reply: FastifyReply) {
         try {
             const userId = (request.user as any).id;
             const { eventId } = request.params as { eventId: string };
@@ -415,7 +415,7 @@ export class EventController {
     }
 
     // Get event categories
-    async getEventCategories(request: FastifyRequest, reply: FastifyReply) {
+    async getEventCategories(_: FastifyRequest, reply: FastifyReply) {
         try {
             const categories = await this.eventService.getEventCategories();
 

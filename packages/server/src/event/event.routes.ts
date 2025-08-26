@@ -346,7 +346,7 @@ export async function eventRoutes(fastify: FastifyInstance) {
                 Params: { eventId: string };
             }>,
             reply: FastifyReply
-        ) => eventController.joinPublicEvent(req, reply)
+        ) => eventController.joinEvent(req, reply)
     );
 
     // Leave event
