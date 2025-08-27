@@ -59,9 +59,10 @@ export default function PostLikesDialog({
                                     key={`${reaction.userId}-${index}`}
                                     onClick={() =>
                                         navigate({
-                                            to: '/profile/$id',
+                                            to: '/profile/$profileId',
                                             params: {
-                                                id: reaction.userId.toString(),
+                                                profileId:
+                                                    reaction.userId.toString(),
                                             },
                                             reloadDocument: true,
                                         })

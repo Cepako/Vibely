@@ -16,7 +16,8 @@ import { Route as MessagesIndexRouteImport } from './routes/messages/index'
 import { Route as HomeIndexRouteImport } from './routes/home/index'
 import { Route as ExploreIndexRouteImport } from './routes/explore/index'
 import { Route as EventsIndexRouteImport } from './routes/events/index'
-import { Route as ProfileIdRouteImport } from './routes/profile.$id'
+import { Route as ProfileProfileIdRouteImport } from './routes/profile/$profileId'
+import { Route as PostPostIdRouteImport } from './routes/post/$postId'
 import { Route as EventsEventIdRouteImport } from './routes/events/$eventId'
 
 const RegistrationRoute = RegistrationRouteImport.update({
@@ -54,9 +55,14 @@ const EventsIndexRoute = EventsIndexRouteImport.update({
   path: '/events/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ProfileIdRoute = ProfileIdRouteImport.update({
-  id: '/profile/$id',
-  path: '/profile/$id',
+const ProfileProfileIdRoute = ProfileProfileIdRouteImport.update({
+  id: '/profile/$profileId',
+  path: '/profile/$profileId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PostPostIdRoute = PostPostIdRouteImport.update({
+  id: '/post/$postId',
+  path: '/post/$postId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EventsEventIdRoute = EventsEventIdRouteImport.update({
@@ -69,7 +75,8 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/registration': typeof RegistrationRoute
   '/events/$eventId': typeof EventsEventIdRoute
-  '/profile/$id': typeof ProfileIdRoute
+  '/post/$postId': typeof PostPostIdRoute
+  '/profile/$profileId': typeof ProfileProfileIdRoute
   '/events': typeof EventsIndexRoute
   '/explore': typeof ExploreIndexRoute
   '/home': typeof HomeIndexRoute
@@ -80,7 +87,8 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/registration': typeof RegistrationRoute
   '/events/$eventId': typeof EventsEventIdRoute
-  '/profile/$id': typeof ProfileIdRoute
+  '/post/$postId': typeof PostPostIdRoute
+  '/profile/$profileId': typeof ProfileProfileIdRoute
   '/events': typeof EventsIndexRoute
   '/explore': typeof ExploreIndexRoute
   '/home': typeof HomeIndexRoute
@@ -92,7 +100,8 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/registration': typeof RegistrationRoute
   '/events/$eventId': typeof EventsEventIdRoute
-  '/profile/$id': typeof ProfileIdRoute
+  '/post/$postId': typeof PostPostIdRoute
+  '/profile/$profileId': typeof ProfileProfileIdRoute
   '/events/': typeof EventsIndexRoute
   '/explore/': typeof ExploreIndexRoute
   '/home/': typeof HomeIndexRoute
@@ -105,7 +114,8 @@ export interface FileRouteTypes {
     | '/'
     | '/registration'
     | '/events/$eventId'
-    | '/profile/$id'
+    | '/post/$postId'
+    | '/profile/$profileId'
     | '/events'
     | '/explore'
     | '/home'
@@ -116,7 +126,8 @@ export interface FileRouteTypes {
     | '/'
     | '/registration'
     | '/events/$eventId'
-    | '/profile/$id'
+    | '/post/$postId'
+    | '/profile/$profileId'
     | '/events'
     | '/explore'
     | '/home'
@@ -127,7 +138,8 @@ export interface FileRouteTypes {
     | '/'
     | '/registration'
     | '/events/$eventId'
-    | '/profile/$id'
+    | '/post/$postId'
+    | '/profile/$profileId'
     | '/events/'
     | '/explore/'
     | '/home/'
@@ -139,7 +151,8 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   RegistrationRoute: typeof RegistrationRoute
   EventsEventIdRoute: typeof EventsEventIdRoute
-  ProfileIdRoute: typeof ProfileIdRoute
+  PostPostIdRoute: typeof PostPostIdRoute
+  ProfileProfileIdRoute: typeof ProfileProfileIdRoute
   EventsIndexRoute: typeof EventsIndexRoute
   ExploreIndexRoute: typeof ExploreIndexRoute
   HomeIndexRoute: typeof HomeIndexRoute
@@ -198,11 +211,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EventsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/profile/$id': {
-      id: '/profile/$id'
-      path: '/profile/$id'
-      fullPath: '/profile/$id'
-      preLoaderRoute: typeof ProfileIdRouteImport
+    '/profile/$profileId': {
+      id: '/profile/$profileId'
+      path: '/profile/$profileId'
+      fullPath: '/profile/$profileId'
+      preLoaderRoute: typeof ProfileProfileIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/post/$postId': {
+      id: '/post/$postId'
+      path: '/post/$postId'
+      fullPath: '/post/$postId'
+      preLoaderRoute: typeof PostPostIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/events/$eventId': {
@@ -219,7 +239,8 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   RegistrationRoute: RegistrationRoute,
   EventsEventIdRoute: EventsEventIdRoute,
-  ProfileIdRoute: ProfileIdRoute,
+  PostPostIdRoute: PostPostIdRoute,
+  ProfileProfileIdRoute: ProfileProfileIdRoute,
   EventsIndexRoute: EventsIndexRoute,
   ExploreIndexRoute: ExploreIndexRoute,
   HomeIndexRoute: HomeIndexRoute,

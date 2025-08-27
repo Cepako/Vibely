@@ -8,7 +8,7 @@ import {
 } from '@tabler/icons-react';
 import type { Comment } from '../../types/comment';
 import UserAvatar from '../ui/UserAvatar';
-import { formatTimeAgo } from '../../utils/utils';
+import { cn, formatTimeAgo } from '../../utils/utils';
 import { useAuth } from '../auth/AuthProvider';
 import {
     useDeleteComment,
@@ -18,6 +18,7 @@ import {
 import DropdownMenu, { type DropdownMenuItem } from '../ui/DropdownMenu';
 import { Dialog, useDialog } from '../ui/Dialog';
 import { useNavigate } from '@tanstack/react-router';
+import CommentLikesDialog from './CommentLikesDialog';
 
 interface CommentItemProps {
     comment: Comment;
@@ -41,6 +42,7 @@ export default function CommentItem({
     const toggleCommentLike = useToggleCommentLike(postId);
     const updateComment = useUpdateComment(postId);
     const deleteDialog = useDialog(false);
+    const likesDialog = useDialog(false);
 
     const isOwnComment = user?.id === comment.userId;
     const canEdit = isOwnComment;
@@ -84,8 +86,8 @@ export default function CommentItem({
 
     const handleProfileClick = () => {
         navigate({
-            to: '/profile/$id',
-            params: { id: comment.userId.toString() },
+            to: '/profile/$profileId',
+            params: { profileId: comment.userId.toString() },
             reloadDocument: true,
         });
     };
@@ -207,7 +209,21 @@ export default function CommentItem({
                                                 : 'none'
                                         }
                                     />
-                                    <span>
+                                    <span
+                                        className={cn(
+                                            'cursor-pointer',
+                                            comment.likeCount > 0 &&
+                                                'hover:underline'
+                                        )}
+                                        onClick={
+                                            comment.likeCount > 0
+                                                ? (e) => {
+                                                      e.stopPropagation();
+                                                      likesDialog.openDialog();
+                                                  }
+                                                : () => {}
+                                        }
+                                    >
                                         {comment.likeCount > 0
                                             ? comment.likeCount
                                             : 'Like'}
@@ -273,6 +289,11 @@ export default function CommentItem({
                     </div>
                 </div>
             </Dialog>
+            <CommentLikesDialog
+                isOpen={likesDialog.isOpen}
+                onClose={likesDialog.closeDialog}
+                comment={comment}
+            />
         </>
     );
 }

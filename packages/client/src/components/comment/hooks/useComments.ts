@@ -304,6 +304,10 @@ export const useToggleCommentLike = (postId: number) => {
         },
         onSettled: () => {
             queryClient.invalidateQueries({ queryKey: ['comments', postId] });
+            queryClient.invalidateQueries({
+                queryKey: ['commentLikes'],
+                exact: false,
+            });
         },
     });
 };
@@ -379,5 +383,14 @@ export const useTogglePostLike = (profileId: number) => {
                 exact: false,
             });
         },
+    });
+};
+
+export const useCommentLikeInfo = (commentId: number) => {
+    return useQuery({
+        queryKey: ['commentLikes', commentId],
+        queryFn: () => commentsApi.getCommentLikeInfo(commentId),
+        enabled: !!commentId,
+        staleTime: 30 * 1000, // 30 seconds
     });
 };

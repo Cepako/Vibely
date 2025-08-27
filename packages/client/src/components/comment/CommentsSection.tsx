@@ -1,10 +1,9 @@
 import { useState, forwardRef } from 'react';
-import { IconMessageCircle } from '@tabler/icons-react';
+import { IconMessageCircle, IconMessage } from '@tabler/icons-react';
 import type { Comment } from '../../types/comment';
 import { usePostComments } from './hooks/useComments';
 import CommentItem from './CommentItem';
 import CommentForm from './CommentForm';
-import { cn } from '../../utils/utils';
 
 interface CommentsSectionProps {
     postId: number;
@@ -29,67 +28,77 @@ const CommentsSection = forwardRef<HTMLDivElement, CommentsSectionProps>(
 
         if (error) {
             return (
-                <div className='p-4 text-center text-red-500'>
-                    Failed to load comments. Please try again.
+                <div className='flex flex-col items-center justify-center px-4 py-8'>
+                    <IconMessage size={32} className='mb-3 text-slate-300' />
+                    <p className='text-center text-sm text-slate-500'>
+                        Unable to load comments
+                    </p>
+                    <button
+                        onClick={() => window.location.reload()}
+                        className='text-primary-600 hover:text-primary-700 mt-2 text-xs transition-colors'
+                    >
+                        Try again
+                    </button>
                 </div>
             );
         }
 
         return (
-            <div ref={ref} className='flex h-full flex-col overflow-hidden'>
-                <div
-                    className={cn(
-                        'flex-1 overflow-y-auto',
-                        replyingTo ? 'max-h-[570px]' : 'max-h-[440px]'
-                    )}
-                >
-                    {isLoading && (
-                        <div className='flex items-center justify-center py-8'>
-                            <div className='h-6 w-6 animate-spin rounded-full border-2 border-blue-500 border-t-transparent'></div>
+            <div ref={ref} className='flex h-full flex-col'>
+                <div className='flex-1 overflow-y-auto'>
+                    {isLoading ? (
+                        <div className='flex items-center justify-center py-12'>
+                            <div className='flex items-center space-x-3'>
+                                <div className='border-primary-500 h-5 w-5 animate-spin rounded-full border-2 border-t-transparent'></div>
+                                <span className='text-sm text-slate-500'>
+                                    Loading comments...
+                                </span>
+                            </div>
                         </div>
-                    )}
-                    {!isLoading && (
-                        <>
-                            {comments.length === 0 ? (
-                                <div className='flex flex-col items-center justify-center py-8 text-slate-500'>
-                                    <IconMessageCircle
-                                        size={48}
-                                        className='mb-2 opacity-50'
+                    ) : comments.length === 0 ? (
+                        <div className='flex flex-col items-center justify-center px-6 py-16'>
+                            <div className='mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-100'>
+                                <IconMessageCircle
+                                    size={28}
+                                    className='text-slate-400'
+                                />
+                            </div>
+                            <h4 className='mb-1 font-medium text-slate-900'>
+                                No comments yet
+                            </h4>
+                            <p className='text-center text-sm text-slate-500'>
+                                Be the first to share your thoughts!
+                            </p>
+                        </div>
+                    ) : (
+                        <div className='divide-y divide-slate-50'>
+                            {comments.map((comment) => (
+                                <div key={comment.id}>
+                                    <CommentItem
+                                        comment={comment}
+                                        postId={postId}
+                                        onReply={handleReply}
                                     />
-                                    <p className='text-sm'>No comments yet</p>
-                                    <p className='text-xs'>
-                                        Be the first to comment!
-                                    </p>
-                                </div>
-                            ) : (
-                                <div className='flex flex-col'>
-                                    {comments.map((comment) => (
-                                        <div key={comment.id}>
-                                            <CommentItem
-                                                comment={comment}
-                                                postId={postId}
-                                                onReply={handleReply}
-                                            />
 
-                                            {replyingTo?.id === comment.id && (
-                                                <CommentForm
-                                                    postId={postId}
-                                                    parentComment={replyingTo}
-                                                    onCancel={handleCancelReply}
-                                                    placeholder={`Reply to ${replyingTo.user.name}...`}
-                                                    autoFocus
-                                                />
-                                            )}
+                                    {replyingTo?.id === comment.id && (
+                                        <div className='border-t border-slate-100 bg-slate-50/80'>
+                                            <CommentForm
+                                                postId={postId}
+                                                parentComment={replyingTo}
+                                                onCancel={handleCancelReply}
+                                                placeholder={`Reply to ${replyingTo.user.name}...`}
+                                                autoFocus
+                                            />
                                         </div>
-                                    ))}
+                                    )}
                                 </div>
-                            )}
-                        </>
+                            ))}
+                        </div>
                     )}
                 </div>
 
                 {!replyingTo && (
-                    <div className='border-t border-slate-200 bg-white'>
+                    <div className='sticky bottom-0 border-t border-slate-100 bg-white shadow-sm'>
                         <CommentForm postId={postId} />
                     </div>
                 )}

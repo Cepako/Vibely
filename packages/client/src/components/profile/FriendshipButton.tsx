@@ -24,8 +24,8 @@ interface FriendshipButtonProps {
 export default function FriendshipButton({
     friendshipStatus,
 }: FriendshipButtonProps) {
-    const params = useParams({ from: '/profile/$id' });
-    const userId = Number(params.id);
+    const params = useParams({ from: '/profile/$profileId' });
+    const userId = Number(params.profileId);
 
     const sendRequestMutation = useSendFriendRequest();
     const removeFriendMutation = useRemoveFriend();

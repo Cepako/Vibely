@@ -72,8 +72,8 @@ export default function FriendCard({
         <div className='rounded-lg border border-slate-200 bg-white p-4 transition-shadow hover:shadow-md'>
             <div className='mb-3 flex items-start justify-between'>
                 <Link
-                    to='/profile/$id'
-                    params={{ id: friend.id.toString() }}
+                    to='/profile/$profileId'
+                    params={{ profileId: friend.id.toString() }}
                     className='flex min-w-0 flex-1 items-center space-x-3'
                 >
                     <div className='relative'>

@@ -18,6 +18,21 @@ export default async function postRoutes(fastify: FastifyInstance) {
     fastify.addHook('preHandler', authGuard);
 
     fastify.get(
+        '/single/:postId',
+        {
+            schema: {
+                params: Type.Object({
+                    postId: Type.Number(),
+                }),
+            },
+        },
+        async (
+            req: FastifyRequest<{ Params: { postId: number } }>,
+            reply: FastifyReply
+        ) => postController.getPostById(req, reply)
+    );
+
+    fastify.get(
         '/:profileId',
         {
             schema: {

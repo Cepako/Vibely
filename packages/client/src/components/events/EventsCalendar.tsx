@@ -129,7 +129,10 @@ export default function EventsCalendar({
 
     const navigateToProfile = (userId: number, e: React.MouseEvent) => {
         e.stopPropagation();
-        navigate({ to: '/profile/$id', params: { id: userId.toString() } });
+        navigate({
+            to: '/profile/$profileId',
+            params: { profileId: userId.toString() },
+        });
     };
 
     const handleDayClick = (day: CalendarDay) => {
@@ -408,7 +411,7 @@ export default function EventsCalendar({
 
                                                 <div className='mb-3 flex items-center gap-2'>
                                                     <div
-                                                        className='hover:ring-primary-500 h-6 w-6 cursor-pointer overflow-hidden rounded-full bg-slate-200 transition-all hover:ring-2'
+                                                        className='h-6 w-6 cursor-pointer overflow-hidden rounded-full bg-slate-200 transition-all'
                                                         onClick={(e) =>
                                                             navigateToProfile(
                                                                 event.organizer

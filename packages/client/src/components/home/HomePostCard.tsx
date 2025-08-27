@@ -64,8 +64,10 @@ export default function HomePostCard({ post }: HomePostCardProps) {
                             className='cursor-pointer font-semibold text-slate-900 hover:underline'
                             onClick={() =>
                                 navigate({
-                                    to: '/profile/$id',
-                                    params: { id: post.userId.toString() },
+                                    to: '/profile/$profileId',
+                                    params: {
+                                        profileId: post.userId.toString(),
+                                    },
                                 })
                             }
                         >

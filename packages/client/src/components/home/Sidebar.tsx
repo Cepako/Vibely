@@ -1,23 +1,9 @@
-import { IconCalendar } from '@tabler/icons-react';
+import { IconCalendar, IconMapPin } from '@tabler/icons-react';
 import { useNavigate } from '@tanstack/react-router';
+import { getEventStatus } from '../../utils/eventStatus';
+import { useEvents } from '../events/hooks/useEvents';
 
-// Dummy data for upcoming events
-const upcomingEvents = [
-    {
-        id: 1,
-        title: 'Design Meetup',
-        date: 'Tomorrow, 6:30 PM',
-        color: 'bg-blue-100 text-blue-800',
-    },
-    {
-        id: 2,
-        title: 'Minimalist Workshop',
-        date: 'May 21, 4:30 PM',
-        color: 'bg-orange-100 text-orange-800',
-    },
-];
-
-// Dummy data for active users
+// Keep mock data for active users for now
 const activeUsers = [
     {
         id: 1,
@@ -48,9 +34,68 @@ const activeUsers = [
 export default function Sidebar() {
     const navigate = useNavigate();
 
+    const upcomingEvents = useEvents('upcoming');
+
+    const formatEventDate = (startTime: string) => {
+        const eventDate = new Date(startTime);
+        const now = new Date();
+        const today = new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            now.getDate()
+        );
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+
+        const eventDateOnly = new Date(
+            eventDate.getFullYear(),
+            eventDate.getMonth(),
+            eventDate.getDate()
+        );
+
+        const timeString = eventDate.toLocaleTimeString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true,
+        });
+
+        if (eventDateOnly.getTime() === today.getTime()) {
+            return `Today, ${timeString}`;
+        } else if (eventDateOnly.getTime() === tomorrow.getTime()) {
+            return `Tomorrow, ${timeString}`;
+        } else {
+            const dateString = eventDate.toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+            });
+            return `${dateString}, ${timeString}`;
+        }
+    };
+
+    const getEventColor = (event: any) => {
+        const status = getEventStatus(event.startTime, event.endTime);
+
+        switch (status.status) {
+            case 'ongoing':
+                return 'bg-amber-100 text-amber-800 border border-amber-200';
+            case 'upcoming':
+                switch (event.privacyLevel) {
+                    case 'public':
+                        return 'bg-emerald-100 text-emerald-800 border border-emerald-200';
+                    case 'friends':
+                        return 'bg-blue-100 text-blue-800 border border-blue-200';
+                    case 'private':
+                        return 'bg-purple-100 text-purple-800 border border-purple-200';
+                    default:
+                        return 'bg-slate-100 text-slate-800 border border-slate-200';
+                }
+            default:
+                return 'bg-slate-100 text-slate-800 border border-slate-200';
+        }
+    };
+
     return (
         <div className='sticky top-24 right-7 h-fit w-80'>
-            {/* Upcoming Events Section */}
             <div className='mb-4 rounded-lg border border-gray-200 bg-white p-4'>
                 <div className='mb-3 flex items-center justify-between'>
                     <h3 className='flex items-center gap-1 font-semibold text-gray-900'>
@@ -60,9 +105,35 @@ export default function Sidebar() {
                 </div>
 
                 <div className='space-y-2'>
-                    {upcomingEvents.map((event) => (
-                        <EventCard key={event.id} event={event} />
-                    ))}
+                    {upcomingEvents.isLoading ? (
+                        <div className='space-y-2'>
+                            {[1, 2].map((i) => (
+                                <div
+                                    key={i}
+                                    className='animate-pulse rounded-lg bg-gray-100 p-3'
+                                >
+                                    <div className='h-4 w-3/4 rounded bg-gray-200'></div>
+                                    <div className='mt-1 h-3 w-1/2 rounded bg-gray-200'></div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : upcomingEvents.events.length > 0 ? (
+                        upcomingEvents.events
+                            .slice(0, 3)
+                            .map((event: any) => (
+                                <EventCard
+                                    key={event.id}
+                                    event={event}
+                                    formatEventDate={formatEventDate}
+                                    getEventColor={getEventColor}
+                                    navigate={navigate}
+                                />
+                            ))
+                    ) : (
+                        <div className='rounded-lg bg-gray-50 p-3 text-center text-sm text-gray-500'>
+                            No upcoming events
+                        </div>
+                    )}
                 </div>
 
                 <button
@@ -73,7 +144,6 @@ export default function Sidebar() {
                 </button>
             </div>
 
-            {/* Active Now Section */}
             <div className='rounded-lg border border-gray-200 bg-white p-4'>
                 <div className='mb-3 flex items-center justify-between'>
                     <h3 className='flex items-center font-semibold text-gray-900'>
@@ -104,13 +174,46 @@ export default function Sidebar() {
 
 interface EventCardProps {
     event: any;
+    formatEventDate: (startTime: string) => string;
+    getEventColor: (event: any) => string;
+    navigate: any;
 }
 
-function EventCard({ event }: EventCardProps) {
+function EventCard({
+    event,
+    formatEventDate,
+    getEventColor,
+    navigate,
+}: EventCardProps) {
+    const handleClick = () => {
+        navigate({
+            to: '/events/$eventId',
+            params: { eventId: event.id.toString() },
+        });
+    };
+
     return (
-        <div className={`rounded-lg p-3 ${event.color} mb-2`}>
-            <h4 className='text-sm font-medium'>{event.title}</h4>
-            <p className='mt-1 text-xs opacity-75'>{event.date}</p>
+        <div
+            className={`cursor-pointer rounded-lg p-3 transition-all hover:shadow-sm ${getEventColor(event)}`}
+            onClick={handleClick}
+        >
+            <h4
+                className='line-clamp-1 text-sm font-medium'
+                title={event.title}
+            >
+                {event.title}
+            </h4>
+            <p className='mt-1 text-xs opacity-75'>
+                {formatEventDate(event.startTime)}
+            </p>
+            {event.location && (
+                <p
+                    className='mt-0.5 line-clamp-1 flex gap-1 text-xs opacity-60'
+                    title={event.location}
+                >
+                    <IconMapPin size={15} /> {event.location}
+                </p>
+            )}
         </div>
     );
 }

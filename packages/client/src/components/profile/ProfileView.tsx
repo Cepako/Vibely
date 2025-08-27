@@ -13,17 +13,16 @@ import { usePosts } from '../post/hooks/usePosts';
 import { useFriends } from './hooks/useFriendship';
 
 export default function ProfileView() {
-    const params = useParams({ from: '/profile/$id' });
+    const params = useParams({ from: '/profile/$profileId' });
     const [selectedView, setSelectedView] = useState<'posts' | 'friends'>(
         'posts'
     );
-    const posts = usePosts(Number(params.id));
+    const posts = usePosts(Number(params.profileId));
     const { user } = useAuth();
-    const { data, isLoading } = useProfile(Number(params.id));
+    const { data, isLoading } = useProfile(Number(params.profileId));
     const userProfile = data;
 
-    // Fetch friends count
-    const { data: friends } = useFriends(Number(params.id));
+    const { data: friends } = useFriends(Number(params.profileId));
     const friendsCount = friends?.length || 0;
 
     const postsData = useMemo(() => {

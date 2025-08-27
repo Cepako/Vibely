@@ -15,6 +15,30 @@ export default class PostController {
         this.friendshipService = friendshipService;
     }
 
+    async getPostById(
+        req: FastifyRequest<{ Params: { postId: number } }>,
+        reply: FastifyReply
+    ) {
+        try {
+            const { id: userId } = req.user;
+            const { postId } = req.params;
+
+            const post = await this.postService.getPostById(postId, userId);
+
+            if (!post) {
+                return reply.status(404).send({
+                    error: 'Post not found or you do not have permission to view it',
+                });
+            }
+
+            return reply.status(200).send(post);
+        } catch (error: any) {
+            return reply.status(500).send({
+                error: error.message || 'Failed to fetch post',
+            });
+        }
+    }
+
     async getPosts(
         req: FastifyRequest<{ Params: { profileId: number } }>,
         reply: FastifyReply

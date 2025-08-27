@@ -5,6 +5,7 @@ import {
     IconPlayerPlayFilled,
     IconTrash,
 } from '@tabler/icons-react';
+import { useNavigate } from '@tanstack/react-router';
 
 import type { Post } from '../../types/post';
 import Tooltip from '../ui/Tooltip';
@@ -15,20 +16,34 @@ import EditPostForm from './EditPostForm';
 
 interface ProfilePostCardProps {
     post: Post;
-    onClick: () => void;
+    onClick?: () => void;
 }
 
 export function ProfilePostCard({ post, onClick }: ProfilePostCardProps) {
     const { user } = useAuth();
+    const navigate = useNavigate();
     const deletePost = useDeletePost(post.user.id);
     const deletePostDialog = useDialog(false);
     const editPostDialog = useDialog(false);
     const isOwnProfile = user?.id === post.userId;
 
+    const handleCardClick = () => {
+        if (onClick) {
+            onClick();
+        } else {
+            navigate({
+                to: '/post/$postId',
+                params: {
+                    postId: String(post.id),
+                },
+            });
+        }
+    };
+
     return (
         <div
             className='group relative aspect-square w-[32%] cursor-pointer overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition-opacity'
-            onClick={onClick}
+            onClick={handleCardClick}
         >
             {post.contentUrl ? (
                 <div className='h-full w-full'>

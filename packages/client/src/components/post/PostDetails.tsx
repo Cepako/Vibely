@@ -5,12 +5,13 @@ import {
     IconHeart,
     IconMessageCircle,
     IconMessageReport,
-    IconX,
+    IconArrowLeft,
+    IconHeartFilled,
 } from '@tabler/icons-react';
 import type { Post } from '../../types/post';
 import UserAvatar from '../ui/UserAvatar';
 import { cn, formatTimeAgo } from '../../utils/utils';
-import { type ReactNode, useRef } from 'react';
+import { type ReactNode, useRef, useState, useEffect } from 'react';
 import PrivacyIcon from './PrivacyIcon';
 import DropdownMenu, { type DropdownMenuItem } from '../ui/DropdownMenu';
 import CommentsSection from '../comment/CommentsSection';
@@ -19,25 +20,15 @@ import { useAuth } from '../auth/AuthProvider';
 import { usePosts } from './hooks/usePosts';
 import { useDialog } from '../ui/Dialog';
 import PostLikesDialog from './PostLikesDialog';
+import { useNavigate } from '@tanstack/react-router';
 
 interface PostDetailsProps {
     post: Post;
-    onClose: () => void;
-    onPrevious?: () => void;
-    onNext?: () => void;
-    hasPrevious?: boolean;
-    hasNext?: boolean;
 }
 
-export default function PostDetails({
-    post: initialPost,
-    onClose,
-    onPrevious,
-    onNext,
-    hasPrevious,
-    hasNext,
-}: PostDetailsProps) {
+export default function PostDetails({ post: initialPost }: PostDetailsProps) {
     const { user } = useAuth();
+    const navigate = useNavigate();
     const { data: posts } = usePosts(initialPost.userId);
     const post = posts?.find((p) => p.id === initialPost.id) || initialPost;
 
@@ -45,10 +36,53 @@ export default function PostDetails({
     const likesDialog = useDialog(false);
 
     const commentsSectionRef = useRef<HTMLDivElement>(null);
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        const checkMobile = () => setIsMobile(window.innerWidth < 768);
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
+    const handleGoToProfile = () => {
+        navigate({ to: `/profile/${post.userId}` });
+    };
 
     const isLiked = post.postReactions.some(
         (reaction) => reaction.userId === user?.id
     );
+
+    const handleNext = () => {
+        if (posts) {
+            const currentIndex = posts.findIndex((p) => p.id === post.id);
+            if (currentIndex < posts.length - 1) {
+                const nextPost = posts[currentIndex + 1];
+                navigate({
+                    to: '/post/$postId',
+                    params: { postId: String(nextPost.id) },
+                });
+            }
+        }
+    };
+
+    const handlePrevious = () => {
+        if (posts) {
+            const currentIndex = posts.findIndex((p) => p.id === post.id);
+            if (currentIndex > 0) {
+                const previousPost = posts[currentIndex - 1];
+                navigate({
+                    to: '/post/$postId',
+                    params: { postId: String(previousPost.id) },
+                });
+            }
+        }
+    };
+
+    const canNavigateNext =
+        posts && posts.findIndex((p) => p.id === post.id) < posts.length - 1;
+    const canNavigatePrevious =
+        posts && posts.findIndex((p) => p.id === post.id) > 0;
 
     const handleLike = () => {
         togglePostLike.mutate(post.id);
@@ -73,156 +107,257 @@ export default function PostDetails({
                 if (commentTextarea) {
                     commentTextarea.focus();
                 }
-            }, 300);
+            }, 100);
         }
     };
 
     const postMenuItems: DropdownMenuItem[] = [
         {
             id: 'report',
-            label: 'Report',
-            icon: <IconMessageReport />,
+            label: 'Report post',
+            icon: <IconMessageReport size={16} />,
             onClick: () => console.log('Report post', post.id),
-            className: 'p-2',
+            className:
+                'p-3 transition-colors hover:bg-rose-50 text-rose-600 hover:text-rose-700',
         },
     ];
 
+    const hasMedia = post.contentUrl;
+    const likesCount = post.postReactions.length;
+    const commentsCount = post.comments.length;
+
     return (
         <>
-            <div className='relative flex h-full overflow-hidden rounded-lg'>
-                <div className='relative flex h-[80vh] max-h-[80vh] flex-1 items-center justify-center bg-black'>
-                    {hasPrevious && onPrevious && (
-                        <PostNavigationButton
-                            onClick={onPrevious}
-                            icon={
-                                <IconChevronLeft
-                                    size={24}
-                                    className='text-slate-800'
-                                />
-                            }
-                            className='left-4'
-                        />
-                    )}
+            <div className='fixed inset-0 z-40 bg-black/60 backdrop-blur-sm' />
 
-                    {post.contentUrl ? (
-                        <>
-                            {post.contentType === 'photo' && (
-                                <img
-                                    src={post.contentUrl}
-                                    alt='Post content'
-                                    className='max-h-full max-w-full object-contain'
-                                />
-                            )}
-                            {post.contentType === 'video' && (
-                                <video
-                                    src={post.contentUrl}
-                                    controls
-                                    className='max-h-full max-w-full object-contain'
-                                />
-                            )}
-                        </>
-                    ) : (
-                        <div className='p-8 text-center text-white'>
-                            <div className='text-lg'>{post.content}</div>
-                        </div>
-                    )}
+            <button
+                onClick={handleGoToProfile}
+                className='group fixed top-5 left-20 z-50 flex cursor-pointer items-center space-x-2 rounded-full bg-white/90 px-4 py-2 shadow-lg backdrop-blur-sm transition-all duration-200 hover:bg-white hover:shadow-xl'
+                aria-label='Go to profile'
+            >
+                <IconArrowLeft
+                    size={18}
+                    className='transition-transform group-hover:-translate-x-0.5'
+                />
+                <span className='text-lg font-medium text-slate-900'>Back</span>
+            </button>
 
-                    {hasNext && onNext && (
-                        <PostNavigationButton
-                            onClick={onNext}
-                            icon={
-                                <IconChevronRight
-                                    size={24}
-                                    className='text-slate-800'
-                                />
-                            }
-                            className='right-4'
-                        />
+            <div className='fixed inset-0 z-40 flex items-center justify-center p-2 md:p-4'>
+                <div
+                    className={cn(
+                        'flex h-full w-full max-w-7xl overflow-hidden rounded-xl bg-white shadow-2xl',
+                        'transition-all duration-300 ease-out',
+                        isMobile ? 'flex-col' : 'flex-row'
                     )}
-                </div>
+                    role='dialog'
+                    aria-modal='true'
+                    aria-labelledby='post-author'
+                >
+                    <div
+                        className={cn(
+                            'relative flex items-center justify-center bg-gradient-to-br from-slate-900 to-black',
+                            isMobile ? 'h-1/2' : 'flex-1'
+                        )}
+                    >
+                        {canNavigatePrevious && !isMobile && (
+                            <PostNavigationButton
+                                onClick={handlePrevious}
+                                icon={<IconChevronLeft size={24} />}
+                                className='left-3'
+                                aria-label='Previous post'
+                            />
+                        )}
 
-                <div className='flex w-[40%] flex-col bg-white'>
-                    <div className='flex items-center justify-between border-b border-slate-200 p-3 shadow-sm'>
-                        <div className='flex items-center space-x-3'>
-                            <UserAvatar user={post.user} size='md' />
-                            <div>
-                                <div className='font-semibold text-slate-900'>
-                                    {post.user.name} {post.user.surname}
-                                </div>
-                                <div className='flex items-center space-x-2 text-sm text-slate-500'>
-                                    <span>{formatTimeAgo(post.createdAt)}</span>
-                                    <PrivacyIcon level={post.privacyLevel} />
+                        {hasMedia ? (
+                            <div className='flex h-full w-full items-center justify-center p-2 md:p-6'>
+                                {post.contentType === 'photo' && (
+                                    <img
+                                        src={post.contentUrl}
+                                        alt='Post content'
+                                        className='h-auto max-h-full w-auto max-w-full rounded-lg object-contain shadow-lg'
+                                        loading='lazy'
+                                    />
+                                )}
+                                {post.contentType === 'video' && (
+                                    <video
+                                        src={post.contentUrl}
+                                        controls
+                                        className='h-auto max-h-full w-auto max-w-full rounded-lg object-contain shadow-lg'
+                                        preload='metadata'
+                                    />
+                                )}
+                            </div>
+                        ) : (
+                            <div className='flex h-full w-full items-center justify-center p-6 md:p-12'>
+                                <div className='max-w-2xl text-center'>
+                                    <p className='text-lg leading-relaxed font-medium text-white md:text-2xl'>
+                                        {post.content}
+                                    </p>
                                 </div>
                             </div>
-                        </div>
-                        <div className='flex items-center gap-1'>
-                            <DropdownMenu
-                                trigger={
-                                    <IconDots className='hover:text-primary-500 h-3 w-3 cursor-pointer duration-200' />
-                                }
-                                items={postMenuItems}
-                                placement='bottom-start'
-                                className='border-slate-300 shadow-lg'
-                            />
+                        )}
 
-                            <button
-                                onClick={onClose}
-                                className='cursor-pointer rounded-full p-1 hover:bg-slate-100'
-                            >
-                                <IconX size={20} className='text-slate-500' />
-                            </button>
-                        </div>
+                        {canNavigateNext && !isMobile && (
+                            <PostNavigationButton
+                                onClick={handleNext}
+                                icon={<IconChevronRight size={24} />}
+                                className='right-3'
+                                aria-label='Next post'
+                            />
+                        )}
                     </div>
 
-                    {post.content && post.contentUrl && (
-                        <div className='border-b border-slate-100 p-3'>
-                            <div className='max-h-[40px] overflow-y-auto text-sm text-slate-700'>
+                    <div
+                        className={cn(
+                            'flex flex-col border-l border-slate-100 bg-white',
+                            isMobile ? 'h-1/2' : 'w-96'
+                        )}
+                    >
+                        <div className='sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-white p-4'>
+                            <div className='flex min-w-0 flex-1 items-center space-x-3'>
+                                <UserAvatar user={post.user} size='md' />
+                                <div className='min-w-0 flex-1'>
+                                    <h2
+                                        id='post-author'
+                                        className='truncate font-semibold text-slate-900'
+                                    >
+                                        {post.user.name} {post.user.surname}
+                                    </h2>
+                                    <div className='flex items-center space-x-2 text-sm text-slate-500'>
+                                        <span>
+                                            {formatTimeAgo(post.createdAt)}
+                                        </span>
+                                        <PrivacyIcon
+                                            level={post.privacyLevel}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className='flex flex-shrink-0 items-center space-x-1'>
+                                <DropdownMenu
+                                    trigger={
+                                        <button
+                                            className='rounded-full p-2 transition-colors hover:bg-slate-100'
+                                            aria-label='Post options'
+                                        >
+                                            <IconDots size={20} />
+                                        </button>
+                                    }
+                                    items={postMenuItems}
+                                    placement='bottom-end'
+                                />
+                            </div>
+                        </div>
+
+                        {post.content && hasMedia && (
+                            <div className='overflow-x-auto border-b border-slate-50 px-4 py-3 leading-relaxed break-words text-ellipsis text-slate-900'>
                                 {post.content}
                             </div>
+                        )}
+
+                        <div className='border-b border-slate-50 bg-slate-50/50 px-4 py-3'>
+                            <div className='flex items-center justify-between'>
+                                <div className='flex items-center space-x-6'>
+                                    <button
+                                        className={cn(
+                                            'group flex cursor-pointer items-center space-x-1 transition-all duration-200',
+                                            isLiked
+                                                ? 'text-rose-500'
+                                                : 'text-slate-600 hover:text-rose-500'
+                                        )}
+                                        onClick={handleLike}
+                                        disabled={togglePostLike.isPending}
+                                        aria-label={
+                                            isLiked
+                                                ? 'Unlike post'
+                                                : 'Like post'
+                                        }
+                                    >
+                                        {isLiked ? (
+                                            <IconHeartFilled
+                                                size={24}
+                                                className='animate-pulse'
+                                            />
+                                        ) : (
+                                            <IconHeart
+                                                size={24}
+                                                className='transition-transform group-hover:scale-110'
+                                            />
+                                        )}
+                                    </button>
+                                    <button
+                                        onClick={handleCommentClick}
+                                        className='group hover:text-primary-500 cursor-pointer text-slate-600 transition-colors'
+                                        aria-label='Comment on post'
+                                    >
+                                        <IconMessageCircle
+                                            size={24}
+                                            className='transition-transform group-hover:scale-110'
+                                        />
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className='mt-3 flex items-center space-x-4 text-sm'>
+                                {likesCount > 0 && (
+                                    <button
+                                        onClick={handleLikesClick}
+                                        className='cursor-pointer font-medium text-slate-900 transition-colors hover:text-slate-600'
+                                    >
+                                        {likesCount}{' '}
+                                        {likesCount === 1 ? 'like' : 'likes'}
+                                    </button>
+                                )}
+                                {commentsCount > 0 && (
+                                    <span className='text-slate-500'>
+                                        {commentsCount}{' '}
+                                        {commentsCount === 1
+                                            ? 'comment'
+                                            : 'comments'}
+                                    </span>
+                                )}
+                            </div>
+
+                            {isMobile &&
+                                (canNavigatePrevious || canNavigateNext) && (
+                                    <div className='mt-3 flex justify-between border-t border-slate-200 pt-3'>
+                                        <button
+                                            onClick={handlePrevious}
+                                            disabled={!canNavigatePrevious}
+                                            className={cn(
+                                                'flex items-center space-x-2 rounded-lg px-3 py-2 transition-colors',
+                                                canNavigatePrevious
+                                                    ? 'text-primary-600 hover:bg-primary-50'
+                                                    : 'cursor-not-allowed text-slate-400'
+                                            )}
+                                        >
+                                            <IconChevronLeft size={20} />
+                                            <span>Previous</span>
+                                        </button>
+                                        <button
+                                            onClick={handleNext}
+                                            disabled={!canNavigateNext}
+                                            className={cn(
+                                                'flex items-center space-x-2 rounded-lg px-3 py-2 transition-colors',
+                                                canNavigateNext
+                                                    ? 'text-primary-600 hover:bg-primary-50'
+                                                    : 'cursor-not-allowed text-slate-400'
+                                            )}
+                                        >
+                                            <span>Next</span>
+                                            <IconChevronRight size={20} />
+                                        </button>
+                                    </div>
+                                )}
                         </div>
-                    )}
-                    <div className='border-b border-slate-200 bg-white'>
-                        <div className='flex items-center space-x-4 p-3'>
-                            <button
-                                className={`flex cursor-pointer items-center gap-1 transition-colors ${
-                                    isLiked
-                                        ? 'text-rose-500'
-                                        : 'text-slate-600 hover:text-rose-500'
-                                }`}
-                                disabled={togglePostLike.isPending}
-                            >
-                                <IconHeart
-                                    size={24}
-                                    fill={isLiked ? 'currentColor' : 'none'}
-                                    onClick={handleLike}
-                                />
-                                <button
-                                    onClick={handleLikesClick}
-                                    className={`font-semibold transition-colors ${
-                                        post.postReactions.length > 0
-                                            ? 'hover:text-primary-600 cursor-pointer text-slate-900'
-                                            : 'cursor-default text-slate-900'
-                                    }`}
-                                >
-                                    {post.postReactions.length}
-                                </button>
-                            </button>
-                            <button
-                                onClick={handleCommentClick}
-                                className='hover:text-primary-500 flex cursor-pointer items-center gap-1 text-slate-600 transition-colors'
-                            >
-                                <IconMessageCircle size={24} />
-                                <span className='hover:text-primary-600 font-medium text-slate-900 transition-colors'>
-                                    {post.comments.length}
-                                </span>
-                            </button>
+
+                        <div
+                            ref={commentsSectionRef}
+                            className='flex-1 overflow-hidden'
+                        >
+                            <CommentsSection postId={post.id} />
                         </div>
-                    </div>
-                    <div
-                        ref={commentsSectionRef}
-                        className='flex-1 overflow-hidden'
-                    >
-                        <CommentsSection postId={post.id} />
                     </div>
                 </div>
             </div>
@@ -240,20 +375,26 @@ interface PostNavigationButtonProps {
     onClick: () => void;
     icon: ReactNode;
     className: string;
+    'aria-label'?: string;
 }
 
 function PostNavigationButton({
     onClick,
     icon,
     className,
+    'aria-label': ariaLabel,
 }: PostNavigationButtonProps) {
     return (
         <button
             onClick={onClick}
             className={cn(
-                'hover:bg-opacity-100 absolute top-1/2 z-10 flex -translate-y-1/2 transform cursor-pointer items-center justify-center rounded-full bg-white p-1 opacity-20 shadow-lg transition-all duration-200 hover:opacity-100',
+                'absolute top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 cursor-pointer items-center justify-center opacity-40 hover:opacity-100',
+                'rounded-full bg-white/90 text-slate-900 shadow-lg backdrop-blur-sm',
+                'border shadow-xl transition-all duration-200 hover:scale-110 hover:bg-white',
+
                 className
             )}
+            aria-label={ariaLabel}
         >
             {icon}
         </button>

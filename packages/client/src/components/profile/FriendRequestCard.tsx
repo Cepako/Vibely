@@ -55,8 +55,8 @@ export default function FriendRequestCard({ request }: FriendRequestCardProps) {
         <div className='rounded-lg border border-slate-200 bg-white p-4'>
             <div className='flex items-center justify-between'>
                 <Link
-                    to='/profile/$id'
-                    params={{ id: request.user_userId.id.toString() }}
+                    to='/profile/$profileId'
+                    params={{ profileId: request.user_userId.id.toString() }}
                     className='flex flex-1 items-center space-x-3'
                 >
                     <img

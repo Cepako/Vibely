@@ -123,7 +123,10 @@ export default function EventDetailPage() {
     };
 
     const navigateToProfile = (userId: number) => {
-        navigate({ to: '/profile/$id', params: { id: userId.toString() } });
+        navigate({
+            to: '/profile/$profileId',
+            params: { profileId: userId.toString() },
+        });
     };
 
     if (isLoading) {

@@ -19,7 +19,7 @@ export default function UserAvatar({
     return (
         <div
             className={cn(
-                `${sizeClasses[size]} from-primary-400 flex flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br to-purple-500 font-semibold text-white`,
+                `${sizeClasses[size]} from-primary-400 bg-primary-200 text-primary-700 flex flex-shrink-0 items-center justify-center rounded-full font-semibold`,
                 onClick && 'cursor-pointer'
             )}
             onClick={() => (onClick ? onClick() : '')}
@@ -31,7 +31,7 @@ export default function UserAvatar({
                     className='h-full w-full rounded-full object-cover'
                 />
             ) : (
-                `${user.name[0]}${user.surname[0]}`
+                user.name[0]
             )}
         </div>
     );

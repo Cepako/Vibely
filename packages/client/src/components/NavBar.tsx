@@ -109,8 +109,8 @@ export default function NavBar({ view }: NavBarProps) {
                         )}
                         onClick={() => {
                             navigate({
-                                to: '/profile/$id',
-                                params: { id: userId },
+                                to: '/profile/$profileId',
+                                params: { profileId: userId },
                             });
                         }}
                     >

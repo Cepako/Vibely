@@ -8,6 +8,17 @@ import { Comment, Post } from './post.model';
 import { FriendshipStatus } from '@/friendship/friendship.schema';
 
 interface IPostService {
+    getPostById(
+        postId: number,
+        viewerId: number
+    ): Promise<
+        | (Post & {
+              user: UserInfo;
+              comments: Array<Comment & { user: UserInfo }>;
+              postReactions: Array<{ user: UserInfo }>;
+          })
+        | null
+    >;
     getPosts: (
         profileId: number,
         viewerId: number,
@@ -32,6 +43,97 @@ interface IPostService {
 
 export class PostService implements IPostService {
     constructor() {}
+
+    async getPostById(
+        postId: number,
+        viewerId: number
+    ): Promise<
+        | (Post & {
+              user: UserInfo;
+              comments: Array<Comment & { user: UserInfo }>;
+              postReactions: Array<{ user: UserInfo }>;
+          })
+        | null
+    > {
+        try {
+            const post = await db.query.posts.findFirst({
+                where: eq(posts.id, postId),
+                with: {
+                    user: {
+                        columns: {
+                            id: true,
+                            name: true,
+                            surname: true,
+                            profilePictureUrl: true,
+                        },
+                    },
+                    comments: {
+                        with: {
+                            user: {
+                                columns: {
+                                    id: true,
+                                    name: true,
+                                    surname: true,
+                                    profilePictureUrl: true,
+                                },
+                            },
+                        },
+                        orderBy: [asc(comments.createdAt)],
+                    },
+                    postReactions: {
+                        with: {
+                            user: {
+                                columns: {
+                                    id: true,
+                                    name: true,
+                                    surname: true,
+                                    profilePictureUrl: true,
+                                },
+                            },
+                        },
+                    },
+                },
+            });
+
+            if (!post) {
+                return null;
+            }
+
+            if (post.userId === viewerId) {
+                return post;
+            }
+
+            if (post.privacyLevel === 'private') {
+                return null;
+            }
+
+            if (post.privacyLevel === 'friends') {
+                const friendshipStatus = await db.query.friendships.findFirst({
+                    where: and(
+                        or(
+                            and(
+                                eq(friendships.userId, viewerId),
+                                eq(friendships.friendId, post.userId)
+                            ),
+                            and(
+                                eq(friendships.userId, post.userId),
+                                eq(friendships.friendId, viewerId)
+                            )
+                        ),
+                        eq(friendships.status, 'accepted')
+                    ),
+                });
+
+                if (!friendshipStatus) {
+                    return null;
+                }
+            }
+
+            return post;
+        } catch (error) {
+            throw new Error(`Failed to get post: ${error}`);
+        }
+    }
 
     async getPosts(
         profileId: number,

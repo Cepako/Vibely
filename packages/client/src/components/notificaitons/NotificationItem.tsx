@@ -81,8 +81,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
                 case 'comment_reactions':
                 case 'comments':
                 case 'posts':
-                    // For now, navigate to home since we don't have individual post pages
-                    navigate({ to: '/home' });
+                    navigate({ to: `/post/${notification.relatedId}` });
                     break;
                 case 'events':
                     navigate({ to: `/events/${notification.relatedId}` });

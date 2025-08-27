@@ -1,5 +1,13 @@
 import { type User } from './user';
 
+export interface CommentReaction {
+    id: number;
+    commentId: number;
+    userId: number;
+    user: User;
+    createdAt?: string;
+}
+
 export interface Comment {
     id: number;
     postId: number;
@@ -12,6 +20,7 @@ export interface Comment {
     replies: Comment[];
     likeCount: number;
     isLiked: boolean;
+    commentReactions?: CommentReaction[];
 }
 
 export interface CreateCommentData {

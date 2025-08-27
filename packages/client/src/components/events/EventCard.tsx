@@ -100,7 +100,10 @@ export default function EventCard({ event }: EventCardProps) {
 
     const navigateToProfile = (e: React.MouseEvent, userId: number) => {
         e.stopPropagation();
-        navigate({ to: '/profile/$id', params: { id: userId.toString() } });
+        navigate({
+            to: '/profile/$profileId',
+            params: { profileId: userId.toString() },
+        });
     };
 
     const isOrganizer = event.canEdit;
@@ -437,9 +440,10 @@ export default function EventCard({ event }: EventCardProps) {
                                                     title={`${participant.user.name} ${participant.user.surname}`}
                                                     onClick={() =>
                                                         navigate({
-                                                            to: '/profile/$id',
+                                                            to: '/profile/$profileId',
                                                             params: {
-                                                                id: participant.user.id.toString(),
+                                                                profileId:
+                                                                    participant.user.id.toString(),
                                                             },
                                                         })
                                                     }
@@ -509,9 +513,10 @@ export default function EventCard({ event }: EventCardProps) {
                                                         title={`${participant.user.name} ${participant.user.surname} (Invited)`}
                                                         onClick={() =>
                                                             navigate({
-                                                                to: '/profile/$id',
+                                                                to: '/profile/$profileId',
                                                                 params: {
-                                                                    id: participant.user.id.toString(),
+                                                                    profileId:
+                                                                        participant.user.id.toString(),
                                                                 },
                                                             })
                                                         }

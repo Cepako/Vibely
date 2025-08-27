@@ -16,6 +16,23 @@ export interface UpdatePostData {
 }
 
 const postsApi = {
+    async getPostById(postId: number): Promise<Post> {
+        const response = await fetch(`/api/post/single/${postId}`, {
+            credentials: 'include',
+        });
+
+        if (!response.ok) {
+            if (response.status === 404) {
+                throw new Error(
+                    'Post not found or you do not have permission to view it'
+                );
+            }
+            throw new Error('Failed to fetch post');
+        }
+
+        return response.json();
+    },
+
     async getPosts(profileId: number): Promise<Post[]> {
         const response = await fetch(`/api/post/${profileId}`, {
             credentials: 'include',
@@ -88,6 +105,16 @@ const postsApi = {
 
         return response.json();
     },
+};
+
+export const usePost = (postId: number) => {
+    const { user } = useAuth();
+    return useQuery({
+        queryKey: ['post', postId, user?.id],
+        queryFn: () => postsApi.getPostById(postId),
+        staleTime: 5 * 60 * 1000,
+        enabled: !!postId,
+    });
 };
 
 export const usePosts = (profileId: number) => {
