@@ -132,14 +132,16 @@ export default function PostDetails({ post: initialPost }: PostDetailsProps) {
 
             <button
                 onClick={handleGoToProfile}
-                className='group fixed top-5 left-20 z-50 flex cursor-pointer items-center space-x-2 rounded-full bg-white/90 px-4 py-2 shadow-lg backdrop-blur-sm transition-all duration-200 hover:bg-white hover:shadow-xl'
+                className='group fixed top-5 left-16 z-50 flex cursor-pointer items-center space-x-2 rounded-full bg-white/90 px-4 py-2 shadow-lg backdrop-blur-sm transition-all duration-200 hover:bg-white hover:shadow-xl'
                 aria-label='Go to profile'
             >
                 <IconArrowLeft
                     size={18}
                     className='transition-transform group-hover:-translate-x-0.5'
                 />
-                <span className='text-lg font-medium text-slate-900'>Back</span>
+                <span className='text-lg font-medium text-slate-900'>
+                    Back to profile
+                </span>
             </button>
 
             <div className='fixed inset-0 z-40 flex items-center justify-center p-2 md:p-4'>
