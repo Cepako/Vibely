@@ -25,6 +25,7 @@ import { Dialog, useDialog } from '../ui/Dialog';
 import PrivacyIcon from '../post/PrivacyIcon';
 import { getEventStatus, formatTimeUntilEvent } from '../../utils/eventStatus';
 import { useEventCategories } from './hooks/useEventCategories';
+import UserAvatar from '../ui/UserAvatar';
 
 export default function EventDetailPage() {
     const { eventId } = useParams({ from: '/events/$eventId' });
@@ -219,20 +220,10 @@ export default function EventDetailPage() {
                                         navigateToProfile(event.organizer.id)
                                     }
                                 >
-                                    {event.organizer.profilePictureUrl ? (
-                                        <img
-                                            src={
-                                                event.organizer
-                                                    .profilePictureUrl
-                                            }
-                                            alt={`${event.organizer.name} ${event.organizer.surname}`}
-                                            className='h-full w-full object-cover'
-                                        />
-                                    ) : (
-                                        <div className='bg-primary-100 text-primary-500 flex h-full w-full items-center justify-center text-lg font-semibold'>
-                                            {event.organizer.name[0]}
-                                        </div>
-                                    )}
+                                    <UserAvatar
+                                        user={event.organizer as any}
+                                        size='xl'
+                                    />
                                 </div>
                                 <div>
                                     <h3
@@ -597,27 +588,11 @@ export default function EventDetailPage() {
                                                         )
                                                     }
                                                 >
-                                                    {participant.user
-                                                        .profilePictureUrl ? (
-                                                        <img
-                                                            src={
-                                                                participant.user
-                                                                    .profilePictureUrl
-                                                            }
-                                                            alt={
-                                                                participant.user
-                                                                    .name
-                                                            }
-                                                            className='h-10 w-10 rounded-full object-cover'
-                                                        />
-                                                    ) : (
-                                                        <div className='flex h-10 w-10 items-center justify-center rounded-full bg-emerald-200 font-medium text-emerald-700'>
-                                                            {
-                                                                participant.user
-                                                                    .name[0]
-                                                            }
-                                                        </div>
-                                                    )}
+                                                    <UserAvatar
+                                                        user={
+                                                            participant.user as any
+                                                        }
+                                                    />
                                                     <div>
                                                         <p className='font-medium text-emerald-800'>
                                                             {
@@ -667,30 +642,11 @@ export default function EventDetailPage() {
                                                             )
                                                         }
                                                     >
-                                                        {participant.user
-                                                            .profilePictureUrl ? (
-                                                            <img
-                                                                src={
-                                                                    participant
-                                                                        .user
-                                                                        .profilePictureUrl
-                                                                }
-                                                                alt={
-                                                                    participant
-                                                                        .user
-                                                                        .name
-                                                                }
-                                                                className='h-10 w-10 rounded-full object-cover'
-                                                            />
-                                                        ) : (
-                                                            <div className='flex h-10 w-10 items-center justify-center rounded-full bg-slate-200 font-medium text-slate-600'>
-                                                                {
-                                                                    participant
-                                                                        .user
-                                                                        .name[0]
-                                                                }
-                                                            </div>
-                                                        )}
+                                                        <UserAvatar
+                                                            user={
+                                                                participant.user as any
+                                                            }
+                                                        />
                                                         <div>
                                                             <p className='font-medium text-slate-700'>
                                                                 {

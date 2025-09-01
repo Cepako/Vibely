@@ -7,13 +7,16 @@ export default function UserAvatar({
     onClick,
 }: {
     user: User;
-    size?: 'sm' | 'md' | 'lg';
+    size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'xxl';
     onClick?: () => void;
 }) {
     const sizeClasses = {
+        xs: 'w-6 h-6 text-[10px]',
         sm: 'w-8 h-8 text-xs',
         md: 'w-10 h-10 text-sm',
         lg: 'w-12 h-12 text-base',
+        xl: 'w-16 h-16 text-lg',
+        xxl: 'h-30 w-30 text-3xl',
     };
 
     return (
@@ -31,7 +34,7 @@ export default function UserAvatar({
                     className='h-full w-full rounded-full object-cover'
                 />
             ) : (
-                user.name[0]
+                `${user.name[0].toUpperCase()}${user.surname[0].toUpperCase()}`
             )}
         </div>
     );

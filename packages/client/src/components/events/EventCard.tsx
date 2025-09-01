@@ -15,6 +15,7 @@ import type { Event } from '../../types/events';
 import { useNavigate } from '@tanstack/react-router';
 import PrivacyIcon from '../post/PrivacyIcon';
 import { getEventStatus, formatTimeUntilEvent } from '../../utils/eventStatus';
+import UserAvatar from '../ui/UserAvatar';
 
 interface EventCardProps {
     event: Event;
@@ -136,17 +137,10 @@ export default function EventCard({ event }: EventCardProps) {
                                 navigateToProfile(e, event.organizer.id)
                             }
                         >
-                            {event.organizer.profilePictureUrl ? (
-                                <img
-                                    src={event.organizer.profilePictureUrl}
-                                    alt={`${event.organizer.name} ${event.organizer.surname}`}
-                                    className='h-full w-full object-cover'
-                                />
-                            ) : (
-                                <div className='bg-primary-100 text-primary-500 flex h-full w-full items-center justify-center font-semibold'>
-                                    {event.organizer.name[0]}
-                                </div>
-                            )}
+                            <UserAvatar
+                                user={event.organizer as any}
+                                size='lg'
+                            />
                         </div>
                         <div>
                             <h3
@@ -448,24 +442,12 @@ export default function EventCard({ event }: EventCardProps) {
                                                         })
                                                     }
                                                 >
-                                                    {participant.user
-                                                        .profilePictureUrl ? (
-                                                        <img
-                                                            src={
-                                                                participant.user
-                                                                    .profilePictureUrl
-                                                            }
-                                                            alt={`${participant.user.name}`}
-                                                            className='h-6 w-6 rounded-full object-cover'
-                                                        />
-                                                    ) : (
-                                                        <div className='flex h-6 w-6 items-center justify-center rounded-full bg-emerald-200 text-xs font-medium text-emerald-700'>
-                                                            {
-                                                                participant.user
-                                                                    .name[0]
-                                                            }
-                                                        </div>
-                                                    )}
+                                                    <UserAvatar
+                                                        user={
+                                                            participant.user as any
+                                                        }
+                                                        size='xs'
+                                                    />
                                                     <span className='text-xs font-medium text-emerald-700'>
                                                         {participant.user.name}
                                                     </span>
@@ -521,26 +503,11 @@ export default function EventCard({ event }: EventCardProps) {
                                                             })
                                                         }
                                                     >
-                                                        {participant.user
-                                                            .profilePictureUrl ? (
-                                                            <img
-                                                                src={
-                                                                    participant
-                                                                        .user
-                                                                        .profilePictureUrl
-                                                                }
-                                                                alt={`${participant.user.name}`}
-                                                                className='h-6 w-6 rounded-full object-cover'
-                                                            />
-                                                        ) : (
-                                                            <div className='flex h-6 w-6 items-center justify-center rounded-full bg-slate-200 text-xs font-medium text-slate-600'>
-                                                                {
-                                                                    participant
-                                                                        .user
-                                                                        .name[0]
-                                                                }
-                                                            </div>
-                                                        )}
+                                                        <UserAvatar
+                                                            user={
+                                                                participant.user as any
+                                                            }
+                                                        />
                                                         <span className='text-xs font-medium text-slate-600'>
                                                             {
                                                                 participant.user

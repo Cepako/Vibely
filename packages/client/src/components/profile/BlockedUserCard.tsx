@@ -1,5 +1,6 @@
 import { IconUserCheck } from '@tabler/icons-react';
 import { useUnblockUser, type BlockedUser } from './hooks/useFriendship';
+import UserAvatar from '../ui/UserAvatar';
 
 interface BlockedUserCardProps {
     user: BlockedUser;
@@ -40,14 +41,7 @@ export default function BlockedUserCard({ user }: BlockedUserCardProps) {
         <div className='rounded-lg border border-slate-200 bg-white p-4'>
             <div className='flex items-center justify-between'>
                 <div className='flex flex-1 items-center space-x-3'>
-                    <img
-                        src={
-                            user.user_friendId.profilePictureUrl ||
-                            '/default-avatar.png'
-                        }
-                        alt={`${user.user_friendId.name} ${user.user_friendId.surname}`}
-                        className='h-12 w-12 rounded-full object-cover opacity-60'
-                    />
+                    <UserAvatar user={user.user_friendId as any} size='lg' />
                     <div>
                         <p className='font-semibold text-slate-900'>
                             {user.user_friendId.name}{' '}

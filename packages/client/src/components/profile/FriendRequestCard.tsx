@@ -4,6 +4,7 @@ import {
     type FriendRequest,
 } from './hooks/useFriendship';
 import { Link } from '@tanstack/react-router';
+import UserAvatar from '../ui/UserAvatar';
 
 interface FriendRequestCardProps {
     request: FriendRequest;
@@ -59,14 +60,7 @@ export default function FriendRequestCard({ request }: FriendRequestCardProps) {
                     params={{ profileId: request.user_userId.id.toString() }}
                     className='flex flex-1 items-center space-x-3'
                 >
-                    <img
-                        src={
-                            request.user_userId.profilePictureUrl ||
-                            '/default-avatar.png'
-                        }
-                        alt={`${request.user_userId.name} ${request.user_userId.surname}`}
-                        className='h-12 w-12 rounded-full object-cover'
-                    />
+                    <UserAvatar user={request.user_userId as any} size='lg' />
                     <div>
                         <p className='font-semibold text-slate-900'>
                             {request.user_userId.name}{' '}

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { IconSearch, IconCheck, IconUser, IconX } from '@tabler/icons-react';
 import { useFriends } from '../profile/hooks/useFriendship';
 import { useCurrentUser } from '../hooks/useCurrentUser';
+import UserAvatar from '../ui/UserAvatar';
 
 interface FriendSelectionProps {
     selectedFriends: number[];
@@ -143,17 +144,10 @@ export default function FriendSelection({
                                     key={friend.id}
                                     className='bg-primary-100 flex items-center gap-2 rounded-full px-3 py-1 text-sm'
                                 >
-                                    {friend.profilePictureUrl ? (
-                                        <img
-                                            src={friend.profilePictureUrl}
-                                            alt={friend.name}
-                                            className='h-4 w-4 rounded-full object-cover'
-                                        />
-                                    ) : (
-                                        <div className='bg-primary-200 text-primary-700 flex h-4 w-4 items-center justify-center rounded-full text-xs font-medium'>
-                                            {friend.name[0]}
-                                        </div>
-                                    )}
+                                    <UserAvatar
+                                        user={friend as any}
+                                        size='sm'
+                                    />
                                     <span className='text-primary-700 font-medium'>
                                         {friend.name}
                                     </span>
@@ -252,19 +246,10 @@ export default function FriendSelection({
                                                     : ''
                                             } ${isDisabled ? 'cursor-not-allowed opacity-50' : ''}`}
                                         >
-                                            {friend.profilePictureUrl ? (
-                                                <img
-                                                    src={
-                                                        friend.profilePictureUrl
-                                                    }
-                                                    alt={`${friend.name} ${friend.surname}`}
-                                                    className='h-8 w-8 rounded-full object-cover'
-                                                />
-                                            ) : (
-                                                <div className='flex h-8 w-8 items-center justify-center rounded-full bg-slate-200 text-sm font-medium text-slate-600'>
-                                                    {friend.name[0]}
-                                                </div>
-                                            )}
+                                            <UserAvatar
+                                                user={friend as any}
+                                                size='sm'
+                                            />
 
                                             <div className='min-w-0 flex-1'>
                                                 <p className='truncate font-medium text-slate-900'>

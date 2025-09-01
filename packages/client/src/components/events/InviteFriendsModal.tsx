@@ -8,6 +8,7 @@ import {
 import { useEventActions } from './hooks/useEventActions';
 import { useFriends } from '../profile/hooks/useFriendship';
 import { useCurrentUser } from '../hooks/useCurrentUser';
+import UserAvatar from '../ui/UserAvatar';
 
 interface InviteFriendsModalProps {
     eventId: number;
@@ -227,17 +228,10 @@ export default function InviteFriendsModal({
                                                 : ''
                                         }`}
                                     >
-                                        {friend.profilePictureUrl ? (
-                                            <img
-                                                src={friend.profilePictureUrl}
-                                                alt={`${friend.name} ${friend.surname}`}
-                                                className='h-12 w-12 rounded-full object-cover'
-                                            />
-                                        ) : (
-                                            <div className='flex h-12 w-12 items-center justify-center rounded-full bg-slate-200 font-medium text-slate-600'>
-                                                {friend.name[0]}
-                                            </div>
-                                        )}
+                                        <UserAvatar
+                                            user={friend as any}
+                                            size='lg'
+                                        />
 
                                         <div className='flex-1'>
                                             <h3 className='font-medium text-slate-900'>

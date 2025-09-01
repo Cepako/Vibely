@@ -20,7 +20,7 @@ const apiCall = async (endpoint: string, options: RequestInit = {}) => {
     return response.json();
 };
 
-// Types based on your backend schemas
+// Types matching backend exactly
 export interface PotentialFriend {
     id: number;
     name: string;
@@ -59,28 +59,48 @@ export interface TrendingPost {
 
 export interface EventWithDetails {
     id: number;
+    organizerId: number;
+    categoryId: number | null;
     title: string;
     description: string;
-    location: string;
+    location: string | null;
     startTime: string;
     endTime: string;
-    organizerId: number;
-    categoryId: number;
     privacyLevel: string;
-    user: {
+    maxParticipants: number | null;
+    createdAt: string;
+    updatedAt: string;
+    organizer: {
         id: number;
         name: string;
         surname: string;
-        profilePictureUrl?: string | null;
+        profilePictureUrl: string | null;
     };
-    eventCategory: {
+    category: {
         id: number;
         name: string;
         description: string;
+    } | null;
+    participants: Array<{
+        id: number;
+        userId: number;
+        status: string;
+        createdAt: string;
+        user: {
+            id: number;
+            name: string;
+            surname: string;
+            profilePictureUrl: string | null;
+        };
+    }>;
+    participantCounts: {
+        total: number;
+        going: number;
+        declined: number;
+        invited: number;
     };
-    participantCount: number;
-    isParticipating: boolean;
-    canJoin: boolean;
+    currentUserStatus: string;
+    canEdit: boolean;
 }
 
 export interface TrendingContent {
@@ -111,9 +131,42 @@ export interface EventFilters {
     privacyLevel?: 'public' | 'friends';
 }
 
+interface PaginatedResponse<T> {
+    success: true;
+    data: T;
+    pagination: {
+        count: number;
+        limit: number;
+    };
+}
+
+interface SuccessResponse<T> {
+    success: true;
+    data: T;
+}
+
+interface SearchResponse<T> {
+    success: true;
+    data: T;
+    query: string;
+}
+
+interface InterestBasedResponse {
+    success: true;
+    data: {
+        friends: PotentialFriend[];
+        events: EventWithDetails[];
+    };
+    pagination: {
+        friendsCount: number;
+        eventsCount: number;
+        limit: number;
+    };
+}
+
 // Hook for getting potential friends
 export const usePotentialFriends = (limit = 20, filters?: ExploreFilters) => {
-    return useQuery({
+    return useQuery<PaginatedResponse<PotentialFriend[]>>({
         queryKey: ['explore', 'potential-friends', limit, filters],
         queryFn: async () => {
             const params = new URLSearchParams();
@@ -142,7 +195,7 @@ export const usePotentialFriends = (limit = 20, filters?: ExploreFilters) => {
 
 // Hook for getting recommended events
 export const useRecommendedEvents = (limit = 20, filters?: EventFilters) => {
-    return useQuery({
+    return useQuery<PaginatedResponse<EventWithDetails[]>>({
         queryKey: ['explore', 'recommended-events', limit, filters],
         queryFn: async () => {
             const params = new URLSearchParams();
@@ -169,7 +222,7 @@ export const useRecommendedEvents = (limit = 20, filters?: EventFilters) => {
 
 // Hook for getting trending content
 export const useTrendingContent = (limit = 10) => {
-    return useQuery({
+    return useQuery<SuccessResponse<TrendingContent>>({
         queryKey: ['explore', 'trending', limit],
         queryFn: async () => {
             const response = await apiCall(`/explore/trending?limit=${limit}`);
@@ -184,7 +237,7 @@ export const useSearchPeople = (
     query: string,
     filters?: Omit<ExploreFilters, 'interests' | 'ageRange'>
 ) => {
-    return useQuery({
+    return useQuery<SearchResponse<PotentialFriend[]>>({
         queryKey: ['explore', 'search-people', query, filters],
         queryFn: async () => {
             const params = new URLSearchParams();
@@ -206,7 +259,7 @@ export const useSearchPeople = (
 
 // Hook for interest-based recommendations
 export const useInterestBasedRecommendations = (limit = 10) => {
-    return useQuery({
+    return useQuery<InterestBasedResponse>({
         queryKey: ['explore', 'interest-based', limit],
         queryFn: async () => {
             const response = await apiCall(
@@ -220,7 +273,13 @@ export const useInterestBasedRecommendations = (limit = 10) => {
 
 // Hook for explore stats
 export const useExploreStats = () => {
-    return useQuery({
+    return useQuery<
+        SuccessResponse<{
+            potentialFriendsCount: number;
+            upcomingEventsCount: number;
+            userInterestsCount: number;
+        }>
+    >({
         queryKey: ['explore', 'stats'],
         queryFn: async () => {
             const response = await apiCall('/explore/stats');

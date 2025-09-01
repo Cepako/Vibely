@@ -13,6 +13,7 @@ import {
 import type { Event } from '../../types/events';
 import { useNavigate } from '@tanstack/react-router';
 import { getEventStatus } from '../../utils/eventStatus';
+import UserAvatar from '../ui/UserAvatar';
 
 interface EventsCalendarProps {
     events: Event[];
@@ -420,30 +421,12 @@ export default function EventsCalendar({
                                                             )
                                                         }
                                                     >
-                                                        {event.organizer
-                                                            .profilePictureUrl ? (
-                                                            <img
-                                                                src={
-                                                                    event
-                                                                        .organizer
-                                                                        .profilePictureUrl
-                                                                }
-                                                                alt={
-                                                                    event
-                                                                        .organizer
-                                                                        .name
-                                                                }
-                                                                className='h-full w-full object-cover'
-                                                            />
-                                                        ) : (
-                                                            <div className='bg-primary-100 text-primary-500 flex h-full w-full items-center justify-center text-xs font-medium'>
-                                                                {
-                                                                    event
-                                                                        .organizer
-                                                                        .name[0]
-                                                                }
-                                                            </div>
-                                                        )}
+                                                        <UserAvatar
+                                                            user={
+                                                                event.organizer as any
+                                                            }
+                                                            size='xs'
+                                                        />
                                                     </div>
                                                     <span
                                                         className='hover:text-primary-600 cursor-pointer text-sm text-slate-600 transition-colors'
