@@ -18,6 +18,7 @@ import websocketPlugin from './plugins/websocket';
 import notificationRoutes from './notification/notification.routes';
 import { commentReactionRoutes } from './commentReaction/commentReaction.routes';
 import { eventRoutes } from './event/event.routes';
+import { exploreRoutes } from './explore/explore.routes';
 
 const server = Fastify({
     logger: true,
@@ -75,6 +76,7 @@ server.register(
         api.register(notificationRoutes, { prefix: '/notification' });
         api.register(commentReactionRoutes, { prefix: '/comment-reaction' });
         api.register(eventRoutes, { prefix: '/events' });
+        api.register(exploreRoutes, { prefix: '/explore' });
     },
     { prefix: '/api' }
 );

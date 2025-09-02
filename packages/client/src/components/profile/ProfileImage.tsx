@@ -10,6 +10,7 @@ import { cn, formatTimeAgo } from '../../utils/utils';
 import { Dialog, useDialog } from '../ui/Dialog';
 import { useRef, useState } from 'react';
 import { useChangeProfileImage } from './hooks/useChangeProfileImage';
+import UserAvatar from '../ui/UserAvatar';
 
 interface ProfileImageProps {
     user: {
@@ -27,21 +28,12 @@ export default function ProfileImage({
     user,
     isOwnProfile,
 }: ProfileImageProps) {
-    const { name, surname, profilePictureUrl, isOnline, lastLoginAt, id } =
-        user;
+    const { name, profilePictureUrl, isOnline, lastLoginAt, id } = user;
 
     return (
         <div className='relative flex-shrink-0'>
             <div className='flex h-30 w-30 items-center justify-center overflow-hidden rounded-full border-2 border-slate-300'>
-                {profilePictureUrl ? (
-                    <img
-                        src={profilePictureUrl}
-                        alt={`${name} ${surname}`}
-                        className='h-full w-full object-cover'
-                    />
-                ) : (
-                    <IconUserFilled size={48} className='' />
-                )}
+                <UserAvatar user={user as any} size='xxl' />
             </div>
             {isOwnProfile && (
                 <ChangeProfileImage

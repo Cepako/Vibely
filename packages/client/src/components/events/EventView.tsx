@@ -13,9 +13,7 @@ export default function EventsView() {
     >('discover');
     const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
     const [searchQuery, setSearchQuery] = useState('');
-    const [selectedCategory, setSelectedCategory] = useState<number | null>(
-        null
-    );
+    const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
     const [showFilters, setShowFilters] = useState(false);
     const createEventDialog = useDialog(false);
 
@@ -34,19 +32,24 @@ export default function EventsView() {
                     ?.toLowerCase()
                     .includes(searchQuery.toLowerCase());
 
-            const matchesCategory =
-                selectedCategory === null ||
-                event.categoryId === selectedCategory;
+            const matchesCategories =
+                selectedCategories.length === 0 ||
+                (event.categoryId &&
+                    selectedCategories.includes(event.categoryId));
 
-            return matchesSearch && matchesCategory;
+            return matchesSearch && matchesCategories;
         });
-    }, [events, searchQuery, selectedCategory]);
+    }, [events, searchQuery, selectedCategories]);
 
     const handleTabChange = (tab: 'discover' | 'my-events' | 'upcoming') => {
         setActiveTab(tab);
         setSearchQuery('');
-        setSelectedCategory(null);
+        setSelectedCategories([]);
         setShowFilters(false);
+    };
+
+    const handleCategoriesChange = (categoryIds: number[]) => {
+        setSelectedCategories(categoryIds);
     };
 
     return (
@@ -55,13 +58,13 @@ export default function EventsView() {
                 activeTab={activeTab}
                 viewMode={viewMode}
                 searchQuery={searchQuery}
-                selectedCategory={selectedCategory}
+                selectedCategories={selectedCategories}
                 showFilters={showFilters}
                 categories={categories || []}
                 onTabChange={handleTabChange}
                 onViewModeChange={setViewMode}
                 onSearchChange={setSearchQuery}
-                onCategoryChange={setSelectedCategory}
+                onCategoriesChange={handleCategoriesChange}
                 onFiltersToggle={() => setShowFilters(!showFilters)}
                 onCreateEvent={createEventDialog.openDialog}
             />

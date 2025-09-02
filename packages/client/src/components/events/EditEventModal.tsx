@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { IconX } from '@tabler/icons-react';
 import { useEventActions } from './hooks/useEventActions';
+import CategorySelector from './CategorySelector';
 import type {
     EventCategory,
     Event,
@@ -123,6 +124,13 @@ export default function EditEventModal({
         setFormData((prev) => ({
             ...prev,
             [field]: value,
+        }));
+    };
+
+    const handleCategoryChange = (categoryId: number | undefined) => {
+        setFormData((prev) => ({
+            ...prev,
+            categoryId,
         }));
     };
 
@@ -289,31 +297,13 @@ export default function EditEventModal({
                 </div>
 
                 <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
-                    <div>
-                        <label className='mb-2 block text-sm font-medium text-slate-700'>
-                            Category
-                        </label>
-                        <select
-                            value={formData.categoryId || ''}
-                            onChange={(e) =>
-                                handleInputChange(
-                                    'categoryId',
-                                    e.target.value
-                                        ? parseInt(e.target.value)
-                                        : undefined
-                                )
-                            }
-                            className='focus:ring-primary-500 focus:border-primary-500 focus:ring-0.5 w-full rounded-lg border border-slate-300 px-3 py-2 outline-none'
-                            disabled={isUpdatingEvent}
-                        >
-                            <option value=''>Select a category</option>
-                            {categories.map((category) => (
-                                <option key={category.id} value={category.id}>
-                                    {category.name}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
+                    <CategorySelector
+                        categories={categories}
+                        selectedCategoryId={formData.categoryId}
+                        onCategoryChange={handleCategoryChange}
+                        disabled={isUpdatingEvent}
+                        showDescription={true}
+                    />
                     <div>
                         <label className='mb-2 block text-sm font-medium text-slate-700'>
                             Privacy Level *

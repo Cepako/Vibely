@@ -12,6 +12,7 @@ import {
     IconTrash,
     IconCalendarX,
     IconCalendarCheck,
+    IconTag,
 } from '@tabler/icons-react';
 import {
     useEventActions,
@@ -25,6 +26,7 @@ import { Dialog, useDialog } from '../ui/Dialog';
 import PrivacyIcon from '../post/PrivacyIcon';
 import { getEventStatus, formatTimeUntilEvent } from '../../utils/eventStatus';
 import { useEventCategories } from './hooks/useEventCategories';
+import UserAvatar from '../ui/UserAvatar';
 
 export default function EventDetailPage() {
     const { eventId } = useParams({ from: '/events/$eventId' });
@@ -153,7 +155,7 @@ export default function EventDetailPage() {
                 <div className='mx-auto max-w-4xl'>
                     <button
                         onClick={() => navigate({ to: '/events' })}
-                        className='mb-6 flex items-center gap-2 text-slate-600 hover:text-slate-800'
+                        className='mb-6 flex cursor-pointer items-center gap-2 text-slate-600 hover:text-slate-800'
                     >
                         <IconArrowLeft size={20} />
                         Back to Events
@@ -219,20 +221,10 @@ export default function EventDetailPage() {
                                         navigateToProfile(event.organizer.id)
                                     }
                                 >
-                                    {event.organizer.profilePictureUrl ? (
-                                        <img
-                                            src={
-                                                event.organizer
-                                                    .profilePictureUrl
-                                            }
-                                            alt={`${event.organizer.name} ${event.organizer.surname}`}
-                                            className='h-full w-full object-cover'
-                                        />
-                                    ) : (
-                                        <div className='bg-primary-100 text-primary-500 flex h-full w-full items-center justify-center text-lg font-semibold'>
-                                            {event.organizer.name[0]}
-                                        </div>
-                                    )}
+                                    <UserAvatar
+                                        user={event.organizer as any}
+                                        size='xl'
+                                    />
                                 </div>
                                 <div>
                                     <h3
@@ -346,12 +338,18 @@ export default function EventDetailPage() {
                                 </span>
                             </div>
                         </div>
-
                         {event.category && (
-                            <div className='mt-6'>
-                                <span className='bg-primary-100 text-primary-700 inline-block rounded-full px-3 py-1 text-sm font-medium'>
-                                    {event.category.name}
-                                </span>
+                            <div className='mt-6 flex flex-col gap-3'>
+                                <div className='bg-primary-100 text-primary-700 mr-auto flex items-center gap-2 rounded-full px-4 py-2 font-medium'>
+                                    <IconTag size={18} />
+                                    <span>{event.category.name}</span>
+                                </div>
+                                {event.category.description && (
+                                    <p className='text-slate-600'>
+                                        <strong>Category:</strong>{' '}
+                                        {event.category.description}
+                                    </p>
+                                )}
                             </div>
                         )}
                     </div>
@@ -400,7 +398,7 @@ export default function EventDetailPage() {
                                                     actionLoading ||
                                                     isAtCapacity
                                                 }
-                                                className={`rounded-lg px-6 py-3 font-semibold text-white transition-colors ${
+                                                className={`cursor-pointer rounded-lg px-6 py-3 font-semibold text-white transition-colors ${
                                                     isAtCapacity
                                                         ? 'cursor-not-allowed bg-slate-400'
                                                         : 'bg-primary-500 hover:bg-primary-600'
@@ -597,27 +595,11 @@ export default function EventDetailPage() {
                                                         )
                                                     }
                                                 >
-                                                    {participant.user
-                                                        .profilePictureUrl ? (
-                                                        <img
-                                                            src={
-                                                                participant.user
-                                                                    .profilePictureUrl
-                                                            }
-                                                            alt={
-                                                                participant.user
-                                                                    .name
-                                                            }
-                                                            className='h-10 w-10 rounded-full object-cover'
-                                                        />
-                                                    ) : (
-                                                        <div className='flex h-10 w-10 items-center justify-center rounded-full bg-emerald-200 font-medium text-emerald-700'>
-                                                            {
-                                                                participant.user
-                                                                    .name[0]
-                                                            }
-                                                        </div>
-                                                    )}
+                                                    <UserAvatar
+                                                        user={
+                                                            participant.user as any
+                                                        }
+                                                    />
                                                     <div>
                                                         <p className='font-medium text-emerald-800'>
                                                             {
@@ -667,30 +649,11 @@ export default function EventDetailPage() {
                                                             )
                                                         }
                                                     >
-                                                        {participant.user
-                                                            .profilePictureUrl ? (
-                                                            <img
-                                                                src={
-                                                                    participant
-                                                                        .user
-                                                                        .profilePictureUrl
-                                                                }
-                                                                alt={
-                                                                    participant
-                                                                        .user
-                                                                        .name
-                                                                }
-                                                                className='h-10 w-10 rounded-full object-cover'
-                                                            />
-                                                        ) : (
-                                                            <div className='flex h-10 w-10 items-center justify-center rounded-full bg-slate-200 font-medium text-slate-600'>
-                                                                {
-                                                                    participant
-                                                                        .user
-                                                                        .name[0]
-                                                                }
-                                                            </div>
-                                                        )}
+                                                        <UserAvatar
+                                                            user={
+                                                                participant.user as any
+                                                            }
+                                                        />
                                                         <div>
                                                             <p className='font-medium text-slate-700'>
                                                                 {

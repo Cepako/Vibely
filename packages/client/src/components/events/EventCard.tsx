@@ -9,12 +9,14 @@ import {
     IconUserX,
     IconCalendarX,
     IconCalendarCheck,
+    IconTag,
 } from '@tabler/icons-react';
 import { useEventActions, useEventParticipants } from './hooks/useEventActions';
 import type { Event } from '../../types/events';
 import { useNavigate } from '@tanstack/react-router';
 import PrivacyIcon from '../post/PrivacyIcon';
 import { getEventStatus, formatTimeUntilEvent } from '../../utils/eventStatus';
+import UserAvatar from '../ui/UserAvatar';
 
 interface EventCardProps {
     event: Event;
@@ -131,26 +133,19 @@ export default function EventCard({ event }: EventCardProps) {
                 <div className='mb-4 flex items-start justify-between'>
                     <div className='flex items-center gap-3'>
                         <div
-                            className='h-12 w-12 overflow-hidden rounded-full bg-slate-200 transition-all'
+                            className='h-12 w-12 cursor-pointer overflow-hidden rounded-full bg-slate-200 transition-all'
                             onClick={(e) =>
                                 navigateToProfile(e, event.organizer.id)
                             }
                         >
-                            {event.organizer.profilePictureUrl ? (
-                                <img
-                                    src={event.organizer.profilePictureUrl}
-                                    alt={`${event.organizer.name} ${event.organizer.surname}`}
-                                    className='h-full w-full object-cover'
-                                />
-                            ) : (
-                                <div className='bg-primary-100 text-primary-500 flex h-full w-full items-center justify-center font-semibold'>
-                                    {event.organizer.name[0]}
-                                </div>
-                            )}
+                            <UserAvatar
+                                user={event.organizer as any}
+                                size='lg'
+                            />
                         </div>
                         <div>
                             <h3
-                                className='hover:text-primary-600 font-semibold text-slate-900 transition-colors'
+                                className='hover:text-primary-600 cursor-pointer font-semibold text-slate-900 transition-colors'
                                 onClick={(e) =>
                                     navigateToProfile(e, event.organizer.id)
                                 }
@@ -197,7 +192,6 @@ export default function EventCard({ event }: EventCardProps) {
                             </p>
                         )}
 
-                        {/* Time until event (only for upcoming events) */}
                         {timeUntilEvent && (
                             <div className='mb-3 text-sm text-slate-500'>
                                 Starts in {timeUntilEvent}
@@ -236,10 +230,11 @@ export default function EventCard({ event }: EventCardProps) {
                         </div>
 
                         {event.category && (
-                            <div className='mt-3'>
-                                <span className='bg-primary-100 text-primary-700 inline-block rounded-full px-2 py-1 text-xs font-medium'>
-                                    {event.category.name}
-                                </span>
+                            <div className='mt-4 flex items-center gap-2'>
+                                <div className='bg-primary-100 text-primary-700 flex items-center gap-1 rounded-full px-3 py-1 text-sm font-medium'>
+                                    <IconTag size={14} />
+                                    <span>{event.category.name}</span>
+                                </div>
                             </div>
                         )}
                     </div>
@@ -366,7 +361,7 @@ export default function EventCard({ event }: EventCardProps) {
                                             className={`rounded-lg border px-3 py-1 text-sm font-medium transition-colors ${
                                                 isAtCapacity
                                                     ? 'cursor-not-allowed border-slate-300 text-slate-400'
-                                                    : 'border-emerald-300 text-emerald-600 hover:bg-emerald-50'
+                                                    : 'cursor-pointer border-emerald-300 text-emerald-600 hover:bg-emerald-50'
                                             } disabled:opacity-50`}
                                             title={
                                                 isAtCapacity
@@ -448,24 +443,12 @@ export default function EventCard({ event }: EventCardProps) {
                                                         })
                                                     }
                                                 >
-                                                    {participant.user
-                                                        .profilePictureUrl ? (
-                                                        <img
-                                                            src={
-                                                                participant.user
-                                                                    .profilePictureUrl
-                                                            }
-                                                            alt={`${participant.user.name}`}
-                                                            className='h-6 w-6 rounded-full object-cover'
-                                                        />
-                                                    ) : (
-                                                        <div className='flex h-6 w-6 items-center justify-center rounded-full bg-emerald-200 text-xs font-medium text-emerald-700'>
-                                                            {
-                                                                participant.user
-                                                                    .name[0]
-                                                            }
-                                                        </div>
-                                                    )}
+                                                    <UserAvatar
+                                                        user={
+                                                            participant.user as any
+                                                        }
+                                                        size='xs'
+                                                    />
                                                     <span className='text-xs font-medium text-emerald-700'>
                                                         {participant.user.name}
                                                     </span>
@@ -521,26 +504,12 @@ export default function EventCard({ event }: EventCardProps) {
                                                             })
                                                         }
                                                     >
-                                                        {participant.user
-                                                            .profilePictureUrl ? (
-                                                            <img
-                                                                src={
-                                                                    participant
-                                                                        .user
-                                                                        .profilePictureUrl
-                                                                }
-                                                                alt={`${participant.user.name}`}
-                                                                className='h-6 w-6 rounded-full object-cover'
-                                                            />
-                                                        ) : (
-                                                            <div className='flex h-6 w-6 items-center justify-center rounded-full bg-slate-200 text-xs font-medium text-slate-600'>
-                                                                {
-                                                                    participant
-                                                                        .user
-                                                                        .name[0]
-                                                                }
-                                                            </div>
-                                                        )}
+                                                        <UserAvatar
+                                                            user={
+                                                                participant.user as any
+                                                            }
+                                                            size='xs'
+                                                        />
                                                         <span className='text-xs font-medium text-slate-600'>
                                                             {
                                                                 participant.user

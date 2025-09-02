@@ -8,12 +8,12 @@ import {
     IconHome,
     IconLogout,
     IconMessages,
-    IconUserFilled,
 } from '@tabler/icons-react';
 import { useAuth } from './auth/AuthProvider';
 import { useCurrentUser } from './hooks/useCurrentUser';
 import { useNotifications } from './notificaitons/hooks/useNotifications';
 import { useEffect } from 'react';
+import UserAvatar from './ui/UserAvatar';
 
 interface NavBarProps {
     view?: 'home' | 'messages' | 'events' | 'explore' | 'me' | 'notifications';
@@ -114,17 +114,7 @@ export default function NavBar({ view }: NavBarProps) {
                             });
                         }}
                     >
-                        <div className='flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-slate-200'>
-                            {data?.profilePictureUrl ? (
-                                <img
-                                    src={data.profilePictureUrl}
-                                    alt='profile image'
-                                    className='h-full w-full object-cover'
-                                />
-                            ) : (
-                                <IconUserFilled />
-                            )}
-                        </div>
+                        <UserAvatar user={data} />
                         <div>
                             {data.name} {data.surname}
                         </div>

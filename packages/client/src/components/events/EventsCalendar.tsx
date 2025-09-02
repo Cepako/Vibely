@@ -9,10 +9,12 @@ import {
     IconExternalLink,
     IconCalendarX,
     IconCalendarCheck,
+    IconTag,
 } from '@tabler/icons-react';
 import type { Event } from '../../types/events';
 import { useNavigate } from '@tanstack/react-router';
 import { getEventStatus } from '../../utils/eventStatus';
+import UserAvatar from '../ui/UserAvatar';
 
 interface EventsCalendarProps {
     events: Event[];
@@ -207,8 +209,8 @@ export default function EventsCalendar({
     }
 
     return (
-        <div className='flex-1 p-6'>
-            <div className='flex h-[700px] rounded-lg border border-slate-200 bg-white shadow-sm'>
+        <div className='flex-1 px-6 py-3'>
+            <div className='flex h-[730px] rounded-lg border border-slate-200 bg-white shadow-sm'>
                 <div className='flex flex-1 flex-col'>
                     <div className='flex items-center justify-between border-b border-slate-200 p-4'>
                         <button
@@ -293,7 +295,7 @@ export default function EventsCalendar({
                                                         <div
                                                             key={event.id}
                                                             className={`flex cursor-pointer items-center gap-1 truncate rounded border px-1 py-0.5 text-xs transition-colors ${getEventStatusColor(event)}`}
-                                                            title={`${event.title} - ${formatTime(event.startTime)} (${eventStatus.label})`}
+                                                            title={`${event.title} - ${formatTime(event.startTime)} (${eventStatus.label})${event.category ? ` • ${event.category.name}` : ''}`}
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 navigateToEvent(
@@ -420,30 +422,12 @@ export default function EventsCalendar({
                                                             )
                                                         }
                                                     >
-                                                        {event.organizer
-                                                            .profilePictureUrl ? (
-                                                            <img
-                                                                src={
-                                                                    event
-                                                                        .organizer
-                                                                        .profilePictureUrl
-                                                                }
-                                                                alt={
-                                                                    event
-                                                                        .organizer
-                                                                        .name
-                                                                }
-                                                                className='h-full w-full object-cover'
-                                                            />
-                                                        ) : (
-                                                            <div className='bg-primary-100 text-primary-500 flex h-full w-full items-center justify-center text-xs font-medium'>
-                                                                {
-                                                                    event
-                                                                        .organizer
-                                                                        .name[0]
-                                                                }
-                                                            </div>
-                                                        )}
+                                                        <UserAvatar
+                                                            user={
+                                                                event.organizer as any
+                                                            }
+                                                            size='xs'
+                                                        />
                                                     </div>
                                                     <span
                                                         className='hover:text-primary-600 cursor-pointer text-sm text-slate-600 transition-colors'
@@ -499,6 +483,21 @@ export default function EventsCalendar({
                                                                 ` / ${event.maxParticipants} max`}
                                                         </span>
                                                     </div>
+
+                                                    {event.category && (
+                                                        <div className='flex items-center gap-2'>
+                                                            <IconTag
+                                                                size={14}
+                                                            />
+                                                            <span className='text-primary-600 font-medium'>
+                                                                {
+                                                                    event
+                                                                        .category
+                                                                        .name
+                                                                }
+                                                            </span>
+                                                        </div>
+                                                    )}
                                                 </div>
 
                                                 {event.description && (
