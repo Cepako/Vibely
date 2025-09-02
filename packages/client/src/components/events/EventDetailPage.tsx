@@ -12,6 +12,7 @@ import {
     IconTrash,
     IconCalendarX,
     IconCalendarCheck,
+    IconTag,
 } from '@tabler/icons-react';
 import {
     useEventActions,
@@ -154,7 +155,7 @@ export default function EventDetailPage() {
                 <div className='mx-auto max-w-4xl'>
                     <button
                         onClick={() => navigate({ to: '/events' })}
-                        className='mb-6 flex items-center gap-2 text-slate-600 hover:text-slate-800'
+                        className='mb-6 flex cursor-pointer items-center gap-2 text-slate-600 hover:text-slate-800'
                     >
                         <IconArrowLeft size={20} />
                         Back to Events
@@ -337,12 +338,18 @@ export default function EventDetailPage() {
                                 </span>
                             </div>
                         </div>
-
                         {event.category && (
-                            <div className='mt-6'>
-                                <span className='bg-primary-100 text-primary-700 inline-block rounded-full px-3 py-1 text-sm font-medium'>
-                                    {event.category.name}
-                                </span>
+                            <div className='mt-6 flex flex-col gap-3'>
+                                <div className='bg-primary-100 text-primary-700 mr-auto flex items-center gap-2 rounded-full px-4 py-2 font-medium'>
+                                    <IconTag size={18} />
+                                    <span>{event.category.name}</span>
+                                </div>
+                                {event.category.description && (
+                                    <p className='text-slate-600'>
+                                        <strong>Category:</strong>{' '}
+                                        {event.category.description}
+                                    </p>
+                                )}
                             </div>
                         )}
                     </div>
@@ -391,7 +398,7 @@ export default function EventDetailPage() {
                                                     actionLoading ||
                                                     isAtCapacity
                                                 }
-                                                className={`rounded-lg px-6 py-3 font-semibold text-white transition-colors ${
+                                                className={`cursor-pointer rounded-lg px-6 py-3 font-semibold text-white transition-colors ${
                                                     isAtCapacity
                                                         ? 'cursor-not-allowed bg-slate-400'
                                                         : 'bg-primary-500 hover:bg-primary-600'

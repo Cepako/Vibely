@@ -20,7 +20,7 @@ export default function ExploreView() {
 
     return (
         <div className='flex max-h-screen w-full flex-col overflow-hidden'>
-            <div className='flex-shrink-0 border-b border-slate-200 bg-white p-4'>
+            <div className='flex-shrink-0 border-b border-slate-200 bg-white p-6'>
                 <div className='flex items-center justify-between'>
                     <h1 className='text-primary-500 flex items-center gap-3 text-3xl font-bold'>
                         <IconCompass size={32} />
@@ -28,7 +28,7 @@ export default function ExploreView() {
                     </h1>
                 </div>
 
-                <div className='flex gap-6 pt-4'>
+                <div className='flex gap-6 pt-6'>
                     {tabs.map((tab) => (
                         <button
                             key={tab.key}
