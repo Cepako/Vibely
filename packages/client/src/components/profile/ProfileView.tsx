@@ -193,6 +193,25 @@ export default function ProfileView() {
                             </p>
                         </div>
                     )}
+
+                    {userProfile.interests &&
+                        userProfile.interests.length > 0 && (
+                            <div className='mb-6'>
+                                <h3 className='mb-2 font-semibold text-gray-900'>
+                                    Interests
+                                </h3>
+                                <div className='flex max-h-[100px] flex-wrap gap-2 overflow-y-auto'>
+                                    {userProfile.interests.map((it) => (
+                                        <span
+                                            key={it.id}
+                                            className='bg-primary-100 text-primary-700 inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm'
+                                        >
+                                            {it.name}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                 </div>
                 {selectedView === 'posts' ? (
                     <PostsList profileId={userProfile.id} posts={postsData} />

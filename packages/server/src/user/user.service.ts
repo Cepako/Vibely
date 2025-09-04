@@ -1,12 +1,19 @@
 import { db } from '../db';
-import { friendships, SafeUser, UserProfile, users } from './user.model';
-import { and, eq, or } from 'drizzle-orm';
+import {
+    friendships,
+    SafeUser,
+    UserProfile,
+    users,
+    userInterests,
+    Interest,
+} from './user.model';
+import { and, eq, inArray, or } from 'drizzle-orm';
 import { RegisterUser } from './user.schema';
 import bcrypt from 'bcrypt';
 import createError from '@fastify/error';
 import { handleFileUpload } from '../utils/handleFileUpload';
 import { deleteFile } from '../utils/deleteFile';
-import { userBlocks } from '../db/schema';
+import { interests, userBlocks } from '../db/schema';
 import { FriendshipService } from '../friendship/friendship.service';
 
 interface IUserService {
@@ -18,7 +25,12 @@ interface IUserService {
         viewerId: number
     ) => Promise<UserProfile | null>;
     editProfile: (
-        data: { city: string; region: string; bio: string },
+        data: {
+            city: string;
+            region: string;
+            bio: string;
+            interests?: number[];
+        },
         profileId: number
     ) => Promise<void>;
     updateProfilePicture: (
@@ -29,6 +41,7 @@ interface IUserService {
             mimetype: string;
         } | null
     ) => Promise<void>;
+    getInterests: () => Promise<Interest[]>;
 }
 
 export default class UserService implements IUserService {
@@ -58,10 +71,33 @@ export default class UserService implements IUserService {
 
         const hashedPassword = await bcrypt.hash(password, this.saltRounds);
         await db.insert(users).values({ ...user, password: hashedPassword });
+
+        const created = await db.query.users.findFirst({
+            where: eq(users.email, email),
+        });
+
+        if (!created) return;
+
+        if (
+            user.interests &&
+            Array.isArray(user.interests) &&
+            user.interests.length > 0
+        ) {
+            const rows = user.interests.map((interestId) => ({
+                userId: created.id,
+                interestId,
+            }));
+            await db.insert(userInterests).values(rows);
+        }
     }
 
     async editProfile(
-        { bio, city, region }: { city: string; region: string; bio: string },
+        {
+            bio,
+            city,
+            region,
+            interests,
+        }: { city: string; region: string; bio: string; interests?: number[] },
         profileId: number
     ) {
         bio = bio.trim();
@@ -72,6 +108,20 @@ export default class UserService implements IUserService {
             .update(users)
             .set({ bio, city, region })
             .where(eq(users.id, profileId));
+
+        if (interests !== undefined) {
+            await db
+                .delete(userInterests)
+                .where(eq(userInterests.userId, profileId));
+
+            if (interests.length > 0) {
+                const rows = interests.map((interestId) => ({
+                    userId: profileId,
+                    interestId,
+                }));
+                await db.insert(userInterests).values(rows);
+            }
+        }
     }
 
     async updateProfilePicture(
@@ -160,7 +210,19 @@ export default class UserService implements IUserService {
                 profileId
             );
 
-        return { ...user, friendshipStatus };
+        const userInterestRows = await db.query.userInterests.findMany({
+            where: eq(userInterests.userId, profileId),
+        });
+        const interestIds = userInterestRows.map((r) => r.interestId);
+
+        let interestsList: Array<any> = [];
+        if (interestIds.length > 0) {
+            interestsList = await db.query.interests.findMany({
+                where: inArray(interests.id, interestIds),
+            });
+        }
+
+        return { ...user, friendshipStatus, interests: interestsList };
     }
 
     private async checkUserBlocked(
@@ -192,5 +254,9 @@ export default class UserService implements IUserService {
         if (viewerAdminBlock) return true;
 
         return false;
+    }
+
+    async getInterests(): Promise<Interest[]> {
+        return await db.query.interests.findMany();
     }
 }

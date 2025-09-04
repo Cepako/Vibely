@@ -58,7 +58,12 @@ export default class UserController {
 
     async editProfile(
         req: FastifyRequest<{
-            Body: { city: string; region: string; bio: string };
+            Body: {
+                city: string;
+                region: string;
+                bio: string;
+                interests?: number[];
+            };
             Params: { profileId: number };
         }>,
         reply: FastifyReply
@@ -155,6 +160,29 @@ export default class UserController {
             fields.dateOfBirth = new Date(fields.dateOfBirth).toISOString();
         }
 
+        if ((fields as any).interests) {
+            const raw = (fields as any).interests;
+            try {
+                if (typeof raw === 'string') {
+                    let parsed: any = null;
+                    try {
+                        parsed = JSON.parse(raw);
+                    } catch {
+                        parsed = raw.split(',').map((s: string) => s.trim());
+                    }
+                    if (Array.isArray(parsed)) {
+                        (fields as any).interests = parsed
+                            .map((v: any) => Number(v))
+                            .filter((n: number) => !Number.isNaN(n));
+                    } else {
+                        (fields as any).interests = [];
+                    }
+                }
+            } catch {
+                (fields as any).interests = [];
+            }
+        }
+
         const validate = ajv.compile(RegisterUserSchema);
         const isValid = validate(fields);
 
@@ -191,5 +219,16 @@ export default class UserController {
         const available = await this.userService.checkIsEmailAvailable(email);
 
         return reply.code(200).send({ available });
+    }
+    async getInterests(req: FastifyRequest, reply: FastifyReply) {
+        try {
+            const list = await this.userService.getInterests();
+            return reply.code(200).send(list);
+        } catch (error: any) {
+            req.log?.error?.(error);
+            return reply
+                .code(500)
+                .send({ message: 'Failed to fetch interests' });
+        }
     }
 }

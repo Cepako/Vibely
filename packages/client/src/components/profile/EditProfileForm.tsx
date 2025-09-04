@@ -4,6 +4,8 @@ import { Dialog, useDialog } from '../ui/Dialog';
 import { useForm } from 'react-hook-form';
 import { useEditProfile, type EditFormData } from './hooks/useEditProfile';
 import Input from '../ui/Input';
+import InterestsDialogSelector from '../registration/InterestsDialogSelector';
+import { useState, useEffect } from 'react';
 
 interface EditProfileFormProps {
     user: UserProfile;
@@ -11,7 +13,7 @@ interface EditProfileFormProps {
 
 export default function EditProfileForm({ user }: EditProfileFormProps) {
     const dialog = useDialog(false);
-    const { region, city, bio, id } = user;
+    const { region, city, bio, id, interests } = user;
 
     return (
         <>
@@ -27,6 +29,7 @@ export default function EditProfileForm({ user }: EditProfileFormProps) {
                     bio={bio}
                     profileId={id}
                     closeDialog={dialog.closeDialog}
+                    interests={interests}
                 />
             </Dialog>
             <button
@@ -46,17 +49,40 @@ interface FormProps {
     region?: string;
     city?: string;
     bio?: string;
+    interests?: { id: number; name?: string }[];
 }
 
-function Form({ region, city, bio, profileId, closeDialog }: FormProps) {
+function Form({
+    region,
+    city,
+    bio,
+    profileId,
+    closeDialog,
+    interests,
+}: FormProps) {
     const editProfile = useEditProfile(profileId);
     const { register, handleSubmit } = useForm<EditFormData>({
         defaultValues: { bio, city, region },
     });
 
-    const onSubmit = (data: EditFormData) => {
-        editProfile.mutate(data);
-        closeDialog();
+    const [selectedInterests, setSelectedInterests] = useState<number[]>(
+        (interests || []).map((i) => i.id)
+    );
+
+    useEffect(() => {
+        setSelectedInterests((interests || []).map((i) => i.id));
+    }, [interests]);
+
+    const onSubmit = async (data: EditFormData) => {
+        try {
+            const payload = { ...data, interests: selectedInterests };
+            await editProfile.mutateAsync(
+                payload as EditFormData & { interests?: number[] }
+            );
+            closeDialog();
+        } catch (err) {
+            console.error('Edit profile failed', err);
+        }
     };
 
     return (
@@ -91,6 +117,16 @@ function Form({ region, city, bio, profileId, closeDialog }: FormProps) {
                         {...register('bio')}
                     />
                 </div>
+
+                <div>
+                    <Label label='Interests' />
+                    <InterestsDialogSelector
+                        selectedIds={selectedInterests}
+                        onChange={(next) => setSelectedInterests(next)}
+                        placeholder='Choose your interests'
+                    />
+                </div>
+
                 <div className='flex justify-evenly'>
                     <button
                         type='submit'

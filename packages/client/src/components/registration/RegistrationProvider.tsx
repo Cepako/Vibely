@@ -13,6 +13,7 @@ export type RegistrationFormData = {
     city?: string;
     region?: string;
     dateOfBirth: Date;
+    interests?: number[];
 };
 
 type RegistrationStep = 'credentials' | 'userInfo' | 'profilePicture';
@@ -88,6 +89,10 @@ const RegistrationProvider: React.FC<RegistrationProviderProps> = ({
         if (formData.city) payload.append('city', formData.city);
         if (formData.region) payload.append('region', formData.region);
         if (formData.bio) payload.append('bio', formData.bio);
+
+        if (formData.interests && formData.interests.length > 0) {
+            payload.append('interests', JSON.stringify(formData.interests));
+        }
 
         if (
             formData.profilePicture &&

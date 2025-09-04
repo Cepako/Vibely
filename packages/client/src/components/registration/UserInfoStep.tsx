@@ -1,8 +1,9 @@
+import React, { useState } from 'react';
 import { Controller, useForm, type SubmitHandler } from 'react-hook-form';
 import { useRegistration } from './RegistrationProvider';
 import Input from '../ui/Input';
 import Button from '../ui/Button';
-import { useState } from 'react';
+import InterestsDialogSelector from './InterestsDialogSelector';
 
 type UserInfoFormData = {
     name: string;
@@ -12,11 +13,15 @@ type UserInfoFormData = {
     region?: string;
     dateOfBirth: Date;
     bio?: string;
+    interests?: number[];
 };
 
 export const UserInfoStep: React.FC = () => {
     const { formData, updateFormData, nextStep, prevStep } = useRegistration();
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+    const [selectedInterests, setSelectedInterests] = useState<number[]>(
+        formData.interests || []
+    );
 
     const {
         register,
@@ -36,7 +41,7 @@ export const UserInfoStep: React.FC = () => {
     });
 
     const onSubmit: SubmitHandler<UserInfoFormData> = (data) => {
-        updateFormData(data);
+        updateFormData({ ...data, interests: selectedInterests });
         nextStep();
     };
 
@@ -348,6 +353,17 @@ export const UserInfoStep: React.FC = () => {
                     placeholder='Tell us a bit about yourself... (optional)'
                     {...register('bio')}
                 />
+
+                <div className='mt-4'>
+                    <label className='text-sm font-medium text-slate-600'>
+                        Interests (optional)
+                    </label>
+                    <InterestsDialogSelector
+                        selectedIds={selectedInterests}
+                        onChange={(next) => setSelectedInterests(next)}
+                        placeholder='Choose your interests'
+                    />
+                </div>
 
                 <div className='mt-4 flex gap-3'>
                     <Button type='button' onClick={prevStep} className='flex-1'>

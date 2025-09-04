@@ -64,6 +64,12 @@ export default async function userRoutes(fastify: FastifyInstance) {
         ) => userController.checkIsEmailAvailable(req, reply)
     );
 
+    fastify.get(
+        '/interests',
+        async (req: FastifyRequest, reply: FastifyReply) =>
+            userController.getInterests(req, reply)
+    );
+
     await fastify.register(async function protectedRoutes(fastify) {
         fastify.addHook('preHandler', authGuard);
 
@@ -97,13 +103,19 @@ export default async function userRoutes(fastify: FastifyInstance) {
                         city: Type.String(),
                         region: Type.String(),
                         bio: Type.String(),
+                        interests: Type.Optional(Type.Array(Type.Number())),
                     }),
                 },
             },
 
             async (
                 req: FastifyRequest<{
-                    Body: { city: string; region: string; bio: string };
+                    Body: {
+                        city: string;
+                        region: string;
+                        bio: string;
+                        interests?: number[];
+                    };
                     Params: { profileId: number };
                 }>,
                 reply: FastifyReply

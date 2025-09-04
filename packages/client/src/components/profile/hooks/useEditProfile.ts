@@ -5,6 +5,7 @@ export type EditFormData = {
     region?: string;
     city?: string;
     bio?: string;
+    interests?: number[];
 };
 
 async function editData({

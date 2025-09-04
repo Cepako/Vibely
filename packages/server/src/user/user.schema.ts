@@ -37,6 +37,7 @@ export const RegisterUserSchema = Type.Object({
     city: Type.Optional(Type.String()),
     region: Type.Optional(Type.String()),
     dateOfBirth: Type.String(),
+    interests: Type.Optional(Type.Array(Type.Number())),
 });
 
 export type RegisterUser = Static<typeof RegisterUserSchema>;

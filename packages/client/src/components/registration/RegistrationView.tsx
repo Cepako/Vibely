@@ -9,6 +9,7 @@ import VibelyIcon from '../ui/VibelyIcon';
 import { useNavigate } from '@tanstack/react-router';
 import { Dialog, useDialog } from '../ui/Dialog';
 import Button from '../ui/Button';
+import { cn } from '../../utils/utils';
 
 export default function RegisterView() {
     const { currentStep, formData } = useRegistration();
@@ -45,7 +46,14 @@ export default function RegisterView() {
     return (
         <div className='bg-primary-50 flex min-h-screen items-center justify-center'>
             <div className='flex h-full w-full items-center justify-center'>
-                <div className='border-primary-100 flex min-w-1/4 flex-col justify-evenly gap-3 rounded-2xl border bg-white px-10 py-6 shadow-2xl'>
+                <div
+                    className={cn(
+                        'border-primary-100 flex max-w-1/3 flex-col justify-evenly gap-3 rounded-2xl border bg-white px-10 py-6 shadow-2xl',
+                        currentStep !== 'credentials'
+                            ? 'min-w-1/3'
+                            : 'min-w-1/4'
+                    )}
+                >
                     <h1 className='text-primary-500 flex items-center gap-1 text-6xl font-bold'>
                         <VibelyIcon className='h-16 w-16' />
                         Vibely
