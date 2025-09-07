@@ -1,47 +1,13 @@
 import React from 'react';
 import { type NotificationData } from '../../types/notification';
-import {
-    IconHeart,
-    IconMessage,
-    IconUsers,
-    IconCalendar,
-    IconMessageCircle,
-    IconPhoto,
-    IconBell,
-    IconMessageCircleHeart,
-} from '@tabler/icons-react';
+import { IconCheck } from '@tabler/icons-react';
 import { useNavigate } from '@tanstack/react-router';
+import { NotificationIcon } from './NotificationIcon';
 
 interface NotificationItemProps {
     notification: NotificationData;
     onMarkAsRead: (id: number) => void;
 }
-
-const getNotificationIcon = (type: NotificationData['type']) => {
-    switch (type) {
-        case 'friendships':
-            return <IconUsers className='text-primary-500' size={20} />;
-        case 'messages':
-            return <IconMessage className='text-green-500' size={20} />;
-        case 'post_reactions':
-            return <IconHeart className='text-red-500' size={20} />;
-        case 'comment_reactions':
-            return (
-                <IconMessageCircleHeart
-                    className='text-fuchsia-500'
-                    size={20}
-                />
-            );
-        case 'comments':
-            return <IconMessageCircle className='text-purple-500' size={20} />;
-        case 'events':
-            return <IconCalendar className='text-orange-500' size={20} />;
-        case 'posts':
-            return <IconPhoto className='text-indigo-500' size={20} />;
-        default:
-            return <IconBell className='text-slate-500' size={20} />;
-    }
-};
 
 const getRelativeTime = (dateString: string) => {
     const date = new Date(dateString);
@@ -94,19 +60,16 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
 
     return (
         <div
-            className={`cursor-pointer border-b border-slate-100 p-4 transition-colors hover:bg-slate-50 ${
-                !notification.isRead
-                    ? 'border-l-primary-500 bg-primary-50 border-l-4'
-                    : ''
+            className={`group flex w-[800px] cursor-pointer items-start justify-between gap-3 border-b border-slate-100 p-3 transition-colors hover:bg-slate-50 ${
+                !notification.isRead ? 'bg-slate-100' : 'bg-white'
             }`}
-            onClick={handleClick}
         >
-            <div className='flex items-start space-x-3'>
-                <div className='flex-shrink-0'>
-                    {getNotificationIcon(notification.type)}
+            <div className='flex items-start gap-3' onClick={handleClick}>
+                <div className='mt-1 flex-shrink-0'>
+                    <NotificationIcon type={notification.type} />
                 </div>
 
-                <div className='min-w-0 flex-1'>
+                <div className='min-w-0'>
                     <p
                         className={`text-sm ${
                             notification.isRead
@@ -120,9 +83,20 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
                         {getRelativeTime(notification.createdAt)}
                     </p>
                 </div>
+            </div>
 
+            <div className='ml-4 flex items-center gap-2 opacity-0 transition-opacity group-hover:opacity-100'>
                 {!notification.isRead && (
-                    <div className='bg-primary-500 h-2 w-2 flex-shrink-0 rounded-full'></div>
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onMarkAsRead(notification.id);
+                        }}
+                        title='Mark as read'
+                        className='hover:bg-primary-50 cursor-pointer rounded bg-white px-2 py-1 text-xs shadow-sm duration-200 hover:text-emerald-500'
+                    >
+                        <IconCheck size={14} />
+                    </button>
                 )}
             </div>
         </div>

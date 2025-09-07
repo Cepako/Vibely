@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import NavBar from '../../components/NavBar';
-import { NotificationView } from '../../components/notificaitons/NotificationView';
+import { NotificationView } from '../../components/notifications/NotificationView';
 
 export const Route = createFileRoute('/notifications/')({
     beforeLoad: ({ context }) => {

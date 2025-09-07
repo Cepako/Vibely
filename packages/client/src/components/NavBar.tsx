@@ -11,7 +11,7 @@ import {
 } from '@tabler/icons-react';
 import { useAuth } from './auth/AuthProvider';
 import { useCurrentUser } from './hooks/useCurrentUser';
-import { useNotifications } from './notificaitons/hooks/useNotifications';
+import { useNotifications } from './notifications/hooks/useNotifications';
 import { useEffect } from 'react';
 import UserAvatar from './ui/UserAvatar';
 
