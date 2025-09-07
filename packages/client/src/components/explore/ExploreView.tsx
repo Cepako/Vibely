@@ -22,7 +22,7 @@ export default function ExploreView() {
         <div className='flex max-h-screen w-full flex-col overflow-hidden'>
             <div className='flex-shrink-0 border-b border-slate-200 bg-white p-6'>
                 <div className='flex items-center justify-between'>
-                    <h1 className='text-primary-500 flex items-center gap-3 text-3xl font-bold'>
+                    <h1 className='text-primary-500 flex items-center gap-2 text-3xl font-bold'>
                         <IconCompass size={32} />
                         Explore
                     </h1>

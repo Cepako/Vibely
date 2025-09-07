@@ -37,6 +37,12 @@ export default function FriendsList({ userId }: FriendsListProps) {
     const { data: friends, isLoading: friendsLoading } = useFriends(
         targetUserId!
     );
+
+    const viewerIdForQuery = user?.id;
+    const { data: myFriends } = useFriends(viewerIdForQuery ?? -1);
+
+    const myFriendIds = new Set(myFriends?.map((f) => f.id) || []);
+
     const { data: friendRequests, isLoading: requestsLoading } =
         useFriendRequests();
     const { data: sentRequests, isLoading: sentLoading } =
@@ -159,14 +165,19 @@ export default function FriendsList({ userId }: FriendsListProps) {
                 }
                 return (
                     <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3'>
-                        {filteredFriends.map((friend) => (
-                            <FriendCard
-                                key={friend.id}
-                                friend={friend}
-                                isFriendMe={friend.id === user?.id}
-                                isOwnProfile={isOwnProfile}
-                            />
-                        ))}
+                        {filteredFriends.map((friend) => {
+                            const isMe = friend.id === user?.id;
+                            const isFriend =
+                                isOwnProfile || myFriendIds.has(friend.id);
+                            return (
+                                <FriendCard
+                                    key={friend.id}
+                                    friend={friend}
+                                    isMe={isMe}
+                                    isFriend={isFriend}
+                                />
+                            );
+                        })}
                     </div>
                 );
 

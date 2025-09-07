@@ -1,6 +1,6 @@
 import { db } from '../db';
 import { friendships, users } from '../db/schema';
-import { and, eq, or } from 'drizzle-orm';
+import { and, eq, or, inArray } from 'drizzle-orm';
 import { FriendshipStatus } from './friendship.schema';
 import { NotificationService } from '../notification/notification.service';
 
@@ -15,6 +15,7 @@ interface IFriendshipService {
         status: FriendshipStatus
     ): Promise<void>;
     cancelFriendRequest(userId: number, friendshipId: number): Promise<void>;
+    cancelFriendship(userId: number, friendshipId: number): Promise<void>;
     removeFriend(userId: number, friendId: number): Promise<void>;
     blockUser(userId: number, userToBlock: number): Promise<void>;
     unblockUser(userId: number, userToUnblock: number): Promise<void>;
@@ -32,7 +33,7 @@ export class FriendshipService implements IFriendshipService {
         this.notificationService = new NotificationService();
     }
 
-    async getFriends(userId: number) {
+    async getFriends(userId: number, viewerId?: number | null) {
         const friendshipData = await db.query.friendships.findMany({
             where: and(
                 or(
@@ -63,7 +64,7 @@ export class FriendshipService implements IFriendshipService {
             },
         });
 
-        return friendshipData.map((friendship) => {
+        const mapped = friendshipData.map((friendship) => {
             const friend =
                 friendship.userId === userId
                     ? friendship.user_friendId
@@ -74,6 +75,35 @@ export class FriendshipService implements IFriendshipService {
                 since: friendship.createdAt,
             };
         });
+
+        if (!viewerId) return mapped;
+
+        const friendIds = mapped.map((f) => f.id);
+        if (friendIds.length === 0) return mapped;
+
+        const blockedRows = await db.query.friendships.findMany({
+            where: and(
+                eq(friendships.status, 'blocked'),
+                or(
+                    and(
+                        eq(friendships.userId, viewerId),
+                        inArray(friendships.friendId, friendIds)
+                    ),
+                    and(
+                        eq(friendships.friendId, viewerId),
+                        inArray(friendships.userId, friendIds)
+                    )
+                )
+            ),
+        });
+
+        const blockedSet = new Set<number>();
+        for (const b of blockedRows) {
+            if (b.userId === viewerId) blockedSet.add(b.friendId);
+            if (b.friendId === viewerId) blockedSet.add(b.userId);
+        }
+
+        return mapped.filter((f) => !blockedSet.has(f.id));
     }
 
     async getFriendRequests(userId: number) {
@@ -407,13 +437,49 @@ export class FriendshipService implements IFriendshipService {
             const friendship = await db.query.friendships.findFirst({
                 where: and(
                     eq(friendships.id, friendshipId),
-                    eq(friendships.userId, userId),
                     eq(friendships.status, 'pending')
                 ),
             });
 
             if (!friendship) {
-                throw new Error('Friend request not found or unauthorized');
+                throw new Error('not found');
+            }
+
+            if (friendship.userId !== userId) {
+                throw new Error('unauthorized');
+            }
+
+            await db
+                .delete(friendships)
+                .where(eq(friendships.id, friendshipId));
+
+            try {
+                await this.notificationService.deleteFriendRequestNotification(
+                    friendship.userId,
+                    friendship.friendId
+                );
+            } catch (err) {
+                console.error(
+                    'Failed to delete friend-request notification',
+                    err
+                );
+            }
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async cancelFriendship(userId: number, friendshipId: number) {
+        try {
+            const friendship = await db.query.friendships.findFirst({
+                where: and(
+                    eq(friendships.id, friendshipId),
+                    eq(friendships.userId, userId)
+                ),
+            });
+
+            if (!friendship) {
+                throw new Error('Friendship not found');
             }
 
             await db

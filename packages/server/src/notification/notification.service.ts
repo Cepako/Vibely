@@ -273,4 +273,19 @@ export class NotificationService {
             relatedId: postId,
         });
     }
+
+    async deleteFriendRequestNotification(
+        fromUserId: number,
+        toUserId: number
+    ): Promise<void> {
+        await db
+            .delete(notifications)
+            .where(
+                and(
+                    eq(notifications.userId, toUserId),
+                    eq(notifications.type, 'friendships'),
+                    eq(notifications.relatedId, fromUserId)
+                )
+            );
+    }
 }

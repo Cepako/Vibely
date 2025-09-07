@@ -15,8 +15,12 @@ export default class FriendshipController {
     ) {
         try {
             const { userId } = req.params;
+            const viewerId = req.user?.id ?? null;
 
-            const friends = await this.friendshipService.getFriends(userId);
+            const friends = await this.friendshipService.getFriends(
+                userId,
+                viewerId
+            );
             return reply.status(200).send(friends);
         } catch (error: any) {
             return reply.status(500).send({
@@ -256,7 +260,7 @@ export default class FriendshipController {
         }
     }
 
-    async cancelFriendRequest(
+    async cancelFriendship(
         req: FastifyRequest<{
             Params: { friendshipId: number };
         }>,
@@ -266,18 +270,49 @@ export default class FriendshipController {
             const { id: userId } = req.user;
             const { friendshipId } = req.params;
 
-            await this.friendshipService.cancelFriendRequest(
-                userId,
-                friendshipId
-            );
+            await this.friendshipService.cancelFriendship(userId, friendshipId);
 
             return reply.status(200).send({
-                message: 'Friend request cancelled successfully',
+                message: 'Friendship deleted successfully',
             });
         } catch (error: any) {
             if (
                 error.message.includes('not found') ||
                 error.message.includes('unauthorized')
+            ) {
+                return reply.status(404).send({
+                    error: 'Friendship not found or unauthorized',
+                });
+            }
+            return reply.status(500).send({
+                error: error.message || 'Failed to delete friendship',
+            });
+        }
+    }
+
+    async cancelFriendRequest(
+        req: FastifyRequest<{
+            Params: { friendshipId: number };
+        }>,
+        reply: FastifyReply
+    ) {
+        try {
+            const { id: currentUserId } = req.user;
+            const friendshipId = Number(req.params.friendshipId);
+
+            await this.friendshipService.cancelFriendRequest(
+                currentUserId,
+                friendshipId
+            );
+
+            return reply
+                .status(200)
+                .send({ message: 'Friend request cancelled' });
+        } catch (error: any) {
+            req.log?.error?.(error);
+            if (
+                error.message?.includes('not found') ||
+                error.message?.includes('unauthorized')
             ) {
                 return reply.status(404).send({
                     error: 'Friend request not found or unauthorized',

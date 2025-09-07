@@ -36,13 +36,13 @@ export default function EventCard({ event }: EventCardProps) {
                     <IconCalendarEvent size={24} className='text-primary-600' />
                 </div>
                 <div className='flex-1'>
-                    <h3 className='line-clamp-1 font-semibold text-gray-900'>
+                    <h3 className='line-clamp-1 font-semibold text-slate-900'>
                         {event.title}
                     </h3>
-                    <p className='mt-1 line-clamp-2 text-sm text-gray-600'>
+                    <p className='mt-1 line-clamp-2 text-sm text-slate-600'>
                         {event.description}
                     </p>
-                    <div className='mt-2 flex items-center gap-4 text-sm text-gray-500'>
+                    <div className='mt-2 flex items-center gap-4 text-sm text-slate-500'>
                         {event.location && (
                             <span className='flex items-center gap-1'>
                                 <IconMapPin size={14} />
@@ -64,13 +64,13 @@ export default function EventCard({ event }: EventCardProps) {
                                 size='sm'
                             />
 
-                            <span className='text-sm text-gray-600'>
+                            <span className='text-sm text-slate-600'>
                                 by {event.organizer.name}{' '}
                                 {event.organizer.surname}
                             </span>
                         </div>
                         {event.category && (
-                            <span className='rounded-full bg-blue-100 px-2 py-1 text-xs text-blue-700'>
+                            <span className='bg-primary-100 text-primary-700 rounded-full px-2 py-1 text-xs'>
                                 {event.category.name}
                             </span>
                         )}

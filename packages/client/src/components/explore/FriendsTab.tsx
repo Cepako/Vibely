@@ -33,7 +33,7 @@ export default function FriendsTab({
 
     return (
         <div className='mx-auto max-w-4xl'>
-            <div className='relative mb-6'>
+            <div className='relative mb-3'>
                 <IconSearch
                     size={20}
                     className='absolute top-1/2 left-3 -translate-y-1/2 transform text-slate-400'
@@ -81,7 +81,7 @@ export default function FriendsTab({
                         </p>
                     </div>
                 ) : (
-                    <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
+                    <div className='grid max-h-[70vh] grid-cols-1 gap-4 overflow-y-auto md:grid-cols-2'>
                         {results?.map((user) => (
                             <UserCard key={user.id} user={user} />
                         ))}

@@ -56,7 +56,7 @@ export default function EventsHeader({
             <div className='border-b border-slate-200 bg-white'>
                 <div className='p-6 pb-0'>
                     <div className='mb-4 flex items-center justify-between'>
-                        <h1 className='text-primary-500 flex gap-1 text-2xl font-bold'>
+                        <h1 className='text-primary-500 flex gap-1 text-3xl font-bold'>
                             <IconCalendarWeek
                                 className='text-primary-500'
                                 size={32}

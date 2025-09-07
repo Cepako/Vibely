@@ -149,7 +149,6 @@ export default function ProfileView() {
                                 </div>
                             </div>
 
-                            {/* Stats */}
                             <div className='mt-2 flex space-x-8'>
                                 <div
                                     className={cn(
