@@ -1,6 +1,6 @@
 import { db } from '../db/';
 import { notifications } from '../db/schema';
-import { eq, desc, and, sql } from 'drizzle-orm';
+import { eq, inArray, and, desc, sql } from 'drizzle-orm';
 import {
     CreateNotificationType,
     NotificationType,
@@ -44,34 +44,49 @@ export class NotificationService {
         return result;
     }
 
-    private async findNotificationsByUserId(
+    async findNotificationsByUserId(
         userId: number,
-        limit: number = 20,
-        offset: number = 0
+        limit = 20,
+        offset = 0,
+        opts?: { types?: string[]; unreadOnly?: boolean; search?: string }
     ): Promise<NotificationType[]> {
-        const results = await db
-            .select()
-            .from(notifications)
-            .where(eq(notifications.userId, userId))
-            .orderBy(desc(notifications.createdAt))
-            .limit(limit)
-            .offset(offset);
+        const whereClauses: any[] = [eq(notifications.userId, userId)];
 
-        return results.map((notification) => {
-            const result: NotificationType = {
-                id: notification.id,
-                userId: notification.userId,
-                type: notification.type as NotificationType['type'],
-                content: notification.content,
-                isRead: notification.isRead || false,
-                createdAt: notification.createdAt || new Date().toISOString(),
+        if (opts?.types && opts.types.length > 0) {
+            whereClauses.push(
+                inArray(notifications.type as any, opts.types as any)
+            );
+        }
+
+        if (opts?.unreadOnly) {
+            whereClauses.push(eq(notifications.isRead, false));
+        }
+
+        if (opts?.search && opts.search.trim()) {
+            const s = `%${opts.search.trim()}%`;
+            whereClauses.push(sql`(${notifications.content} ILIKE ${s})`);
+        }
+
+        const rows = await db.query.notifications.findMany({
+            where: and(...whereClauses),
+            orderBy: desc(notifications.createdAt),
+            limit,
+            offset,
+        });
+
+        return rows.map((r) => {
+            const out: NotificationType = {
+                id: r.id,
+                userId: r.userId,
+                type: r.type as NotificationType['type'],
+                content: r.content,
+                createdAt: r.createdAt ?? new Date().toISOString(),
+                isRead: !!r.isRead,
             };
-
-            if (notification.relatedId !== null) {
-                result.relatedId = notification.relatedId;
+            if (r.relatedId !== null && r.relatedId !== undefined) {
+                out.relatedId = r.relatedId;
             }
-
-            return result;
+            return out;
         });
     }
 
@@ -162,9 +177,15 @@ export class NotificationService {
     async getUserNotifications(
         userId: number,
         limit: number = 20,
-        offset: number = 0
+        offset: number = 0,
+        opts?: { types?: string[]; unreadOnly?: boolean; search?: string }
     ): Promise<NotificationType[]> {
-        return await this.findNotificationsByUserId(userId, limit, offset);
+        return await this.findNotificationsByUserId(
+            userId,
+            limit,
+            offset,
+            opts
+        );
     }
 
     async markAsRead(notificationId: number): Promise<void> {

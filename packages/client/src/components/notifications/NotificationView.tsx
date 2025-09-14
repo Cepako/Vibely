@@ -1,4 +1,10 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, {
+    useEffect,
+    useState,
+    useMemo,
+    useRef,
+    useCallback,
+} from 'react';
 import { useNotifications } from './hooks/useNotifications';
 import { NotificationItem } from './NotificationItem';
 import {
@@ -22,26 +28,90 @@ export const NotificationView: React.FC = () => {
 
     const [loadingMore, setLoadingMore] = useState(false);
     const [query, setQuery] = useState('');
+    const [debouncedQuery, setDebouncedQuery] = useState<string | undefined>(
+        undefined
+    );
+
     const [filter, setFilter] = useState<'all' | 'unread'>('all');
     const [filterType, setFilterType] = useState<'all' | NotificationType>(
         'all'
     );
 
+    const scrollRef = useRef<HTMLDivElement | null>(null);
+
     useEffect(() => {
-        fetchNotifications();
-    }, [fetchNotifications]);
+        fetchNotifications(
+            20,
+            0,
+            filterType,
+            filter === 'unread',
+            debouncedQuery
+        );
+    }, [fetchNotifications, filterType, filter, debouncedQuery]);
 
-    const handleLoadMore = async () => {
+    useEffect(() => {
+        const t = setTimeout(() => {
+            setDebouncedQuery(query.trim() ? query.trim() : undefined);
+        }, 400);
+        return () => clearTimeout(t);
+    }, [query]);
+
+    const handleLoadMore = useCallback(async () => {
+        if (loadingMore) return;
         setLoadingMore(true);
-        await fetchNotifications(20, notifications.length);
-        setLoadingMore(false);
-    };
+        try {
+            const currentCount = Array.isArray(notifications)
+                ? notifications.length
+                : 0;
+            await fetchNotifications(
+                20,
+                currentCount,
+                filterType,
+                filter === 'unread',
+                debouncedQuery
+            );
+        } finally {
+            setLoadingMore(false);
+        }
+    }, [
+        fetchNotifications,
+        notifications,
+        loadingMore,
+        filterType,
+        filter,
+        debouncedQuery,
+    ]);
 
-    const hasUnreadNotifications = notifications.some((n) => !n.isRead);
+    const handleScroll = useCallback(() => {
+        const el = scrollRef.current;
+        if (!el || loadingMore) return;
+
+        const { scrollTop, scrollHeight, clientHeight } = el;
+        const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
+        const currentCount = Array.isArray(notifications)
+            ? notifications.length
+            : 0;
+
+        if (distanceFromBottom <= clientHeight * 0.1 && currentCount >= 20) {
+            handleLoadMore();
+        }
+    }, [loadingMore, handleLoadMore, notifications]);
+
+    useEffect(() => {
+        const el = scrollRef.current;
+        if (!el) return;
+        el.addEventListener('scroll', handleScroll, { passive: true });
+        return () => el.removeEventListener('scroll', handleScroll);
+    }, [handleScroll]);
+
+    const notificationsArray = Array.isArray(notifications)
+        ? notifications
+        : [];
+    const hasUnreadNotifications = notificationsArray.some((n) => !n.isRead);
 
     const filteredNotifications = useMemo(() => {
         const q = query.trim().toLowerCase();
-        const list = notifications || [];
+        const list = notificationsArray;
         const filtered = list.filter((n) => {
             if (filter === 'unread' && n.isRead) return false;
             if (filterType !== 'all' && n.type !== filterType) return false;
@@ -51,11 +121,21 @@ export const NotificationView: React.FC = () => {
                 (n.type || '').toLowerCase().includes(q)
             );
         });
-        return filtered.sort((a, b) => Number(a.isRead) - Number(b.isRead));
-    }, [notifications, query, filter, filterType]);
+        return filtered.sort((a, b) => {
+            const unreadOrder = Number(a.isRead) - Number(b.isRead);
+            if (unreadOrder !== 0) return unreadOrder;
+            return (
+                new Date(b.createdAt).getTime() -
+                new Date(a.createdAt).getTime()
+            );
+        });
+    }, [notificationsArray, query, filter, filterType]);
 
     return (
-        <div className='bg-primary-50 mx-auto min-h-screen w-full overflow-y-auto'>
+        <div
+            ref={scrollRef}
+            className='bg-primary-50 mx-auto min-h-screen w-full overflow-y-auto'
+        >
             <div className='sticky top-0 z-10 border-b border-slate-200 bg-white p-4'>
                 <div className='flex items-center justify-between pr-[100px]'>
                     <div className='text-primary-500 flex items-center gap-2'>
@@ -136,7 +216,7 @@ export const NotificationView: React.FC = () => {
             </div>
 
             <div className='flex w-full flex-col items-center justify-center px-[100px] pb-4'>
-                {loading && notifications.length === 0 ? (
+                {loading && notificationsArray.length === 0 ? (
                     <div className='flex items-center justify-center p-8'>
                         <IconRefresh
                             className='animate-spin text-slate-400'
@@ -170,20 +250,6 @@ export const NotificationView: React.FC = () => {
                                 />
                             ))}
                         </div>
-
-                        {notifications.length >= 20 && (
-                            <div className='p-4 text-center'>
-                                <button
-                                    onClick={handleLoadMore}
-                                    disabled={loadingMore}
-                                    className='text-primary-600 hover:text-primary-800 cursor-pointer px-4 py-2 text-sm transition-colors disabled:text-slate-400'
-                                >
-                                    {loadingMore
-                                        ? 'Loading...'
-                                        : 'Load more notifications'}
-                                </button>
-                            </div>
-                        )}
                     </>
                 )}
             </div>

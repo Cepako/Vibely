@@ -14,14 +14,35 @@ export class NotificationController {
         reply: FastifyReply
     ) {
         try {
-            const { limit = 20, offset = 0 } = request.query;
             const user = request.user as Payload;
+            const limitNum = Number(request.query.limit ?? 20);
+            const offsetNum = Number(request.query.offset ?? 0);
+
+            const rawType = (request.query as any).type;
+            let types: string[] | undefined;
+            if (typeof rawType === 'string' && rawType.trim()) {
+                types = rawType
+                    .split(',')
+                    .map((s) => s.trim())
+                    .filter(Boolean);
+            } else if (Array.isArray(rawType) && rawType.length) {
+                types = rawType.map((s) => String(s).trim()).filter(Boolean);
+            }
+
+            const rawUnread = (request.query as any).unread;
+            const unreadOnly = rawUnread === 'true' || rawUnread === true;
+            const rawQ = (request.query as any).q;
+            const q =
+                typeof rawQ === 'string' && rawQ.trim()
+                    ? String(rawQ).trim()
+                    : undefined;
 
             const notifications =
                 await this.notificationService.getUserNotifications(
                     user.id,
-                    limit,
-                    offset
+                    limitNum,
+                    offsetNum,
+                    { types, unreadOnly, search: q }
                 );
 
             return reply.send({ notifications });

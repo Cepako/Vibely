@@ -17,7 +17,9 @@ interface WebSocketContextType {
     addNotification: (notification: NotificationData) => void;
     setUnreadCount: (count: number | ((prev: number) => number)) => void;
     updateNotifications: (
-        updater: (prev: NotificationData[]) => NotificationData[]
+        updater:
+            | NotificationData[]
+            | ((prev: NotificationData[]) => NotificationData[])
     ) => void;
     setNotifications: (notifications: NotificationData[]) => void;
 }
@@ -51,6 +53,25 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
             : null;
     }, [user?.id]);
 
+    const dedupeAndSort = useCallback((arr: NotificationData[]) => {
+        const map = new Map<number, NotificationData>();
+        for (const n of arr) {
+            const existing = map.get(n.id);
+            if (!existing) {
+                map.set(n.id, n);
+            } else {
+                const existingTs = new Date(existing.createdAt).getTime();
+                const newTs = new Date(n.createdAt).getTime();
+                if (newTs > existingTs) map.set(n.id, n);
+            }
+        }
+        return Array.from(map.values()).sort(
+            (a, b) =>
+                new Date(b.createdAt).getTime() -
+                new Date(a.createdAt).getTime()
+        );
+    }, []);
+
     const { isConnected } = useWebSocket({
         url: websocketUrl || '',
         enabled: !!websocketUrl,
@@ -59,7 +80,9 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
                 console.log('Notification WebSocket message:', message);
 
                 if (message.type === 'notification') {
-                    setNotifications((prev) => [message.data, ...prev]);
+                    setNotifications((prev) =>
+                        dedupeAndSort([message.data, ...(prev ?? [])])
+                    );
 
                     if (!message.data.isRead) {
                         setUnreadCount((prev) => prev + 1);
@@ -108,15 +131,32 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     }, [user?.id]);
 
     const addNotification = useCallback((notification: NotificationData) => {
-        setNotifications((prev) => [notification, ...prev]);
+        setNotifications((prev) =>
+            dedupeAndSort([notification, ...(prev ?? [])])
+        );
         if (!notification.isRead) {
             setUnreadCount((prev) => prev + 1);
         }
     }, []);
 
     const updateNotifications = useCallback(
-        (updater: (prev: NotificationData[]) => NotificationData[]) => {
-            setNotifications(updater);
+        (
+            updater:
+                | NotificationData[]
+                | ((prev: NotificationData[]) => NotificationData[])
+        ) => {
+            if (typeof updater === 'function') {
+                setNotifications((prev) => {
+                    const result = (
+                        updater as (
+                            prev: NotificationData[]
+                        ) => NotificationData[]
+                    )(prev ?? []);
+                    return dedupeAndSort(result ?? []);
+                });
+            } else {
+                setNotifications(dedupeAndSort(updater ?? []));
+            }
         },
         []
     );

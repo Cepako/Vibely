@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useAuth } from '../../auth/AuthProvider';
 import { useWebSocketContext } from '../../providers/WebSocketProvider';
 
@@ -16,40 +16,72 @@ export const useNotifications = () => {
         setNotifications,
     } = useWebSocketContext();
 
-    const fetchNotifications = useCallback(
-        async (limit = 20, offset = 0) => {
-            if (!user?.id) return;
+    const notificationsRef = useRef<typeof notifications>(notifications);
+    useEffect(() => {
+        notificationsRef.current = notifications;
+    }, [notifications]);
 
+    const fetchNotifications = useCallback(
+        async (
+            limit = 20,
+            offset = 0,
+            type?: string | 'all',
+            unreadOnly = false,
+            search?: string
+        ) => {
             setLoading(true);
             try {
-                const response = await fetch(
-                    `${API_BASE}/notification?limit=${limit}&offset=${offset}`,
-                    {
-                        credentials: 'include',
+                const params = new URLSearchParams();
+                params.set('limit', String(limit));
+                params.set('offset', String(offset));
+                if (type && type !== 'all') params.set('type', type);
+                if (unreadOnly) params.set('unread', 'true');
+                if (search && search.trim()) params.set('q', search.trim());
+
+                const res = await fetch(
+                    `${API_BASE}/notification?${params.toString()}`,
+                    { credentials: 'include' }
+                );
+                if (!res.ok) throw new Error('Failed to fetch notifications');
+
+                const payload = await res.json();
+                const data = Array.isArray(payload)
+                    ? payload
+                    : Array.isArray(payload?.notifications)
+                      ? payload.notifications
+                      : [];
+
+                const current = notificationsRef.current ?? [];
+                const merged = offset === 0 ? data : [...current, ...data];
+
+                const map = new Map<number, (typeof merged)[0]>();
+                for (const n of merged) {
+                    const existing = map.get(n.id);
+                    if (!existing) map.set(n.id, n);
+                    else {
+                        if (
+                            new Date(n.createdAt).getTime() >
+                            new Date(existing.createdAt).getTime()
+                        ) {
+                            map.set(n.id, n);
+                        }
                     }
+                }
+                const dedupedSorted = Array.from(map.values()).sort(
+                    (a, b) =>
+                        new Date(b.createdAt).getTime() -
+                        new Date(a.createdAt).getTime()
                 );
 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                const data = await response.json();
-
-                if (offset === 0) {
-                    setNotifications(data.notifications || []);
-                } else {
-                    updateNotifications((prev) => [
-                        ...prev,
-                        ...(data.notifications || []),
-                    ]);
-                }
-            } catch (error) {
-                console.error('Error fetching notifications:', error);
+                updateNotifications?.(dedupedSorted);
+                notificationsRef.current = dedupedSorted;
+            } catch (err) {
+                console.error('fetchNotifications failed', err);
             } finally {
                 setLoading(false);
             }
         },
-        [user?.id, updateNotifications, setNotifications]
+        [updateNotifications, setNotifications]
     );
 
     const fetchUnreadCount = useCallback(async () => {
@@ -88,15 +120,17 @@ export const useNotifications = () => {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
-                updateNotifications((prev) =>
-                    prev.map((notification) =>
-                        notification.id === notificationId
-                            ? { ...notification, isRead: true }
-                            : notification
-                    )
+                const current = notificationsRef.current ?? [];
+                const updated = current.map((notification) =>
+                    notification.id === notificationId
+                        ? { ...notification, isRead: true }
+                        : notification
                 );
 
-                const notification = notifications.find(
+                setNotifications(updated);
+                updateNotifications?.(updated);
+
+                const notification = current.find(
                     (n) => n.id === notificationId
                 );
                 if (notification && !notification.isRead) {
@@ -106,7 +140,7 @@ export const useNotifications = () => {
                 console.error('Error marking notification as read:', error);
             }
         },
-        [updateNotifications, setUnreadCount, notifications]
+        [updateNotifications, setUnreadCount, setNotifications]
     );
 
     const markAllAsRead = useCallback(async () => {
@@ -120,14 +154,18 @@ export const useNotifications = () => {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            updateNotifications((prev) =>
-                prev.map((notification) => ({ ...notification, isRead: true }))
-            );
+            const current = notificationsRef.current ?? [];
+            const updated = current.map((notification) => ({
+                ...notification,
+                isRead: true,
+            }));
+            setNotifications(updated);
+            updateNotifications?.(updated);
             setUnreadCount(0);
         } catch (error) {
             console.error('Error marking all notifications as read:', error);
         }
-    }, [updateNotifications, setUnreadCount]);
+    }, [updateNotifications, setUnreadCount, setNotifications]);
 
     return {
         notifications,
