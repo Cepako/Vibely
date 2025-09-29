@@ -1,19 +1,16 @@
-// src/components/messages/ChatWindow.tsx
 import React, { useState, useRef, useEffect } from 'react';
 import type { Message, Conversation } from '../../types/message';
-import { formatDistanceToNow, format, isToday, isYesterday } from 'date-fns';
+import { format, isToday, isYesterday } from 'date-fns';
 import {
     IconPaperclip,
     IconSend,
-    IconPhone,
-    IconVideo,
     IconDotsVertical,
     IconTrash,
 } from '@tabler/icons-react';
 import { useAuth } from '../auth/AuthProvider';
 
 interface ChatWindowProps {
-    conversation: Conversation | null;
+    conversation: Conversation;
     messages: Message[];
     onSendMessage: (content: string, file?: File) => Promise<void>;
     onDeleteMessage: (messageId: number) => Promise<void>;
@@ -148,7 +145,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         return groups;
     };
 
-    // Get conversation info
     const getConversationInfo = () => {
         if (!conversation) return { name: '', isOnline: false };
 
@@ -177,32 +173,14 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         }
     };
 
-    if (!conversation) {
-        return (
-            <div className='bg-primary-50 flex h-full items-center justify-center'>
-                <div className='text-center text-gray-500'>
-                    <div className='mb-4 text-4xl'>💬</div>
-                    <h3 className='mb-2 text-xl font-semibold text-gray-900'>
-                        Select a conversation
-                    </h3>
-                    <p className='text-sm'>
-                        Choose a conversation from the sidebar to start
-                        messaging
-                    </p>
-                </div>
-            </div>
-        );
-    }
-
     const { name, isOnline } = getConversationInfo();
     const messageGroups = groupMessagesByDate(messages);
 
     return (
-        <div className='flex h-full flex-col bg-white'>
-            {/* Chat Header */}
-            <div className='flex items-center justify-between border-b border-gray-200 bg-white p-4'>
+        <div className='flex h-full w-full flex-col bg-white'>
+            <div className='flex items-center justify-between border-b border-slate-200 bg-white p-4'>
                 <div>
-                    <h3 className='text-lg font-semibold text-gray-900'>
+                    <h3 className='text-lg font-semibold text-slate-900'>
                         {name}
                     </h3>
                     {isOnline && conversation.participants.length === 2 && (
@@ -213,19 +191,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                 </div>
                 <div className='flex gap-2'>
                     <button
-                        className='hover:text-primary-500 rounded-full p-2 text-gray-500 transition-colors hover:bg-gray-100'
-                        title='Call'
-                    >
-                        <IconPhone size={20} />
-                    </button>
-                    <button
-                        className='hover:text-primary-500 rounded-full p-2 text-gray-500 transition-colors hover:bg-gray-100'
-                        title='Video call'
-                    >
-                        <IconVideo size={20} />
-                    </button>
-                    <button
-                        className='hover:text-primary-500 rounded-full p-2 text-gray-500 transition-colors hover:bg-gray-100'
+                        className='hover:text-primary-500 rounded-full p-2 text-slate-500 transition-colors hover:bg-slate-100'
                         title='More options'
                     >
                         <IconDotsVertical size={20} />
@@ -236,12 +202,12 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             {/* Messages Container */}
             <div className='bg-primary-50 flex-1 overflow-y-auto p-4'>
                 {loading ? (
-                    <div className='flex h-48 flex-col items-center justify-center text-gray-500'>
-                        <div className='border-t-primary-500 mb-3 h-6 w-6 animate-spin rounded-full border-2 border-gray-200'></div>
+                    <div className='flex h-48 flex-col items-center justify-center text-slate-500'>
+                        <div className='border-t-primary-500 mb-3 h-6 w-6 animate-spin rounded-full border-2 border-slate-200'></div>
                         <p>Loading messages...</p>
                     </div>
                 ) : Object.keys(messageGroups).length === 0 ? (
-                    <div className='flex h-48 items-center justify-center text-gray-500'>
+                    <div className='flex h-48 items-center justify-center text-slate-500'>
                         <p>No messages yet. Start the conversation!</p>
                     </div>
                 ) : (
@@ -250,7 +216,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                             <div key={date} className='mb-6'>
                                 {/* Date Separator */}
                                 <div className='my-4 flex justify-center'>
-                                    <span className='rounded-full border border-gray-200 bg-white px-3 py-1 text-xs text-gray-500'>
+                                    <span className='rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-500'>
                                         {date}
                                     </span>
                                 </div>
@@ -308,7 +274,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                                                 {/* Sender name for other users */}
                                                 {!isOwnMessage &&
                                                     showAvatar && (
-                                                        <div className='mb-1 ml-1 text-xs text-gray-500'>
+                                                        <div className='mb-1 ml-1 text-xs text-slate-500'>
                                                             {
                                                                 message.sender
                                                                     .name
@@ -325,7 +291,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                                                     className={`rounded-2xl px-4 py-2 ${
                                                         isOwnMessage
                                                             ? 'bg-primary-500 rounded-br-md text-white'
-                                                            : 'rounded-bl-md border border-gray-200 bg-white text-gray-900'
+                                                            : 'rounded-bl-md border border-slate-200 bg-white text-slate-900'
                                                     }`}
                                                 >
                                                     {/* Attachments */}
@@ -395,7 +361,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                                                         className={`mt-1 flex items-center gap-1 text-xs ${
                                                             isOwnMessage
                                                                 ? 'text-primary-100'
-                                                                : 'text-gray-500'
+                                                                : 'text-slate-500'
                                                         }`}
                                                     >
                                                         <span>
@@ -422,7 +388,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                                                 {/* Delete button for own messages */}
                                                 {isOwnMessage && (
                                                     <button
-                                                        className='absolute top-1/2 -left-8 flex h-6 w-6 -translate-y-1/2 transform items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 opacity-0 transition-all group-hover:opacity-100 hover:bg-red-50 hover:text-red-500'
+                                                        className='absolute top-1/2 -left-8 flex h-6 w-6 -translate-y-1/2 transform items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 opacity-0 transition-all group-hover:opacity-100 hover:bg-red-50 hover:text-red-500'
                                                         onClick={() =>
                                                             onDeleteMessage(
                                                                 message.id
@@ -445,11 +411,11 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             </div>
 
             {/* Message Input */}
-            <div className='border-t border-gray-200 bg-white p-4'>
+            <div className='border-t border-slate-200 bg-white p-4'>
                 {/* File Preview */}
                 {selectedFile && (
                     <div className='mb-3'>
-                        <div className='relative inline-block overflow-hidden rounded-lg bg-gray-100'>
+                        <div className='relative inline-block overflow-hidden rounded-lg bg-slate-100'>
                             {previewUrl ? (
                                 <img
                                     src={previewUrl}
@@ -457,7 +423,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                                     className='max-h-20 max-w-32 object-cover'
                                 />
                             ) : (
-                                <div className='p-4 text-gray-600'>
+                                <div className='p-4 text-slate-600'>
                                     <span>📄 {selectedFile.name}</span>
                                 </div>
                             )}
@@ -472,10 +438,10 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                 )}
 
                 {/* Input Area */}
-                <div className='flex items-end gap-2 rounded-full bg-gray-100 p-2'>
+                <div className='flex items-end gap-2 rounded-full bg-slate-100 p-2'>
                     {/* Attach Button */}
                     <button
-                        className='hover:text-primary-500 flex-shrink-0 rounded-full p-2 text-gray-500 transition-colors hover:bg-white'
+                        className='hover:text-primary-500 flex-shrink-0 rounded-full p-2 text-slate-500 transition-colors hover:bg-white'
                         onClick={() => fileInputRef.current?.click()}
                         title='Attach file'
                     >
@@ -509,7 +475,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                         className={`flex-shrink-0 rounded-full p-2 transition-colors ${
                             messageText.trim() || selectedFile
                                 ? 'bg-primary-500 hover:bg-primary-600 text-white'
-                                : 'bg-gray-200 text-gray-400'
+                                : 'bg-slate-200 text-slate-400'
                         }`}
                         onClick={handleSendMessage}
                         disabled={

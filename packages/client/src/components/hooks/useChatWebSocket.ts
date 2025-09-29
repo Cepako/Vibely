@@ -23,14 +23,12 @@ export const useChatWebSocket = ({
 }: UseChatWebSocketProps): UseChatWebSocketReturn => {
     const { user } = useAuth();
 
-    // WebSocket URL for chat
     const chatWebSocketUrl = useMemo(() => {
         return user?.id && currentConversationId
             ? `ws://localhost:3000/ws/chat?userId=${user.id}&conversationId=${currentConversationId}`
             : null;
     }, [user?.id, currentConversationId]);
 
-    // Chat WebSocket connection
     const { isConnected, sendMessage } = useWebSocket({
         url: chatWebSocketUrl || '',
         enabled: !!chatWebSocketUrl,
@@ -43,6 +41,9 @@ export const useChatWebSocket = ({
                     case 'chat_message':
                         if (message.data && onNewMessage) {
                             onNewMessage(message.data);
+                        }
+                        if (onConversationUpdate) {
+                            onConversationUpdate();
                         }
                         break;
                     case 'message_updated':

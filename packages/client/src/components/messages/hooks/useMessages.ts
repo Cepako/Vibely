@@ -1,5 +1,5 @@
-// src/components/hooks/useMessages.ts
 import { useState, useCallback, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../auth/AuthProvider';
 import { messageApiService } from '../MessageApi';
 import type {
@@ -10,15 +10,12 @@ import type {
 } from '../../../types/message';
 
 interface UseMessagesReturn {
-    // State
     conversations: Conversation[];
-    currentConversation: Conversation | null;
     messages: Message[];
     loading: boolean;
     error: string | null;
     sending: boolean;
 
-    // Actions
     loadConversations: () => Promise<void>;
     loadMessages: (conversationId: number) => Promise<void>;
     sendMessage: (content: string, file?: File) => Promise<void>;
@@ -26,75 +23,179 @@ interface UseMessagesReturn {
     markAsRead: (messageIds: number[]) => Promise<void>;
     deleteMessage: (messageId: number) => Promise<void>;
     leaveConversation: (conversationId: number) => Promise<void>;
-    setCurrentConversation: (conversation: Conversation | null) => void;
 
-    // Computed
     totalUnreadCount: number;
 }
 
-export const useMessages = (): UseMessagesReturn => {
+export const useMessages = (
+    conversationId: number | null
+): UseMessagesReturn => {
     const { user } = useAuth();
-    const [conversations, setConversations] = useState<Conversation[]>([]);
-    const [currentConversation, setCurrentConversationState] =
-        useState<Conversation | null>(null);
-    const [messages, setMessages] = useState<Message[]>([]);
-    const [loading, setLoading] = useState(false);
+    const queryClient = useQueryClient();
+
     const [error, setError] = useState<string | null>(null);
     const [sending, setSending] = useState(false);
 
-    // Load conversations
-    const loadConversations = useCallback(async () => {
-        if (!user?.id) return;
+    // Conversations query
+    const {
+        data: conversations = [],
+        isLoading: conversationsLoading,
+        refetch: refetchConversations,
+    } = useQuery<Conversation[], Error>({
+        queryKey: ['conversations'],
+        queryFn: () => messageApiService.getConversations(),
+        enabled: Boolean(user?.id),
+    });
 
+    // Messages query for current conversation (key depends on id)
+    const {
+        data: messages = [],
+        isLoading: messagesLoading,
+        refetch: refetchMessages,
+    } = useQuery<Message[], Error>({
+        queryKey: ['messages', conversationId],
+        queryFn: async () => {
+            if (!conversationId) return [];
+            return messageApiService.getMessages(conversationId);
+        },
+        enabled: !!conversationId,
+    });
+
+    // Mutations
+    const sendMessageMutation = useMutation<Message, Error, CreateMessageData>({
+        mutationFn: (data) => messageApiService.sendMessage(data),
+        onSuccess: (newMessage) => {
+            // refresh messages for that conversation and conversations list
+            queryClient.invalidateQueries({
+                queryKey: ['messages', newMessage.conversationId],
+            });
+            queryClient.invalidateQueries({ queryKey: ['conversations'] });
+        },
+        onError: (err: any) =>
+            setError(
+                err instanceof Error ? err.message : 'Failed to send message'
+            ),
+    });
+
+    const createConversationMutation = useMutation<
+        Conversation,
+        Error,
+        CreateConversationData
+    >({
+        mutationFn: (data) => messageApiService.createConversation(data),
+        onSuccess: (newConversation) => {
+            queryClient.invalidateQueries({ queryKey: ['conversations'] });
+        },
+        onError: (err: any) =>
+            setError(
+                err instanceof Error
+                    ? err.message
+                    : 'Failed to create conversation'
+            ),
+    });
+
+    const markAsReadMutation = useMutation<void, Error, number[]>({
+        mutationFn: (messageIds) =>
+            messageApiService.markMessagesAsRead(messageIds),
+
+        onSuccess: (_, messageIds) => {
+            if (conversationId) {
+                queryClient.setQueryData<Message[]>(
+                    ['messages', conversationId],
+                    (old = []) =>
+                        old.map((m) =>
+                            messageIds.includes(m.id)
+                                ? { ...m, isRead: true }
+                                : m
+                        )
+                );
+            }
+            queryClient.invalidateQueries({ queryKey: ['conversations'] });
+        },
+        onError: (err: any) =>
+            console.error('Failed to mark messages as read', err),
+    });
+
+    const deleteMessageMutation = useMutation<void, Error, number>({
+        mutationFn: (messageId) => messageApiService.deleteMessage(messageId),
+
+        onSuccess: (_, messageId) => {
+            if (conversationId) {
+                queryClient.setQueryData<Message[]>(
+                    ['messages', conversationId],
+                    (old = []) => old.filter((m) => m.id !== messageId)
+                );
+            }
+            queryClient.invalidateQueries({ queryKey: ['conversations'] });
+        },
+        onError: (err: any) =>
+            setError(
+                err instanceof Error ? err.message : 'Failed to delete message'
+            ),
+    });
+
+    const leaveConversationMutation = useMutation<void, Error, number>({
+        mutationFn: (conversationIdToLeave) =>
+            messageApiService.leaveConversation(conversationIdToLeave),
+
+        onSuccess: (_, conversationIdToLeave) => {
+            queryClient.invalidateQueries({ queryKey: ['conversations'] });
+            if (conversationId === conversationIdToLeave) {
+                queryClient.removeQueries({
+                    queryKey: ['messages', conversationIdToLeave],
+                });
+            }
+        },
+        onError: (err: any) =>
+            setError(
+                err instanceof Error
+                    ? err.message
+                    : 'Failed to leave conversation'
+            ),
+    });
+
+    // Actions
+    const loadConversations = useCallback(async (): Promise<void> => {
         try {
-            setLoading(true);
-            setError(null);
-            const data = await messageApiService.getConversations();
-            setConversations(data);
+            await refetchConversations();
         } catch (err) {
             setError(
                 err instanceof Error
                     ? err.message
                     : 'Failed to load conversations'
             );
-        } finally {
-            setLoading(false);
         }
-    }, [user?.id]);
+    }, [refetchConversations]);
 
-    // Load messages for a conversation
-    const loadMessages = useCallback(async (conversationId: number) => {
-        try {
-            setLoading(true);
-            setError(null);
-            const data = await messageApiService.getMessages(conversationId);
-            setMessages(data);
-        } catch (err) {
-            setError(
-                err instanceof Error ? err.message : 'Failed to load messages'
-            );
-        } finally {
-            setLoading(false);
-        }
-    }, []);
+    // loadMessages
+    const loadMessages = useCallback(
+        async (convId: number): Promise<void> => {
+            try {
+                await queryClient.fetchQuery({
+                    queryKey: ['messages', convId],
+                    queryFn: () => messageApiService.getMessages(convId),
+                });
+            } catch (err) {
+                setError(
+                    err instanceof Error
+                        ? err.message
+                        : 'Failed to load messages'
+                );
+            }
+        },
+        [conversations, queryClient]
+    );
 
-    // Send a message
     const sendMessage = useCallback(
-        async (content: string, file?: File) => {
-            if (!currentConversation) {
-                throw new Error('No conversation selected');
-            }
-
-            if (!content.trim() && !file) {
+        async (content: string, file?: File): Promise<void> => {
+            if (!conversationId) throw new Error('No conversation selected');
+            if (!content.trim() && !file)
                 throw new Error('Message content or file is required');
-            }
 
             try {
                 setSending(true);
-                setError(null);
-
                 const messageData: CreateMessageData = {
-                    conversationId: currentConversation.id,
+                    conversationId: conversationId,
                     content,
                     contentType: file
                         ? file.type.startsWith('image/')
@@ -103,191 +204,84 @@ export const useMessages = (): UseMessagesReturn => {
                         : 'text',
                     file,
                 };
-
-                const newMessage =
-                    await messageApiService.sendMessage(messageData);
-
-                // Add message to current messages
-                setMessages((prev) => [...prev, newMessage]);
-
-                // Update conversation with new last message
-                setConversations((prev) =>
-                    prev.map((conv) =>
-                        conv.id === currentConversation.id
-                            ? {
-                                  ...conv,
-                                  lastMessage: newMessage,
-                                  updatedAt: newMessage.createdAt,
-                              }
-                            : conv
-                    )
-                );
-            } catch (err) {
-                const errorMessage =
-                    err instanceof Error
-                        ? err.message
-                        : 'Failed to send message';
-                setError(errorMessage);
-                console.error('Send message error:', err);
-                throw new Error(errorMessage);
+                await sendMessageMutation.mutateAsync(messageData);
             } finally {
                 setSending(false);
             }
         },
-        [currentConversation]
+        [conversationId, sendMessageMutation]
     );
 
-    // Create new conversation
-    const createConversation = useCallback(async (participantIds: number[]) => {
-        try {
-            setLoading(true);
-            setError(null);
-
-            const data: CreateConversationData = { participantIds };
-            const newConversation =
-                await messageApiService.createConversation(data);
-
-            setConversations((prev) => [newConversation, ...prev]);
-            setCurrentConversationState(newConversation);
-        } catch (err) {
-            setError(
-                err instanceof Error
-                    ? err.message
-                    : 'Failed to create conversation'
-            );
-            throw err;
-        } finally {
-            setLoading(false);
-        }
-    }, []);
-
-    // Mark messages as read
-    const markAsRead = useCallback(
-        async (messageIds: number[]) => {
-            if (messageIds.length === 0) return;
-
+    const createConversation = useCallback(
+        async (participantIds: number[]): Promise<void> => {
             try {
-                await messageApiService.markMessagesAsRead(messageIds);
-
-                // Update messages read status
-                setMessages((prev) =>
-                    prev.map((msg) =>
-                        messageIds.includes(msg.id)
-                            ? { ...msg, isRead: true }
-                            : msg
-                    )
-                );
-
-                // Update conversation unread count
-                if (currentConversation) {
-                    setConversations((prev) =>
-                        prev.map((conv) =>
-                            conv.id === currentConversation.id
-                                ? {
-                                      ...conv,
-                                      unreadCount: Math.max(
-                                          0,
-                                          conv.unreadCount - messageIds.length
-                                      ),
-                                  }
-                                : conv
-                        )
-                    );
-                }
+                const data: CreateConversationData = { participantIds };
+                await createConversationMutation.mutateAsync(data);
             } catch (err) {
-                console.error('Failed to mark messages as read:', err);
-            }
-        },
-        [currentConversation]
-    );
-
-    // Delete message
-    const deleteMessage = useCallback(async (messageId: number) => {
-        try {
-            await messageApiService.deleteMessage(messageId);
-            setMessages((prev) => prev.filter((msg) => msg.id !== messageId));
-        } catch (err) {
-            setError(
-                err instanceof Error ? err.message : 'Failed to delete message'
-            );
-            throw err;
-        }
-    }, []);
-
-    // Leave conversation
-    const leaveConversation = useCallback(
-        async (conversationId: number) => {
-            try {
-                await messageApiService.leaveConversation(conversationId);
-                setConversations((prev) =>
-                    prev.filter((conv) => conv.id !== conversationId)
-                );
-
-                if (currentConversation?.id === conversationId) {
-                    setCurrentConversationState(null);
-                    setMessages([]);
-                }
-            } catch (err) {
-                setError(
-                    err instanceof Error
-                        ? err.message
-                        : 'Failed to leave conversation'
-                );
                 throw err;
             }
         },
-        [currentConversation]
+        [createConversationMutation]
     );
 
-    // Set current conversation and load its messages
-    const setCurrentConversation = useCallback(
-        (conversation: Conversation | null) => {
-            setCurrentConversationState(conversation);
-            if (conversation) {
-                loadMessages(conversation.id);
-            } else {
-                setMessages([]);
+    const markAsRead = useCallback(
+        async (messageIds: number[]): Promise<void> => {
+            if (messageIds.length === 0) return;
+            try {
+                await markAsReadMutation.mutateAsync(messageIds);
+            } catch (err) {
+                console.error(err);
             }
         },
-        [loadMessages]
+        [markAsReadMutation]
     );
 
-    // Calculate total unread count
-    const totalUnreadCount = conversations.reduce(
-        (sum, conv) => sum + conv.unreadCount,
+    const deleteMessage = useCallback(
+        async (messageId: number): Promise<void> => {
+            try {
+                await deleteMessageMutation.mutateAsync(messageId);
+            } catch (err) {
+                throw err;
+            }
+        },
+        [deleteMessageMutation]
+    );
+
+    const leaveConversation = useCallback(
+        async (convId: number): Promise<void> => {
+            try {
+                await leaveConversationMutation.mutateAsync(convId);
+            } catch (err) {
+                throw err;
+            }
+        },
+        [leaveConversationMutation]
+    );
+
+    // auto mark as read when viewing conversation
+    useEffect(() => {
+        if (!conversationId || messages.length === 0) return;
+        const unreadMessages = messages
+            .filter((msg) => !msg.isRead && msg.senderId !== user?.id)
+            .map((m) => m.id);
+        if (unreadMessages.length > 0) {
+            markAsRead(unreadMessages);
+        }
+    }, [conversationId, messages, user?.id, markAsRead]);
+
+    const loading = conversationsLoading || messagesLoading;
+    const totalUnreadCount = (conversations || []).reduce(
+        (sum, conv) => sum + (conv.unreadCount || 0),
         0
     );
 
-    // Auto-mark messages as read when viewing conversation
-    useEffect(() => {
-        if (currentConversation && messages.length > 0) {
-            const unreadMessages = messages
-                .filter((msg) => !msg.isRead && msg.senderId !== user?.id)
-                .map((msg) => msg.id);
-
-            if (unreadMessages.length > 0) {
-                markAsRead(unreadMessages);
-            }
-        }
-    }, [currentConversation, messages, user?.id, markAsRead]);
-
-    // Load conversations on mount
-    useEffect(() => {
-        if (user?.id) {
-            loadConversations();
-        }
-    }, [user?.id, loadConversations]);
-
     return {
-        // State
         conversations,
-        currentConversation,
         messages,
         loading,
         error,
         sending,
 
-        // Actions
         loadConversations,
         loadMessages,
         sendMessage,
@@ -295,9 +289,7 @@ export const useMessages = (): UseMessagesReturn => {
         markAsRead,
         deleteMessage,
         leaveConversation,
-        setCurrentConversation,
 
-        // Computed
         totalUnreadCount,
     };
 };

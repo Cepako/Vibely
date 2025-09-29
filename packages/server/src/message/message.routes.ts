@@ -1,4 +1,3 @@
-// src/message/message.routes.ts
 import { FastifyInstance } from 'fastify';
 import { MessageController } from './message.controller';
 import {

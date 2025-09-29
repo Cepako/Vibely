@@ -1,47 +1,44 @@
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
 import { useMessages } from './hooks/useMessages';
 import { useChatWebSocket } from '../hooks/useChatWebSocket';
 import { ConversationList } from './ConversationList';
-import { ChatWindow } from './ChatWindow';
 import { NewConversationModal } from './NewConversationModal';
+import type { Message } from '../../types/message';
+import { Outlet, useNavigate, useParams } from '@tanstack/react-router';
+import { Dialog, useDialog } from '../ui/Dialog';
 
 export default function MessagesView() {
-    const [showNewConversationModal, setShowNewConversationModal] =
-        useState(false);
+    const dialog = useDialog(false);
+    const navigate = useNavigate();
+    const params = useParams({ strict: false });
+    const conversationId = params.conversationId
+        ? Number(params.conversationId)
+        : null;
 
     const {
         conversations,
-        currentConversation,
-        messages,
         loading,
         error,
-        sending,
-        sendMessage,
         createConversation,
-        deleteMessage,
-        setCurrentConversation,
         totalUnreadCount,
         loadConversations,
         loadMessages,
-    } = useMessages();
+    } = useMessages(conversationId);
 
-    // WebSocket for real-time chat updates
     useChatWebSocket({
-        currentConversationId: currentConversation?.id || null,
+        currentConversationId: conversationId,
         onNewMessage: useCallback(
-            (message) => {
-                // If the message is for the current conversation, refresh messages immediately
+            (message: Message) => {
                 if (
-                    currentConversation &&
-                    message.conversationId === currentConversation.id
+                    conversationId &&
+                    message.conversationId === conversationId
                 ) {
-                    loadMessages(currentConversation.id);
+                    loadMessages(conversationId);
                 }
 
-                // Always refresh conversations to update last message and unread counts
                 loadConversations();
             },
-            [currentConversation, loadMessages, loadConversations]
+            [conversationId, loadMessages, loadConversations]
         ),
         onConversationUpdate: useCallback(() => {
             loadConversations();
@@ -57,72 +54,43 @@ export default function MessagesView() {
     };
 
     const handleSelectConversation = (conversation: any) => {
-        setCurrentConversation(conversation);
-    };
-
-    const handleSendMessage = async (content: string, file?: File) => {
-        if (!currentConversation) {
-            console.error('No conversation selected for sending message');
-            return;
-        }
-
-        try {
-            await sendMessage(content, file);
-        } catch (error) {
-            console.error('Error in handleSendMessage:', error);
-            // Optionally show user-friendly error message
-        }
-    };
-
-    const handleDeleteMessage = async (messageId: number) => {
-        try {
-            await deleteMessage(messageId);
-        } catch (error) {
-            console.error('Error deleting message:', error);
-        }
+        navigate({
+            to:
+                conversation.id === params.conversationId
+                    ? '/messages/'
+                    : `/messages/${conversation.id}`,
+        });
     };
 
     return (
         <>
-            {/* Messages Layout */}
             <div className='flex h-full flex-1'>
-                {/* Conversation List Sidebar */}
-                <div className='w-80 flex-shrink-0 border-r border-gray-200'>
+                <div className='w-96 flex-shrink-0 border-r border-slate-200'>
                     <ConversationList
                         conversations={conversations}
-                        currentConversation={currentConversation}
+                        conversationId={conversationId}
                         onSelectConversation={handleSelectConversation}
-                        onNewConversation={() =>
-                            setShowNewConversationModal(true)
-                        }
+                        onNewConversation={dialog.openDialog}
                         loading={loading}
                         totalUnreadCount={totalUnreadCount}
                     />
                 </div>
-
-                {/* Chat Window */}
-                <div className='flex-1'>
-                    <ChatWindow
-                        conversation={currentConversation}
-                        messages={messages}
-                        onSendMessage={handleSendMessage}
-                        onDeleteMessage={handleDeleteMessage}
-                        loading={loading}
-                        sending={sending}
-                    />
-                </div>
+                <Outlet />
             </div>
 
-            {/* New Conversation Modal */}
-            <NewConversationModal
-                isOpen={showNewConversationModal}
-                onClose={() => setShowNewConversationModal(false)}
-                onCreateConversation={handleCreateConversation}
-            />
+            <Dialog
+                isOpen={dialog.isOpen}
+                onClose={dialog.closeDialog}
+                size='md'
+            >
+                <NewConversationModal
+                    onClose={dialog.closeDialog}
+                    onCreateConversation={handleCreateConversation}
+                />
+            </Dialog>
 
-            {/* Error Display */}
             {error && (
-                <div className='fixed right-4 bottom-4 rounded-lg bg-red-500 px-4 py-2 text-white shadow-lg'>
+                <div className='fixed right-4 bottom-4 rounded-lg bg-rose-500 px-4 py-2 text-white shadow-lg'>
                     {error}
                 </div>
             )}

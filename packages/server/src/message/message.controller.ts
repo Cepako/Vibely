@@ -1,4 +1,3 @@
-// src/message/message.controller.ts
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { MessageService } from './message.service';
 import {
