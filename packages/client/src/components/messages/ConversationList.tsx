@@ -17,7 +17,6 @@ interface ConversationListProps {
     onSelectConversation: (conversation: Conversation) => void;
     onNewConversation: () => void;
     loading: boolean;
-    totalUnreadCount: number;
 }
 
 export const ConversationList: React.FC<ConversationListProps> = ({
@@ -26,7 +25,6 @@ export const ConversationList: React.FC<ConversationListProps> = ({
     onSelectConversation,
     onNewConversation,
     loading,
-    totalUnreadCount,
 }) => {
     const { user } = useAuth();
     const [searchTerm, setSearchTerm] = useState('');
@@ -94,12 +92,6 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                 <div className='text-primary-500 flex items-center gap-2'>
                     <IconMessages size={32} />
                     <h1 className='py-2 text-3xl font-bold'>Messages</h1>
-
-                    {totalUnreadCount > 0 && (
-                        <span className='min-w-[18px] rounded-full bg-red-500 px-2 py-1 text-center text-xs font-semibold text-white'>
-                            {totalUnreadCount}
-                        </span>
-                    )}
                 </div>
                 <button
                     className='bg-primary-500 hover:bg-primary-600 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full text-white transition-colors'

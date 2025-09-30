@@ -184,20 +184,35 @@ export class MessageService implements IMessageService {
                 ...(attachment && { attachments: [attachment] }),
             };
 
-            // Send real-time message to conversation participants
             this.broadcastMessageToConversation(
                 data.conversationId,
                 messageWithSender,
                 userId
             );
 
-            // Send notifications to other participants
-            await this.notifyConversationParticipants(
-                data.conversationId,
-                userId,
-                sender,
-                messageWithSender
-            );
+            try {
+                const parts = await db.query.conversationParticipants.findMany({
+                    where: eq(
+                        conversationParticipants.conversationId,
+                        data.conversationId
+                    ),
+                    columns: { userId: true },
+                });
+                const recipientIds = Array.from(
+                    new Set(
+                        parts.map((p) => p.userId).filter((id) => id !== userId)
+                    )
+                );
+
+                for (const rid of recipientIds) {
+                    websocketManager.emitEventToUser(rid, {
+                        type: 'chat_message',
+                        data: messageWithSender,
+                    });
+                }
+            } catch (err) {
+                console.error('Failed to emit chat events to recipients', err);
+            }
 
             return messageWithSender;
         } catch (error) {
@@ -427,10 +442,9 @@ export class MessageService implements IMessageService {
                     orderBy: [desc(messages.createdAt)],
                 });
 
-                // Get unread count
                 const unreadResult = await db
                     .select({
-                        count: sql<number>`count(*)`,
+                        count: sql<number>`count(*)::int`,
                     })
                     .from(messages)
                     .where(
@@ -739,39 +753,6 @@ export class MessageService implements IMessageService {
             });
         } catch (error) {
             console.error('Error broadcasting message:', error);
-        }
-    }
-
-    private async notifyConversationParticipants(
-        conversationId: number,
-        senderId: number,
-        sender: { name: string; surname: string },
-        message: MessageWithSender
-    ): Promise<void> {
-        try {
-            const participants =
-                await db.query.conversationParticipants.findMany({
-                    where: and(
-                        eq(
-                            conversationParticipants.conversationId,
-                            conversationId
-                        ),
-                        ne(conversationParticipants.userId, senderId)
-                    ),
-                });
-
-            const senderFullName = `${sender.name} ${sender.surname}`;
-
-            for (const participant of participants) {
-                await this.notificationService.notifyNewMessage(
-                    senderId,
-                    participant.userId,
-                    senderFullName,
-                    conversationId
-                );
-            }
-        } catch (error) {
-            console.error('Error notifying conversation participants:', error);
         }
     }
 }

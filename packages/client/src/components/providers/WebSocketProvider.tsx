@@ -22,6 +22,8 @@ interface WebSocketContextType {
             | ((prev: NotificationData[]) => NotificationData[])
     ) => void;
     setNotifications: (notifications: NotificationData[]) => void;
+    // subscribe to chat events coming over the notification websocket
+    addChatListener: (cb: (event: any) => void) => () => void;
 }
 
 const WebSocketContext = createContext<WebSocketContextType | null>(null);
@@ -94,6 +96,15 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
                             tag: `notification-${message.data.id}`,
                         });
                     }
+                } else if (message.type === 'chat_message') {
+                    const data = message.data;
+                    chatListenersRef.current.forEach((cb) => {
+                        try {
+                            cb(data);
+                        } catch (err) {
+                            console.error('chat listener error', err);
+                        }
+                    });
                 } else if (message.type === 'connected') {
                     console.log(
                         'Connected to notifications WebSocket:',
@@ -116,6 +127,15 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
             console.log('Disconnected from notifications WebSocket');
         }, []),
     });
+
+    const chatListenersRef = React.useRef(new Set<(e: any) => void>());
+
+    const addChatListener = useCallback((cb: (e: any) => void) => {
+        chatListenersRef.current.add(cb);
+        return () => {
+            chatListenersRef.current.delete(cb);
+        };
+    }, []);
 
     useEffect(() => {
         if (user?.id && Notification.permission === 'default') {
@@ -177,6 +197,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
             setUnreadCount,
             updateNotifications,
             setNotifications: setNotificationsMethod,
+            addChatListener,
         }),
         [
             isConnected,
@@ -185,6 +206,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
             addNotification,
             updateNotifications,
             setNotificationsMethod,
+            addChatListener,
         ]
     );
 

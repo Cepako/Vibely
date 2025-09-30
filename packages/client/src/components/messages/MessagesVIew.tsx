@@ -1,9 +1,8 @@
-import { useCallback } from 'react';
+import { useEffect } from 'react';
 import { useMessages } from './hooks/useMessages';
-import { useChatWebSocket } from '../hooks/useChatWebSocket';
 import { ConversationList } from './ConversationList';
 import { NewConversationModal } from './NewConversationModal';
-import type { Message } from '../../types/message';
+import { useWebSocketContext } from '../providers/WebSocketProvider';
 import { Outlet, useNavigate, useParams } from '@tanstack/react-router';
 import { Dialog, useDialog } from '../ui/Dialog';
 
@@ -20,30 +19,22 @@ export default function MessagesView() {
         loading,
         error,
         createConversation,
-        totalUnreadCount,
         loadConversations,
         loadMessages,
     } = useMessages(conversationId);
 
-    useChatWebSocket({
-        currentConversationId: conversationId,
-        onNewMessage: useCallback(
-            (message: Message) => {
-                if (
-                    conversationId &&
-                    message.conversationId === conversationId
-                ) {
-                    loadMessages(conversationId);
-                }
+    const { addChatListener } = useWebSocketContext();
 
-                loadConversations();
-            },
-            [conversationId, loadMessages, loadConversations]
-        ),
-        onConversationUpdate: useCallback(() => {
+    useEffect(() => {
+        const unsub = addChatListener((msg: any) => {
             loadConversations();
-        }, [loadConversations]),
-    });
+            if (conversationId && msg.conversationId === conversationId) {
+                loadMessages(conversationId);
+            }
+        });
+
+        return () => unsub();
+    }, [addChatListener, conversationId, loadConversations, loadMessages]);
 
     const handleCreateConversation = async (participantIds: number[]) => {
         try {
@@ -72,7 +63,6 @@ export default function MessagesView() {
                         onSelectConversation={handleSelectConversation}
                         onNewConversation={dialog.openDialog}
                         loading={loading}
-                        totalUnreadCount={totalUnreadCount}
                     />
                 </div>
                 <Outlet />

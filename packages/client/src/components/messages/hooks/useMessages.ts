@@ -23,8 +23,6 @@ interface UseMessagesReturn {
     markAsRead: (messageIds: number[]) => Promise<void>;
     deleteMessage: (messageId: number) => Promise<void>;
     leaveConversation: (conversationId: number) => Promise<void>;
-
-    totalUnreadCount: number;
 }
 
 export const useMessages = (
@@ -258,7 +256,6 @@ export const useMessages = (
         [leaveConversationMutation]
     );
 
-    // auto mark as read when viewing conversation
     useEffect(() => {
         if (!conversationId || messages.length === 0) return;
         const unreadMessages = messages
@@ -270,10 +267,6 @@ export const useMessages = (
     }, [conversationId, messages, user?.id, markAsRead]);
 
     const loading = conversationsLoading || messagesLoading;
-    const totalUnreadCount = (conversations || []).reduce(
-        (sum, conv) => sum + (conv.unreadCount || 0),
-        0
-    );
 
     return {
         conversations,
@@ -289,7 +282,5 @@ export const useMessages = (
         markAsRead,
         deleteMessage,
         leaveConversation,
-
-        totalUnreadCount,
     };
 };

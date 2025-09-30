@@ -40,9 +40,6 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
                 case 'friendships':
                     navigate({ to: `/profile/${notification.relatedId}` });
                     break;
-                case 'messages':
-                    navigate({ to: `/messages/${notification.relatedId}` });
-                    break;
                 case 'post_reactions':
                 case 'comment_reactions':
                 case 'comments':
