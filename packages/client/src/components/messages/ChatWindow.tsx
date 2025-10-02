@@ -5,9 +5,12 @@ import {
     IconPaperclip,
     IconSend,
     IconDotsVertical,
-    IconTrash,
+    IconRobot,
 } from '@tabler/icons-react';
 import { useAuth } from '../auth/AuthProvider';
+import UserAvatar from '../ui/UserAvatar';
+import type { User } from '../../types/user';
+import MessageBubble from './MessageBubble';
 
 interface ChatWindowProps {
     conversation: Conversation;
@@ -22,7 +25,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     conversation,
     messages,
     onSendMessage,
-    onDeleteMessage,
     loading,
     sending,
 }) => {
@@ -34,12 +36,10 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     const fileInputRef = useRef<HTMLInputElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-    // Auto-scroll to bottom
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     };
 
-    // Auto-resize textarea
     const adjustTextareaHeight = () => {
         if (textareaRef.current) {
             textareaRef.current.style.height = 'auto';
@@ -55,7 +55,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         adjustTextareaHeight();
     }, [messageText]);
 
-    // Handle file selection
     const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (file) {
@@ -69,7 +68,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         }
     };
 
-    // Remove selected file
     const removeFile = () => {
         setSelectedFile(null);
         if (previewUrl) {
@@ -81,7 +79,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         }
     };
 
-    // Handle send message
     const handleSendMessage = async () => {
         if ((!messageText.trim() && !selectedFile) || sending) return;
 
@@ -96,11 +93,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             removeFile();
         } catch (error) {
             console.error('Failed to send message:', error);
-            // You might want to show a toast notification here
         }
     };
 
-    // Handle key press
     const handleKeyPress = (event: React.KeyboardEvent) => {
         if (event.key === 'Enter' && !event.shiftKey) {
             event.preventDefault();
@@ -108,19 +103,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         }
     };
 
-    // Format message timestamp
-    const formatMessageTime = (timestamp: string) => {
-        const date = new Date(timestamp);
-        if (isToday(date)) {
-            return format(date, 'HH:mm');
-        } else if (isYesterday(date)) {
-            return `Yesterday ${format(date, 'HH:mm')}`;
-        } else {
-            return format(date, 'MMM d, HH:mm');
-        }
-    };
-
-    // Group messages by date
     const groupMessagesByDate = (messages: Message[]) => {
         const groups: { [key: string]: Message[] } = {};
 
@@ -199,7 +181,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                 </div>
             </div>
 
-            {/* Messages Container */}
             <div className='bg-primary-50 flex-1 overflow-y-auto p-4'>
                 {loading ? (
                     <div className='flex h-48 flex-col items-center justify-center text-slate-500'>
@@ -214,14 +195,12 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                     Object.entries(messageGroups).map(
                         ([date, messagesInGroup]) => (
                             <div key={date} className='mb-6'>
-                                {/* Date Separator */}
                                 <div className='my-4 flex justify-center'>
-                                    <span className='rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-500'>
+                                    <span className='bg-primary-500 rounded-full px-3 py-1 text-xs text-white shadow'>
                                         {date}
                                     </span>
                                 </div>
 
-                                {/* Messages */}
                                 {messagesInGroup.map((message, index) => {
                                     const isOwnMessage =
                                         message.senderId === user?.id;
@@ -235,31 +214,15 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                                     return (
                                         <div
                                             key={message.id}
-                                            className={`mb-2 flex items-end ${isOwnMessage ? 'justify-end' : 'justify-start'}`}
+                                            className={`mb-0.5 flex items-end ${isOwnMessage ? 'justify-end' : 'justify-start'}`}
                                         >
-                                            {/* Avatar for other users */}
                                             {showAvatar && !isOwnMessage && (
-                                                <div className='mr-2 mb-1 h-8 w-8 flex-shrink-0'>
-                                                    {message.sender
-                                                        .profilePictureUrl ? (
-                                                        <img
-                                                            src={
-                                                                message.sender
-                                                                    .profilePictureUrl
-                                                            }
-                                                            alt={
-                                                                message.sender
-                                                                    .name
-                                                            }
-                                                            className='h-full w-full rounded-full object-cover'
-                                                        />
-                                                    ) : (
-                                                        <div className='from-primary-400 flex h-full w-full items-center justify-center rounded-full bg-gradient-to-br to-purple-500 text-sm font-semibold text-white'>
-                                                            {message.sender.name
-                                                                .charAt(0)
-                                                                .toUpperCase()}
-                                                        </div>
-                                                    )}
+                                                <div className='flex-shrink-0'>
+                                                    <UserAvatar
+                                                        user={
+                                                            message.sender as User
+                                                        }
+                                                    />
                                                 </div>
                                             )}
 
@@ -271,122 +234,27 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                                             <div
                                                 className={`group relative max-w-xs lg:max-w-md ${isOwnMessage ? 'order-1' : ''}`}
                                             >
-                                                {/* Sender name for other users */}
-                                                {!isOwnMessage &&
-                                                    showAvatar && (
-                                                        <div className='mb-1 ml-1 text-xs text-slate-500'>
-                                                            {
-                                                                message.sender
-                                                                    .name
-                                                            }{' '}
-                                                            {
-                                                                message.sender
-                                                                    .surname
-                                                            }
-                                                        </div>
-                                                    )}
+                                                <MessageBubble
+                                                    isOwnMessage={isOwnMessage}
+                                                    isGroupChat={
+                                                        conversation
+                                                            .participants
+                                                            .length > 2
+                                                    }
+                                                    message={message}
+                                                    nextMessage={
+                                                        messagesInGroup[
+                                                            index + 1
+                                                        ]
+                                                    }
+                                                    prevMessage={
+                                                        messagesInGroup[
+                                                            index - 1
+                                                        ]
+                                                    }
+                                                />
 
-                                                {/* Message bubble */}
-                                                <div
-                                                    className={`rounded-2xl px-4 py-2 ${
-                                                        isOwnMessage
-                                                            ? 'bg-primary-500 rounded-br-md text-white'
-                                                            : 'rounded-bl-md border border-slate-200 bg-white text-slate-900'
-                                                    }`}
-                                                >
-                                                    {/* Attachments */}
-                                                    {message.attachments &&
-                                                        message.attachments
-                                                            .length > 0 && (
-                                                            <div className='mb-2'>
-                                                                {message.attachments.map(
-                                                                    (
-                                                                        attachment
-                                                                    ) => (
-                                                                        <div
-                                                                            key={
-                                                                                attachment.id
-                                                                            }
-                                                                        >
-                                                                            {attachment.fileType ===
-                                                                            'image' ? (
-                                                                                <img
-                                                                                    src={
-                                                                                        attachment.fileUrl
-                                                                                    }
-                                                                                    alt='Attachment'
-                                                                                    className='h-auto max-w-full rounded-lg'
-                                                                                />
-                                                                            ) : attachment.fileType ===
-                                                                              'video' ? (
-                                                                                <video
-                                                                                    src={
-                                                                                        attachment.fileUrl
-                                                                                    }
-                                                                                    controls
-                                                                                    className='h-auto max-w-full rounded-lg'
-                                                                                />
-                                                                            ) : (
-                                                                                <a
-                                                                                    href={
-                                                                                        attachment.fileUrl
-                                                                                    }
-                                                                                    target='_blank'
-                                                                                    rel='noopener noreferrer'
-                                                                                    className='bg-opacity-10 hover:bg-opacity-20 inline-flex items-center rounded-lg bg-black p-2 transition-colors'
-                                                                                >
-                                                                                    📄{' '}
-                                                                                    {attachment.fileUrl
-                                                                                        .split(
-                                                                                            '/'
-                                                                                        )
-                                                                                        .pop()}
-                                                                                </a>
-                                                                            )}
-                                                                        </div>
-                                                                    )
-                                                                )}
-                                                            </div>
-                                                        )}
-
-                                                    {/* Message text */}
-                                                    {message.content && (
-                                                        <div className='break-words whitespace-pre-wrap'>
-                                                            {message.content}
-                                                        </div>
-                                                    )}
-
-                                                    {/* Message time */}
-                                                    <div
-                                                        className={`mt-1 flex items-center gap-1 text-xs ${
-                                                            isOwnMessage
-                                                                ? 'text-primary-100'
-                                                                : 'text-slate-500'
-                                                        }`}
-                                                    >
-                                                        <span>
-                                                            {formatMessageTime(
-                                                                message.createdAt
-                                                            )}
-                                                        </span>
-                                                        {isOwnMessage && (
-                                                            <span
-                                                                className={
-                                                                    message.isRead
-                                                                        ? 'text-primary-200'
-                                                                        : 'text-primary-300'
-                                                                }
-                                                            >
-                                                                {message.isRead
-                                                                    ? '✓✓'
-                                                                    : '✓'}
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                </div>
-
-                                                {/* Delete button for own messages */}
-                                                {isOwnMessage && (
+                                                {/* {isOwnMessage && (
                                                     <button
                                                         className='absolute top-1/2 -left-8 flex h-6 w-6 -translate-y-1/2 transform items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 opacity-0 transition-all group-hover:opacity-100 hover:bg-red-50 hover:text-red-500'
                                                         onClick={() =>
@@ -398,7 +266,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                                                     >
                                                         <IconTrash size={12} />
                                                     </button>
-                                                )}
+                                                )} */}
                                             </div>
                                         </div>
                                     );
@@ -410,9 +278,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                 <div ref={messagesEndRef} />
             </div>
 
-            {/* Message Input */}
             <div className='border-t border-slate-200 bg-white p-4'>
-                {/* File Preview */}
                 {selectedFile && (
                     <div className='mb-3'>
                         <div className='relative inline-block overflow-hidden rounded-lg bg-slate-100'>
@@ -437,11 +303,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                     </div>
                 )}
 
-                {/* Input Area */}
-                <div className='flex items-end gap-2 rounded-full bg-slate-100 p-2'>
-                    {/* Attach Button */}
+                <div className='flex items-center gap-2 rounded-full bg-slate-100 p-2'>
                     <button
-                        className='hover:text-primary-500 flex-shrink-0 rounded-full p-2 text-slate-500 transition-colors hover:bg-white'
+                        className='hover:text-primary-500 flex-shrink-0 cursor-pointer rounded-full p-2 text-slate-500 transition-colors hover:bg-white'
                         onClick={() => fileInputRef.current?.click()}
                         title='Attach file'
                     >
@@ -456,13 +320,12 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                         className='hidden'
                     />
 
-                    {/* Text Input */}
                     <div className='flex-1'>
                         <textarea
                             ref={textareaRef}
                             value={messageText}
                             onChange={(e) => setMessageText(e.target.value)}
-                            onKeyPress={handleKeyPress}
+                            onKeyDown={handleKeyPress}
                             placeholder='Type a message...'
                             className='max-h-24 w-full resize-none border-none bg-transparent px-3 py-2 text-sm outline-none'
                             rows={1}
@@ -470,11 +333,18 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                         />
                     </div>
 
-                    {/* Send Button */}
+                    <button
+                        className={`flex-shrink-0 cursor-pointer rounded-full bg-cyan-600 p-2 text-white transition-colors hover:bg-cyan-700`}
+                        onClick={() => {}} //TODO: handle AI
+                        title='Conversation Advisor'
+                    >
+                        <IconRobot size={20} />
+                    </button>
+
                     <button
                         className={`flex-shrink-0 rounded-full p-2 transition-colors ${
                             messageText.trim() || selectedFile
-                                ? 'bg-primary-500 hover:bg-primary-600 text-white'
+                                ? 'bg-primary-500 hover:bg-primary-600 cursor-pointer text-white'
                                 : 'bg-slate-200 text-slate-400'
                         }`}
                         onClick={handleSendMessage}

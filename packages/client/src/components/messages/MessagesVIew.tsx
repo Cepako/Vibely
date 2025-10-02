@@ -47,7 +47,8 @@ export default function MessagesView() {
     const handleSelectConversation = (conversation: any) => {
         navigate({
             to:
-                conversation.id === params.conversationId
+                params.conversationId &&
+                conversation.id === Number(params.conversationId)
                     ? '/messages/'
                     : `/messages/${conversation.id}`,
         });
