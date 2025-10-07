@@ -6,6 +6,11 @@ export const MessageContentType = Type.Union([
     Type.Literal('video'),
 ]);
 
+export const ConversationType = Type.Union([
+    Type.Literal('direct'),
+    Type.Literal('group'),
+]);
+
 export const CreateMessageSchema = Type.Object({
     conversationId: Type.Number(),
     content: Type.String({ minLength: 1, maxLength: 2000 }),
@@ -14,6 +19,17 @@ export const CreateMessageSchema = Type.Object({
 
 export const CreateConversationSchema = Type.Object({
     participantIds: Type.Array(Type.Number(), { minItems: 1, maxItems: 50 }),
+    type: Type.Optional(ConversationType),
+});
+
+export const UpdateConversationNameSchema = Type.Object({
+    name: Type.Optional(Type.String({ minLength: 1, maxLength: 100 })),
+});
+
+export const UpdateParticipantNicknameSchema = Type.Object({
+    conversationId: Type.Number(),
+    userId: Type.Number(),
+    nickname: Type.String({ minLength: 1, maxLength: 100 }),
 });
 
 export const MarkAsReadSchema = Type.Object({
@@ -39,6 +55,16 @@ export type CreateMessageType = {
 
 export type CreateConversationType = {
     participantIds: number[];
+    type?: 'direct' | 'group';
+};
+
+export type UpdateConversationNameType = {
+    name?: string;
+};
+
+export type UpdateParticipantNicknameType = {
+    userId: number;
+    nickname: string;
 };
 
 export type MarkAsReadType = {

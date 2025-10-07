@@ -6,10 +6,14 @@ import {
     messageAttachments,
     users,
 } from '../db/schema';
-import { and, eq, desc, inArray, sql, or, asc, ne } from 'drizzle-orm';
-import { CreateMessageType, CreateConversationType } from './message.schema';
+import { and, eq, desc, inArray, sql, ne } from 'drizzle-orm';
 import {
-    Message,
+    CreateMessageType,
+    CreateConversationType,
+    UpdateParticipantNicknameType,
+    UpdateConversationNameType,
+} from './message.schema';
+import {
     MessageWithSender,
     ConversationWithDetails,
     MessageAttachment,
@@ -24,28 +28,59 @@ interface IMessageService {
         data: CreateMessageType,
         file?: FileInput
     ): Promise<MessageWithSender>;
+
     getMessages(
         userId: number,
         conversationId: number,
         limit?: number,
         offset?: number
     ): Promise<MessageWithSender[]>;
+
     markMessagesAsRead(userId: number, messageIds: number[]): Promise<void>;
+
     createConversation(
         userId: number,
         data: CreateConversationType
     ): Promise<ConversationWithDetails>;
+
     getUserConversations(
         userId: number,
         limit?: number,
         offset?: number
     ): Promise<ConversationWithDetails[]>;
+
     getConversationById(
         userId: number,
         conversationId: number
     ): Promise<ConversationWithDetails | null>;
+
     deleteMessage(userId: number, messageId: number): Promise<void>;
+
     leaveConversation(userId: number, conversationId: number): Promise<void>;
+
+    updateConversation(
+        userId: number,
+        conversationId: number,
+        data: UpdateConversationNameType
+    ): Promise<ConversationWithDetails>;
+
+    updateParticipantNickname(
+        userId: number,
+        conversationId: number,
+        data: UpdateParticipantNicknameType
+    ): Promise<void>;
+
+    addParticipantToConversation(
+        userId: number,
+        conversationId: number,
+        newParticipantId: number
+    ): Promise<void>;
+
+    removeParticipantFromConversation(
+        userId: number,
+        conversationId: number,
+        participantId: number
+    ): Promise<void>;
 }
 
 export class MessageService implements IMessageService {
@@ -61,7 +96,6 @@ export class MessageService implements IMessageService {
         file?: FileInput
     ): Promise<MessageWithSender> {
         try {
-            // Verify user is participant of the conversation
             const participation =
                 await db.query.conversationParticipants.findFirst({
                     where: and(
@@ -79,7 +113,6 @@ export class MessageService implements IMessageService {
                 );
             }
 
-            // Create the message
             const [newMessage] = await db
                 .insert(messages)
                 .values({
@@ -95,7 +128,6 @@ export class MessageService implements IMessageService {
                 throw new Error('Failed to create message');
             }
 
-            // Handle file attachment if provided
             let attachment: MessageAttachment | null = null;
             if (file) {
                 const allowedTypes =
@@ -146,7 +178,6 @@ export class MessageService implements IMessageService {
                 }
             }
 
-            // Get sender info
             const sender = await db.query.users.findFirst({
                 where: eq(users.id, userId),
                 columns: {
@@ -161,7 +192,6 @@ export class MessageService implements IMessageService {
                 throw new Error('Sender not found');
             }
 
-            // Update conversation timestamp
             await db
                 .update(conversations)
                 .set({
@@ -180,7 +210,7 @@ export class MessageService implements IMessageService {
                     | 'video',
                 isRead: newMessage.isRead || false,
                 createdAt: newMessage.createdAt || new Date().toISOString(),
-                sender,
+                sender: { ...sender, isOnline: null },
                 ...(attachment && { attachments: [attachment] }),
             };
 
@@ -227,7 +257,6 @@ export class MessageService implements IMessageService {
         offset = 0
     ): Promise<MessageWithSender[]> {
         try {
-            // Verify user is participant
             const participation =
                 await db.query.conversationParticipants.findFirst({
                     where: and(
@@ -272,7 +301,7 @@ export class MessageService implements IMessageService {
                     contentType: msg.contentType as 'text' | 'image' | 'video',
                     isRead: msg.isRead || false,
                     createdAt: msg.createdAt || new Date().toISOString(),
-                    sender: msg.user,
+                    sender: { ...msg.user, isOnline: null },
                     ...(msg.messageAttachments.length > 0 && {
                         attachments: msg.messageAttachments.map((att) => ({
                             id: att.id,
@@ -285,7 +314,7 @@ export class MessageService implements IMessageService {
                         })),
                     }),
                 }))
-                .reverse(); // Return in chronological order
+                .reverse();
         } catch (error) {
             throw new Error(`Failed to get messages: ${error}`);
         }
@@ -296,7 +325,6 @@ export class MessageService implements IMessageService {
         messageIds: number[]
     ): Promise<void> {
         try {
-            // Only mark messages as read if the user is the recipient
             await db
                 .update(messages)
                 .set({
@@ -305,7 +333,7 @@ export class MessageService implements IMessageService {
                 .where(
                     and(
                         inArray(messages.id, messageIds),
-                        ne(messages.senderId, userId) // Don't mark own messages as read
+                        ne(messages.senderId, userId)
                     )
                 );
         } catch (error) {
@@ -318,11 +346,9 @@ export class MessageService implements IMessageService {
         data: CreateConversationType
     ): Promise<ConversationWithDetails> {
         try {
-            // Check if conversation already exists with same participants
             const allParticipants = [...data.participantIds, userId];
             const uniqueParticipants = [...new Set(allParticipants)];
 
-            // Validate all participants exist and are not blocked
             const participantUsers = await db.query.users.findMany({
                 where: inArray(users.id, uniqueParticipants),
                 columns: {
@@ -339,7 +365,6 @@ export class MessageService implements IMessageService {
                 throw new Error('Some participants not found');
             }
 
-            // Check for inactive users
             const activeUsers = participantUsers.filter(
                 (user) => user.status === 'active'
             );
@@ -349,36 +374,42 @@ export class MessageService implements IMessageService {
                 );
             }
 
-            // For any conversation, check if one already exists with exact same participants
-            const existingConversation =
-                await this.findExistingConversationWithParticipants(
-                    uniqueParticipants
-                );
-            if (existingConversation) {
-                return existingConversation;
+            const conversationType =
+                data.type ||
+                (uniqueParticipants.length > 2 ? 'group' : 'direct');
+
+            if (conversationType === 'direct') {
+                const existingConversation =
+                    await this.findExistingConversationWithParticipants(
+                        uniqueParticipants
+                    );
+                if (existingConversation) {
+                    return existingConversation;
+                }
             }
 
-            // Create new conversation
             const [newConversation] = await db
                 .insert(conversations)
-                .values({})
+                .values({ type: conversationType })
                 .returning();
 
             if (!newConversation) {
                 throw new Error('Failed to create conversation');
             }
 
-            // Add participants
             const participantValues = uniqueParticipants.map(
                 (participantId) => ({
                     conversationId: newConversation.id,
                     userId: participantId,
+                    role:
+                        participantId === userId && conversationType === 'group'
+                            ? 'admin'
+                            : 'member',
                 })
             );
 
             await db.insert(conversationParticipants).values(participantValues);
 
-            // Return conversation with details
             return (await this.getConversationById(
                 userId,
                 newConversation.id
@@ -426,7 +457,6 @@ export class MessageService implements IMessageService {
             for (const userConv of userConversations) {
                 const conversation = userConv.conversation;
 
-                // Get last message
                 const lastMessage = await db.query.messages.findFirst({
                     where: eq(messages.conversationId, conversation.id),
                     with: {
@@ -459,6 +489,8 @@ export class MessageService implements IMessageService {
 
                 conversationsWithDetails.push({
                     id: conversation.id,
+                    type: conversation.type,
+                    name: conversation.name,
                     createdAt:
                         conversation.createdAt || new Date().toISOString(),
                     updatedAt:
@@ -466,6 +498,8 @@ export class MessageService implements IMessageService {
                     participants: conversation.conversationParticipants.map(
                         (cp) => ({
                             id: cp.id,
+                            nickname: cp.nickname,
+                            role: cp.role || 'member',
                             conversationId: cp.conversationId,
                             userId: cp.userId,
                             createdAt: cp.createdAt || new Date().toISOString(),
@@ -486,14 +520,13 @@ export class MessageService implements IMessageService {
                               createdAt:
                                   lastMessage.createdAt ||
                                   new Date().toISOString(),
-                              sender: lastMessage.user,
+                              sender: { ...lastMessage.user, isOnline: null },
                           }
                         : undefined,
                     unreadCount,
                 });
             }
 
-            // Sort by last message or conversation update time
             return conversationsWithDetails.sort((a, b) => {
                 const aTime = a.lastMessage?.createdAt || a.updatedAt;
                 const bTime = b.lastMessage?.createdAt || b.updatedAt;
@@ -509,7 +542,6 @@ export class MessageService implements IMessageService {
         conversationId: number
     ): Promise<ConversationWithDetails | null> {
         try {
-            // Verify user is participant
             const participation =
                 await db.query.conversationParticipants.findFirst({
                     where: and(
@@ -548,7 +580,6 @@ export class MessageService implements IMessageService {
                 return null;
             }
 
-            // Get last message
             const lastMessage = await db.query.messages.findFirst({
                 where: eq(messages.conversationId, conversationId),
                 with: {
@@ -564,7 +595,6 @@ export class MessageService implements IMessageService {
                 orderBy: [desc(messages.createdAt)],
             });
 
-            // Get unread count
             const unreadResult = await db
                 .select({
                     count: sql<number>`count(*)`,
@@ -582,6 +612,8 @@ export class MessageService implements IMessageService {
 
             return {
                 id: conversation.id,
+                type: conversation.type,
+                name: conversation.name,
                 createdAt: conversation.createdAt || new Date().toISOString(),
                 updatedAt: conversation.updatedAt || new Date().toISOString(),
                 participants: conversation.conversationParticipants.map(
@@ -589,6 +621,8 @@ export class MessageService implements IMessageService {
                         id: cp.id,
                         conversationId: cp.conversationId,
                         userId: cp.userId,
+                        nickname: cp.nickname,
+                        role: cp.role || 'member',
                         createdAt: cp.createdAt || new Date().toISOString(),
                         user: cp.user,
                     })
@@ -606,7 +640,7 @@ export class MessageService implements IMessageService {
                           isRead: lastMessage.isRead || false,
                           createdAt:
                               lastMessage.createdAt || new Date().toISOString(),
-                          sender: lastMessage.user,
+                          sender: { ...lastMessage.user, isOnline: null },
                       }
                     : undefined,
                 unreadCount,
@@ -652,7 +686,6 @@ export class MessageService implements IMessageService {
                     )
                 );
 
-            // Check if conversation has any participants left
             const remainingParticipants =
                 await db.query.conversationParticipants.findMany({
                     where: eq(
@@ -661,7 +694,6 @@ export class MessageService implements IMessageService {
                     ),
                 });
 
-            // If no participants left, delete the conversation
             if (remainingParticipants.length === 0) {
                 await db
                     .delete(conversations)
@@ -672,11 +704,231 @@ export class MessageService implements IMessageService {
         }
     }
 
+    async updateConversation(
+        userId: number,
+        conversationId: number,
+        data: UpdateConversationNameType
+    ): Promise<ConversationWithDetails> {
+        try {
+            const participant =
+                await db.query.conversationParticipants.findFirst({
+                    where: and(
+                        eq(
+                            conversationParticipants.conversationId,
+                            conversationId
+                        ),
+                        eq(conversationParticipants.userId, userId)
+                    ),
+                });
+
+            if (!participant) {
+                throw new Error(
+                    'User is not a participant of this conversation'
+                );
+            }
+
+            const conversation = await db.query.conversations.findFirst({
+                where: eq(conversations.id, conversationId),
+            });
+
+            if (!conversation) {
+                throw new Error('Conversation not found');
+            }
+
+            await db
+                .update(conversations)
+                .set({
+                    ...(data.name && { name: data.name }),
+                    updatedAt: new Date().toISOString(),
+                })
+                .where(eq(conversations.id, conversationId));
+
+            return (await this.getConversationById(
+                userId,
+                conversationId
+            )) as ConversationWithDetails;
+        } catch (error) {
+            throw new Error(`Failed to update conversation: ${error}`);
+        }
+    }
+
+    async updateParticipantNickname(
+        userId: number,
+        conversationId: number,
+        data: UpdateParticipantNicknameType
+    ): Promise<void> {
+        try {
+            const requesterParticipant =
+                await db.query.conversationParticipants.findFirst({
+                    where: and(
+                        eq(
+                            conversationParticipants.conversationId,
+                            conversationId
+                        ),
+                        eq(conversationParticipants.userId, userId)
+                    ),
+                });
+
+            if (!requesterParticipant) {
+                throw new Error(
+                    'You are not a participant of this conversation'
+                );
+            }
+
+            const targetParticipant =
+                await db.query.conversationParticipants.findFirst({
+                    where: and(
+                        eq(
+                            conversationParticipants.conversationId,
+                            conversationId
+                        ),
+                        eq(conversationParticipants.userId, data.userId)
+                    ),
+                });
+
+            if (!targetParticipant) {
+                throw new Error(
+                    'Target user is not a participant of this conversation'
+                );
+            }
+
+            await db
+                .update(conversationParticipants)
+                .set({
+                    nickname: data.nickname,
+                })
+                .where(eq(conversationParticipants.id, targetParticipant.id));
+        } catch (error) {
+            throw new Error(`Failed to update participant nickname: ${error}`);
+        }
+    }
+
+    async addParticipantToConversation(
+        userId: number,
+        conversationId: number,
+        newParticipantId: number
+    ): Promise<void> {
+        try {
+            const conversation = await db.query.conversations.findFirst({
+                where: eq(conversations.id, conversationId),
+            });
+
+            if (!conversation) {
+                throw new Error('Conversation not found');
+            }
+
+            if (conversation.type !== 'group') {
+                throw new Error(
+                    'Can only add participants to group conversations'
+                );
+            }
+
+            const requester = await db.query.conversationParticipants.findFirst(
+                {
+                    where: and(
+                        eq(
+                            conversationParticipants.conversationId,
+                            conversationId
+                        ),
+                        eq(conversationParticipants.userId, userId)
+                    ),
+                }
+            );
+
+            if (!requester || requester.role !== 'admin') {
+                throw new Error('Only admins can add participants');
+            }
+
+            const existing = await db.query.conversationParticipants.findFirst({
+                where: and(
+                    eq(conversationParticipants.conversationId, conversationId),
+                    eq(conversationParticipants.userId, newParticipantId)
+                ),
+            });
+
+            if (existing) {
+                throw new Error('User is already a participant');
+            }
+
+            await db.insert(conversationParticipants).values({
+                conversationId,
+                userId: newParticipantId,
+                role: 'member',
+            });
+        } catch (error) {
+            throw new Error(`Failed to add participant: ${error}`);
+        }
+    }
+
+    async removeParticipantFromConversation(
+        userId: number,
+        conversationId: number,
+        participantId: number
+    ): Promise<void> {
+        try {
+            const conversation = await db.query.conversations.findFirst({
+                where: eq(conversations.id, conversationId),
+            });
+
+            if (!conversation) {
+                throw new Error('Conversation not found');
+            }
+
+            if (conversation.type !== 'group') {
+                throw new Error(
+                    'Can only remove participants from group conversations'
+                );
+            }
+
+            const requester = await db.query.conversationParticipants.findFirst(
+                {
+                    where: and(
+                        eq(
+                            conversationParticipants.conversationId,
+                            conversationId
+                        ),
+                        eq(conversationParticipants.userId, userId)
+                    ),
+                }
+            );
+
+            if (!requester || requester.role !== 'admin') {
+                throw new Error('Only admins can remove participants');
+            }
+
+            await db
+                .delete(conversationParticipants)
+                .where(
+                    and(
+                        eq(
+                            conversationParticipants.conversationId,
+                            conversationId
+                        ),
+                        eq(conversationParticipants.userId, participantId)
+                    )
+                );
+
+            const remaining = await db.query.conversationParticipants.findMany({
+                where: eq(
+                    conversationParticipants.conversationId,
+                    conversationId
+                ),
+            });
+
+            if (remaining.length === 0) {
+                await db
+                    .delete(conversations)
+                    .where(eq(conversations.id, conversationId));
+            }
+        } catch (error) {
+            throw new Error(`Failed to remove participant: ${error}`);
+        }
+    }
+
     private async findExistingConversationWithParticipants(
         participantIds: number[]
     ): Promise<ConversationWithDetails | null> {
         try {
-            // Get all conversations where at least one of our participants is involved
             const potentialConversations =
                 await db.query.conversationParticipants.findMany({
                     where: inArray(
@@ -694,7 +946,6 @@ export class MessageService implements IMessageService {
                 return null;
             }
 
-            // For each conversation, check if it has exactly the same participants
             for (const conversationId of conversationIds) {
                 const participantsInConv =
                     await db.query.conversationParticipants.findMany({
@@ -710,16 +961,15 @@ export class MessageService implements IMessageService {
                     .sort();
                 const targetParticipantIds = [...participantIds].sort();
 
-                // Check if arrays are equal
                 if (
                     convParticipantIds.length === targetParticipantIds.length &&
                     convParticipantIds.every(
                         (id, index) => id === targetParticipantIds[index]
-                    )
+                    ) &&
+                    participantIds.length > 1
                 ) {
-                    // Found existing conversation with same participants
                     return await this.getConversationById(
-                        participantIds[0],
+                        participantIds[0]!,
                         conversationId
                     );
                 }

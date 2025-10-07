@@ -1,7 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { MessageController } from './message.controller';
 import {
-    CreateMessageSchema,
     CreateConversationSchema,
     MarkAsReadSchema,
     GetMessagesQuerySchema,

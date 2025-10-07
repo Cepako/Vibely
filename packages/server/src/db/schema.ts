@@ -1,7 +1,8 @@
-import { pgTable, serial, timestamp, index, foreignKey, unique, check, integer, varchar, text, boolean, date, pgEnum } from "drizzle-orm/pg-core"
+import { pgTable, index, foreignKey, unique, check, serial, integer, timestamp, varchar, text, boolean, date, pgEnum } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 
 export const contentType = pgEnum("content_type", ['text', 'video', 'image'])
+export const conversationType = pgEnum("conversation_type", ['direct', 'group'])
 export const fileType = pgEnum("file_type", ['image', 'video', 'pdf'])
 export const friendshipStatusType = pgEnum("friendship_status_type", ['pending', 'accepted', 'rejected', 'blocked'])
 export const genderType = pgEnum("gender_type", ['male', 'female'])
@@ -13,12 +14,6 @@ export const reportStatusType = pgEnum("report_status_type", ['pending', 'review
 export const userRoleType = pgEnum("user_role_type", ['user', 'admin'])
 export const userStatusType = pgEnum("user_status_type", ['active', 'inactive', 'suspended', 'banned'])
 
-
-export const conversations = pgTable("conversations", {
-	id: serial().primaryKey().notNull(),
-	createdAt: timestamp("created_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
-	updatedAt: timestamp("updated_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
-});
 
 export const friendships = pgTable("friendships", {
 	id: serial().primaryKey().notNull(),
@@ -124,6 +119,8 @@ export const conversationParticipants = pgTable("conversation_participants", {
 	conversationId: integer("conversation_id").notNull(),
 	userId: integer("user_id").notNull(),
 	createdAt: timestamp("created_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
+	nickname: varchar({ length: 100 }),
+	role: varchar({ length: 20 }).default('member').notNull(),
 }, (table) => [
 	index("idx_conversation_participants_conversation_id").using("btree", table.conversationId.asc().nullsLast().op("int4_ops")),
 	index("idx_conversation_participants_user_id").using("btree", table.userId.asc().nullsLast().op("int4_ops")),
@@ -267,6 +264,16 @@ export const posts = pgTable("posts", {
 			foreignColumns: [users.id],
 			name: "posts_user_id_fkey"
 		}).onDelete("cascade"),
+]);
+
+export const conversations = pgTable("conversations", {
+	id: serial().primaryKey().notNull(),
+	createdAt: timestamp("created_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
+	updatedAt: timestamp("updated_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
+	type: conversationType().default('direct').notNull(),
+	name: varchar({ length: 100 }),
+}, (table) => [
+	index("idx_conversations_type").using("btree", table.type.asc().nullsLast().op("enum_ops")),
 ]);
 
 export const userReports = pgTable("user_reports", {

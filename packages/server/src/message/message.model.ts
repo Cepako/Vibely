@@ -9,12 +9,7 @@ export interface Message {
 }
 
 export interface MessageWithSender extends Message {
-    sender: {
-        id: number;
-        name: string;
-        surname: string;
-        profilePictureUrl?: string | null;
-    };
+    sender: UserBasicInfo;
     attachments?: MessageAttachment[];
 }
 
@@ -26,14 +21,13 @@ export interface MessageAttachment {
     fileSize: number;
     createdAt: string;
 }
-
-export interface Conversation {
+export type ConversationType = 'direct' | 'group';
+export interface ConversationWithDetails {
     id: number;
+    type: ConversationType;
+    name: string | null;
     createdAt: string;
     updatedAt: string;
-}
-
-export interface ConversationWithDetails extends Conversation {
     participants: ConversationParticipant[];
     lastMessage?: MessageWithSender;
     unreadCount: number;
@@ -43,12 +37,16 @@ export interface ConversationParticipant {
     id: number;
     conversationId: number;
     userId: number;
+    nickname: string | null;
+    role: string;
     createdAt: string;
-    user: {
-        id: number;
-        name: string;
-        surname: string;
-        profilePictureUrl?: string | null;
-        isOnline: boolean;
-    };
+    user: UserBasicInfo;
+}
+
+export interface UserBasicInfo {
+    id: number;
+    name: string;
+    surname: string;
+    profilePictureUrl: string | null;
+    isOnline: boolean | null;
 }
