@@ -4,6 +4,8 @@ import type {
     CreateMessageData,
     CreateConversationData,
     MessageResponse,
+    UpdateConversationNameData,
+    UpdateParticipantNicknameData,
 } from '../../types/message';
 
 class MessageApi {
@@ -52,6 +54,58 @@ class MessageApi {
             body: JSON.stringify(data),
         });
         return response?.data as Conversation;
+    }
+
+    async updateConversationName(
+        conversationId: number,
+        data: UpdateConversationNameData
+    ): Promise<Conversation> {
+        const response = await this.request<MessageResponse>(
+            `/conversations/${conversationId}/participants/nickname`,
+            {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+            }
+        );
+        return response?.data as Conversation;
+    }
+
+    async updateParticipantNickname(
+        conversationId: number,
+        data: UpdateParticipantNicknameData
+    ): Promise<void> {
+        await this.request(
+            `/conversations/${conversationId}/participants/nickname`,
+            {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+            }
+        );
+    }
+
+    async addParticipant(
+        conversationId: number,
+        userId: number
+    ): Promise<void> {
+        await this.request(`/conversations/${conversationId}/participants`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId }),
+        });
+    }
+
+    async removeParticipant(
+        conversationId: number,
+        userId: number
+    ): Promise<void> {
+        await this.request(
+            `/conversations/${conversationId}/participants/${userId}`,
+            {
+                method: 'DELETE',
+            }
+        );
     }
 
     async getMessages(

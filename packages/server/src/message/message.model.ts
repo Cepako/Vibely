@@ -49,4 +49,5 @@ export interface UserBasicInfo {
     surname: string;
     profilePictureUrl: string | null;
     isOnline: boolean | null;
+    nickname?: string | null;
 }

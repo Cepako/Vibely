@@ -7,6 +7,8 @@ import type {
     Conversation,
     CreateMessageData,
     CreateConversationData,
+    UpdateConversationNameData,
+    UpdateParticipantNicknameData,
 } from '../../../types/message';
 
 interface UseMessagesReturn {
@@ -19,10 +21,28 @@ interface UseMessagesReturn {
     loadConversations: () => Promise<void>;
     loadMessages: (conversationId: number) => Promise<void>;
     sendMessage: (content: string, file?: File) => Promise<void>;
-    createConversation: (participantIds: number[]) => Promise<void>;
+    createConversation: (
+        participantIds: number[],
+        name?: string,
+        type?: 'direct' | 'group'
+    ) => Promise<void>;
     markAsRead: (messageIds: number[]) => Promise<void>;
     deleteMessage: (messageId: number) => Promise<void>;
     leaveConversation: (conversationId: number) => Promise<void>;
+    updateConversationName: (
+        conversationId: number,
+        name: string
+    ) => Promise<void>;
+    updateParticipantNickname: (
+        conversationId: number,
+        userId: number,
+        nickname: string
+    ) => Promise<void>;
+    addParticipant: (conversationId: number, userId: number) => Promise<void>;
+    removeParticipant: (
+        conversationId: number,
+        userId: number
+    ) => Promise<void>;
 }
 
 export const useMessages = (
@@ -34,7 +54,6 @@ export const useMessages = (
     const [error, setError] = useState<string | null>(null);
     const [sending, setSending] = useState(false);
 
-    // Conversations query
     const {
         data: conversations = [],
         isLoading: conversationsLoading,
@@ -45,7 +64,6 @@ export const useMessages = (
         enabled: Boolean(user?.id),
     });
 
-    // Messages query for current conversation (key depends on id)
     const {
         data: messages = [],
         isLoading: messagesLoading,
@@ -59,11 +77,9 @@ export const useMessages = (
         enabled: !!conversationId,
     });
 
-    // Mutations
     const sendMessageMutation = useMutation<Message, Error, CreateMessageData>({
         mutationFn: (data) => messageApiService.sendMessage(data),
         onSuccess: (newMessage) => {
-            // refresh messages for that conversation and conversations list
             queryClient.invalidateQueries({
                 queryKey: ['messages', newMessage.conversationId],
             });
@@ -89,6 +105,74 @@ export const useMessages = (
                 err instanceof Error
                     ? err.message
                     : 'Failed to create conversation'
+            ),
+    });
+
+    const updateConversationNameMutation = useMutation<
+        Conversation,
+        Error,
+        { conversationId: number; data: UpdateConversationNameData }
+    >({
+        mutationFn: ({ conversationId, data }) =>
+            messageApiService.updateConversationName(conversationId, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['conversations'] });
+        },
+        onError: (err: any) =>
+            setError(
+                err instanceof Error
+                    ? err.message
+                    : 'Failed to update conversation name'
+            ),
+    });
+
+    const updateParticipantNicknameMutation = useMutation<
+        void,
+        Error,
+        { conversationId: number; data: UpdateParticipantNicknameData }
+    >({
+        mutationFn: ({ conversationId, data }) =>
+            messageApiService.updateParticipantNickname(conversationId, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['conversations'] });
+        },
+        onError: (err: any) =>
+            setError(
+                err instanceof Error ? err.message : 'Failed to update nickname'
+            ),
+    });
+
+    const addParticipantMutation = useMutation<
+        void,
+        Error,
+        { conversationId: number; userId: number }
+    >({
+        mutationFn: ({ conversationId, userId }) =>
+            messageApiService.addParticipant(conversationId, userId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['conversations'] });
+        },
+        onError: (err: any) =>
+            setError(
+                err instanceof Error ? err.message : 'Failed to add participant'
+            ),
+    });
+
+    const removeParticipantMutation = useMutation<
+        void,
+        Error,
+        { conversationId: number; userId: number }
+    >({
+        mutationFn: ({ conversationId, userId }) =>
+            messageApiService.removeParticipant(conversationId, userId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['conversations'] });
+        },
+        onError: (err: any) =>
+            setError(
+                err instanceof Error
+                    ? err.message
+                    : 'Failed to remove participant'
             ),
     });
 
@@ -152,7 +236,6 @@ export const useMessages = (
             ),
     });
 
-    // Actions
     const loadConversations = useCallback(async (): Promise<void> => {
         try {
             await refetchConversations();
@@ -165,7 +248,6 @@ export const useMessages = (
         }
     }, [refetchConversations]);
 
-    // loadMessages
     const loadMessages = useCallback(
         async (convId: number): Promise<void> => {
             try {
@@ -211,15 +293,83 @@ export const useMessages = (
     );
 
     const createConversation = useCallback(
-        async (participantIds: number[]): Promise<void> => {
+        async (
+            participantIds: number[],
+            name?: string,
+            type?: 'direct' | 'group'
+        ): Promise<void> => {
             try {
-                const data: CreateConversationData = { participantIds };
+                const data: CreateConversationData = {
+                    participantIds,
+                    ...(name && { name }),
+                    ...(type && { type }),
+                };
                 await createConversationMutation.mutateAsync(data);
             } catch (err) {
                 throw err;
             }
         },
         [createConversationMutation]
+    );
+
+    const updateConversationName = useCallback(
+        async (convId: number, name: string): Promise<void> => {
+            try {
+                await updateConversationNameMutation.mutateAsync({
+                    conversationId: convId,
+                    data: { name },
+                });
+            } catch (err) {
+                throw err;
+            }
+        },
+        [updateConversationNameMutation]
+    );
+
+    const updateParticipantNickname = useCallback(
+        async (
+            convId: number,
+            userId: number,
+            nickname: string
+        ): Promise<void> => {
+            try {
+                await updateParticipantNicknameMutation.mutateAsync({
+                    conversationId: convId,
+                    data: { userId, nickname },
+                });
+            } catch (err) {
+                throw err;
+            }
+        },
+        [updateParticipantNicknameMutation]
+    );
+
+    const addParticipant = useCallback(
+        async (convId: number, userId: number): Promise<void> => {
+            try {
+                await addParticipantMutation.mutateAsync({
+                    conversationId: convId,
+                    userId,
+                });
+            } catch (err) {
+                throw err;
+            }
+        },
+        [addParticipantMutation]
+    );
+
+    const removeParticipant = useCallback(
+        async (convId: number, userId: number): Promise<void> => {
+            try {
+                await removeParticipantMutation.mutateAsync({
+                    conversationId: convId,
+                    userId,
+                });
+            } catch (err) {
+                throw err;
+            }
+        },
+        [removeParticipantMutation]
     );
 
     const markAsRead = useCallback(
@@ -282,5 +432,9 @@ export const useMessages = (
         markAsRead,
         deleteMessage,
         leaveConversation,
+        updateConversationName,
+        updateParticipantNickname,
+        addParticipant,
+        removeParticipant,
     };
 };

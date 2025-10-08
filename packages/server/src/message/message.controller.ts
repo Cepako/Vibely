@@ -6,6 +6,8 @@ import {
     MarkAsReadType,
     GetMessagesQueryType,
     GetConversationsQueryType,
+    UpdateConversationNameType,
+    UpdateParticipantNicknameType,
 } from './message.schema';
 
 export class MessageController {
@@ -15,7 +17,6 @@ export class MessageController {
         this.messageService = new MessageService();
     }
 
-    // Get user conversations
     async getConversations(
         request: FastifyRequest<{ Querystring: GetConversationsQueryType }>,
         reply: FastifyReply
@@ -44,7 +45,6 @@ export class MessageController {
         }
     }
 
-    // Get specific conversation
     async getConversation(
         request: FastifyRequest<{ Params: { conversationId: string } }>,
         reply: FastifyReply
@@ -85,7 +85,6 @@ export class MessageController {
         }
     }
 
-    // Create new conversation
     async createConversation(
         request: FastifyRequest<{ Body: CreateConversationType }>,
         reply: FastifyReply
@@ -112,7 +111,171 @@ export class MessageController {
         }
     }
 
-    // Get messages in a conversation
+    async updateConversation(
+        request: FastifyRequest<{
+            Params: { conversationId: string };
+            Body: UpdateConversationNameType;
+        }>,
+        reply: FastifyReply
+    ) {
+        try {
+            const userId = request.user.id;
+            const conversationId = parseInt(request.params.conversationId);
+            const data = request.body;
+
+            if (!conversationId || isNaN(conversationId)) {
+                return reply.code(400).send({
+                    success: false,
+                    message: 'Invalid conversation ID',
+                });
+            }
+
+            const conversation = await this.messageService.updateConversation(
+                userId,
+                conversationId,
+                data
+            );
+
+            return reply.code(200).send({
+                success: true,
+                data: conversation,
+            });
+        } catch (error) {
+            request.log.error(error);
+            return reply.code(500).send({
+                success: false,
+                message: `Failed to update conversation: ${error}`,
+            });
+        }
+    }
+
+    async updateParticipantNickname(
+        request: FastifyRequest<{
+            Params: { conversationId: string };
+            Body: UpdateParticipantNicknameType;
+        }>,
+        reply: FastifyReply
+    ) {
+        try {
+            const userId = request.user.id;
+            const conversationId = parseInt(request.params.conversationId);
+            const data = request.body;
+
+            if (!conversationId || isNaN(conversationId)) {
+                return reply.code(400).send({
+                    success: false,
+                    message: 'Invalid conversation ID',
+                });
+            }
+
+            await this.messageService.updateParticipantNickname(
+                userId,
+                conversationId,
+                data
+            );
+
+            return reply.code(200).send({
+                success: true,
+                message: 'Nickname updated successfully',
+            });
+        } catch (error) {
+            request.log.error(error);
+            return reply.code(500).send({
+                success: false,
+                message: `Failed to update nickname: ${error}`,
+            });
+        }
+    }
+
+    async addParticipant(
+        request: FastifyRequest<{
+            Params: { conversationId: string };
+            Body: { userId: number };
+        }>,
+        reply: FastifyReply
+    ) {
+        try {
+            const userId = request.user.id;
+            const conversationId = parseInt(request.params.conversationId);
+            const { userId: newParticipantId } = request.body;
+
+            if (!conversationId || isNaN(conversationId)) {
+                return reply.code(400).send({
+                    success: false,
+                    message: 'Invalid conversation ID',
+                });
+            }
+
+            if (!newParticipantId) {
+                return reply.code(400).send({
+                    success: false,
+                    message: 'User ID is required',
+                });
+            }
+
+            await this.messageService.addParticipantToConversation(
+                userId,
+                conversationId,
+                newParticipantId
+            );
+
+            return reply.code(200).send({
+                success: true,
+                message: 'Participant added successfully',
+            });
+        } catch (error) {
+            request.log.error(error);
+            return reply.code(500).send({
+                success: false,
+                message: `Failed to add participant: ${error}`,
+            });
+        }
+    }
+
+    async removeParticipant(
+        request: FastifyRequest<{
+            Params: { conversationId: string; userId: string };
+        }>,
+        reply: FastifyReply
+    ) {
+        try {
+            const userId = request.user.id;
+            const conversationId = parseInt(request.params.conversationId);
+            const participantId = parseInt(request.params.userId);
+
+            if (!conversationId || isNaN(conversationId)) {
+                return reply.code(400).send({
+                    success: false,
+                    message: 'Invalid conversation ID',
+                });
+            }
+
+            if (!participantId || isNaN(participantId)) {
+                return reply.code(400).send({
+                    success: false,
+                    message: 'Invalid user ID',
+                });
+            }
+
+            await this.messageService.removeParticipantFromConversation(
+                userId,
+                conversationId,
+                participantId
+            );
+
+            return reply.code(200).send({
+                success: true,
+                message: 'Participant removed successfully',
+            });
+        } catch (error) {
+            request.log.error(error);
+            return reply.code(500).send({
+                success: false,
+                message: `Failed to remove participant: ${error}`,
+            });
+        }
+    }
+
     async getMessages(
         request: FastifyRequest<{ Querystring: GetMessagesQueryType }>,
         reply: FastifyReply
@@ -141,7 +304,6 @@ export class MessageController {
         }
     }
 
-    // Send a message
     async sendMessage(request: FastifyRequest, reply: FastifyReply) {
         try {
             const userId = request.user.id;
@@ -170,7 +332,6 @@ export class MessageController {
                     }
                 }
 
-                // Validate required fields
                 if (!formData.conversationId || !formData.content) {
                     return reply.code(400).send({
                         success: false,
@@ -184,7 +345,6 @@ export class MessageController {
                     contentType: formData.contentType || 'text',
                 };
 
-                // Validate conversationId is a valid number
                 if (isNaN(data.conversationId)) {
                     return reply.code(400).send({
                         success: false,
@@ -192,7 +352,6 @@ export class MessageController {
                     });
                 }
             } else {
-                // Handle JSON body (fallback)
                 data = request.body as CreateMessageType;
 
                 if (!data.conversationId || !data.content) {
@@ -222,7 +381,6 @@ export class MessageController {
         }
     }
 
-    // Mark messages as read
     async markMessagesAsRead(
         request: FastifyRequest<{ Body: MarkAsReadType }>,
         reply: FastifyReply
@@ -246,7 +404,6 @@ export class MessageController {
         }
     }
 
-    // Delete a message
     async deleteMessage(
         request: FastifyRequest<{ Params: { messageId: string } }>,
         reply: FastifyReply
@@ -277,7 +434,6 @@ export class MessageController {
         }
     }
 
-    // Leave conversation
     async leaveConversation(
         request: FastifyRequest<{ Params: { conversationId: string } }>,
         reply: FastifyReply

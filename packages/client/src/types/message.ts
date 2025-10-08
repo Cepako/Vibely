@@ -4,6 +4,7 @@ export interface User {
     surname: string;
     profilePictureUrl?: string | null;
     isOnline?: boolean;
+    nickname?: string | null;
 }
 
 export interface MessageAttachment {
@@ -31,12 +32,16 @@ export interface ConversationParticipant {
     id: number;
     conversationId: number;
     userId: number;
+    nickname: string | null;
+    role: 'admin' | 'member';
     createdAt: string;
     user: User;
 }
-
+export type ConversationType = 'direct' | 'group';
 export interface Conversation {
     id: number;
+    type: ConversationType;
+    name: string | null;
     createdAt: string;
     updatedAt: string;
     participants: ConversationParticipant[];
@@ -53,6 +58,17 @@ export interface CreateMessageData {
 
 export interface CreateConversationData {
     participantIds: number[];
+    name?: string;
+    type?: ConversationType;
+}
+
+export interface UpdateConversationNameData {
+    name: string;
+}
+
+export interface UpdateParticipantNicknameData {
+    userId: number;
+    nickname: string;
 }
 
 export interface MessageResponse {

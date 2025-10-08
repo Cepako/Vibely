@@ -27,9 +27,8 @@ export const UpdateConversationNameSchema = Type.Object({
 });
 
 export const UpdateParticipantNicknameSchema = Type.Object({
-    conversationId: Type.Number(),
     userId: Type.Number(),
-    nickname: Type.String({ minLength: 1, maxLength: 100 }),
+    nickname: Type.String({ maxLength: 100 }),
 });
 
 export const MarkAsReadSchema = Type.Object({

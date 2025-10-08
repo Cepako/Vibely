@@ -11,6 +11,7 @@ import { useAuth } from '../auth/AuthProvider';
 import UserAvatar from '../ui/UserAvatar';
 import type { User } from '../../types/user';
 import MessageBubble from './MessageBubble';
+import { ChatWindowHeader } from './ChatWindowHeader';
 
 interface ChatWindowProps {
     conversation: Conversation;
@@ -127,50 +128,13 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         return groups;
     };
 
-    const getConversationInfo = () => {
-        if (!conversation) return { name: '', isOnline: false };
-
-        if (conversation.participants.length === 2) {
-            const otherParticipant = conversation.participants.find(
-                (p) => p.userId !== user?.id
-            );
-            return {
-                name: otherParticipant
-                    ? `${otherParticipant.user.name} ${otherParticipant.user.surname}`
-                    : 'Unknown User',
-                isOnline: otherParticipant?.user.isOnline || false,
-            };
-        } else {
-            const participantNames = conversation.participants
-                .filter((p) => p.userId !== user?.id)
-                .map((p) => p.user.name);
-
-            return {
-                name:
-                    participantNames.length > 0
-                        ? `${participantNames.join(', ')}${conversation.participants.length > 3 ? ` +${conversation.participants.length - 3}` : ''}`
-                        : 'Group Chat',
-                isOnline: false,
-            };
-        }
-    };
-
-    const { name, isOnline } = getConversationInfo();
     const messageGroups = groupMessagesByDate(messages);
 
     return (
         <div className='flex h-full w-full flex-col bg-white'>
             <div className='flex items-center justify-between border-b border-slate-200 bg-white p-4'>
-                <div>
-                    <h3 className='text-lg font-semibold text-slate-900'>
-                        {name}
-                    </h3>
-                    {isOnline && conversation.participants.length === 2 && (
-                        <span className='text-sm font-medium text-green-500'>
-                            Online
-                        </span>
-                    )}
-                </div>
+                <ChatWindowHeader conversation={conversation} />
+
                 <div className='flex gap-2'>
                     <button
                         className='hover:text-primary-500 rounded-full p-2 text-slate-500 transition-colors hover:bg-slate-100'

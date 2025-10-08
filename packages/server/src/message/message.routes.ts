@@ -5,6 +5,8 @@ import {
     MarkAsReadSchema,
     GetMessagesQuerySchema,
     GetConversationsQuerySchema,
+    UpdateConversationNameSchema,
+    UpdateParticipantNicknameSchema,
 } from './message.schema';
 import { AuthService } from '@/auth/auth.service';
 import { createAuthGuard } from '@/hooks/authGuard';
@@ -16,19 +18,18 @@ export async function messageRoutes(fastify: FastifyInstance) {
 
     fastify.addHook('preHandler', authGuard);
 
-    // Get user conversations
+    // Conversations routes
+
     fastify.get(
         '/conversations',
         {
             schema: {
                 querystring: GetConversationsQuerySchema,
-                security: [{ bearerAuth: [] }],
             },
         },
         messageController.getConversations.bind(messageController)
     );
 
-    // Get specific conversation
     fastify.get(
         '/conversations/:conversationId',
         {
@@ -40,80 +41,38 @@ export async function messageRoutes(fastify: FastifyInstance) {
                     },
                     required: ['conversationId'],
                 },
-                security: [{ bearerAuth: [] }],
             },
         },
         messageController.getConversation.bind(messageController)
     );
 
-    // Create new conversation
     fastify.post(
         '/conversations',
         {
             schema: {
                 body: CreateConversationSchema,
-                security: [{ bearerAuth: [] }],
             },
         },
         messageController.createConversation.bind(messageController)
     );
 
-    // Get messages in a conversation
-    fastify.get(
-        '/messages',
-        {
-            schema: {
-                querystring: GetMessagesQuerySchema,
-                security: [{ bearerAuth: [] }],
-            },
-        },
-        messageController.getMessages.bind(messageController)
-    );
-
-    // Send a message
-    fastify.post(
-        '/messages',
-        {
-            schema: {
-                // Note: When using multipart, we can't use body schema validation
-                // The validation will be done manually in the controller
-                security: [{ bearerAuth: [] }],
-            },
-        },
-        messageController.sendMessage.bind(messageController)
-    );
-
-    // Mark messages as read
     fastify.patch(
-        '/messages/read',
-        {
-            schema: {
-                body: MarkAsReadSchema,
-                security: [{ bearerAuth: [] }],
-            },
-        },
-        messageController.markMessagesAsRead.bind(messageController)
-    );
-
-    // Delete a message
-    fastify.delete(
-        '/messages/:messageId',
+        '/conversations/:conversationId',
         {
             schema: {
                 params: {
                     type: 'object',
                     properties: {
-                        messageId: { type: 'string' },
+                        conversationId: { type: 'string' },
                     },
-                    required: ['messageId'],
+                    required: ['conversationId'],
                 },
-                security: [{ bearerAuth: [] }],
+                body: UpdateConversationNameSchema,
             },
         },
-        messageController.deleteMessage.bind(messageController)
+        messageController.updateConversation.bind(messageController)
     );
 
-    // Leave conversation
     fastify.delete(
         '/conversations/:conversationId/leave',
         {
@@ -125,9 +84,113 @@ export async function messageRoutes(fastify: FastifyInstance) {
                     },
                     required: ['conversationId'],
                 },
-                security: [{ bearerAuth: [] }],
             },
         },
         messageController.leaveConversation.bind(messageController)
+    );
+
+    // Participant routes
+
+    fastify.patch(
+        '/conversations/:conversationId/participants/nickname',
+        {
+            schema: {
+                params: {
+                    type: 'object',
+                    properties: {
+                        conversationId: { type: 'string' },
+                    },
+                    required: ['conversationId'],
+                },
+                body: UpdateParticipantNicknameSchema,
+            },
+        },
+        messageController.updateParticipantNickname.bind(messageController)
+    );
+
+    fastify.post(
+        '/conversations/:conversationId/participants',
+        {
+            schema: {
+                params: {
+                    type: 'object',
+                    properties: {
+                        conversationId: { type: 'string' },
+                    },
+                    required: ['conversationId'],
+                },
+                body: {
+                    type: 'object',
+                    properties: {
+                        userId: { type: 'number' },
+                    },
+                    required: ['userId'],
+                },
+            },
+        },
+        messageController.addParticipant.bind(messageController)
+    );
+
+    fastify.delete(
+        '/conversations/:conversationId/participants/:userId',
+        {
+            schema: {
+                params: {
+                    type: 'object',
+                    properties: {
+                        conversationId: { type: 'string' },
+                        userId: { type: 'string' },
+                    },
+                    required: ['conversationId', 'userId'],
+                },
+            },
+        },
+        messageController.removeParticipant.bind(messageController)
+    );
+
+    // Messages routes
+
+    fastify.get(
+        '/messages',
+        {
+            schema: {
+                querystring: GetMessagesQuerySchema,
+            },
+        },
+        messageController.getMessages.bind(messageController)
+    );
+
+    fastify.post(
+        '/messages',
+        {
+            schema: {},
+        },
+        messageController.sendMessage.bind(messageController)
+    );
+
+    fastify.patch(
+        '/messages/read',
+        {
+            schema: {
+                body: MarkAsReadSchema,
+            },
+        },
+        messageController.markMessagesAsRead.bind(messageController)
+    );
+
+    fastify.delete(
+        '/messages/:messageId',
+        {
+            schema: {
+                params: {
+                    type: 'object',
+                    properties: {
+                        messageId: { type: 'string' },
+                    },
+                    required: ['messageId'],
+                },
+            },
+        },
+        messageController.deleteMessage.bind(messageController)
     );
 }

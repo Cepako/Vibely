@@ -301,7 +301,10 @@ export class MessageService implements IMessageService {
                     contentType: msg.contentType as 'text' | 'image' | 'video',
                     isRead: msg.isRead || false,
                     createdAt: msg.createdAt || new Date().toISOString(),
-                    sender: { ...msg.user, isOnline: null },
+                    sender: {
+                        ...msg.user,
+                        isOnline: null,
+                    },
                     ...(msg.messageAttachments.length > 0 && {
                         attachments: msg.messageAttachments.map((att) => ({
                             id: att.id,
@@ -795,7 +798,7 @@ export class MessageService implements IMessageService {
             await db
                 .update(conversationParticipants)
                 .set({
-                    nickname: data.nickname,
+                    nickname: data.nickname !== '' ? data.nickname : null,
                 })
                 .where(eq(conversationParticipants.id, targetParticipant.id));
         } catch (error) {
