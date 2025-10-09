@@ -174,7 +174,10 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                                             messagesInGroup[index + 1]
                                                 ?.senderId !==
                                                 message.senderId);
-
+                                    const nickName =
+                                        conversation.participants.find(
+                                            (p) => p.userId === message.senderId
+                                        )?.nickname;
                                     return (
                                         <div
                                             key={message.id}
@@ -216,21 +219,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                                                             index - 1
                                                         ]
                                                     }
+                                                    nickName={nickName}
                                                 />
-
-                                                {/* {isOwnMessage && (
-                                                    <button
-                                                        className='absolute top-1/2 -left-8 flex h-6 w-6 -translate-y-1/2 transform items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 opacity-0 transition-all group-hover:opacity-100 hover:bg-red-50 hover:text-red-500'
-                                                        onClick={() =>
-                                                            onDeleteMessage(
-                                                                message.id
-                                                            )
-                                                        }
-                                                        title='Delete message'
-                                                    >
-                                                        <IconTrash size={12} />
-                                                    </button>
-                                                )} */}
                                             </div>
                                         </div>
                                     );

@@ -14,14 +14,8 @@ export default function MessagesView() {
         ? Number(params.conversationId)
         : null;
 
-    const {
-        conversations,
-        loading,
-        error,
-        createConversation,
-        loadConversations,
-        loadMessages,
-    } = useMessages(conversationId);
+    const { conversations, loading, error, loadConversations, loadMessages } =
+        useMessages(conversationId);
 
     const { addChatListener } = useWebSocketContext();
 
@@ -35,14 +29,6 @@ export default function MessagesView() {
 
         return () => unsub();
     }, [addChatListener, conversationId, loadConversations, loadMessages]);
-
-    const handleCreateConversation = async (participantIds: number[]) => {
-        try {
-            await createConversation(participantIds);
-        } catch (error) {
-            console.error('Error creating conversation:', error);
-        }
-    };
 
     const handleSelectConversation = (conversation: any) => {
         navigate({
@@ -74,10 +60,7 @@ export default function MessagesView() {
                 onClose={dialog.closeDialog}
                 size='md'
             >
-                <NewConversationModal
-                    onClose={dialog.closeDialog}
-                    onCreateConversation={handleCreateConversation}
-                />
+                <NewConversationModal onClose={dialog.closeDialog} />
             </Dialog>
 
             {error && (

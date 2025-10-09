@@ -8,6 +8,7 @@ interface MessageBubbleProps {
     isGroupChat: boolean;
     prevMessage?: Message;
     nextMessage?: Message;
+    nickName?: string | null;
 }
 
 export default function MessageBubble({
@@ -16,6 +17,7 @@ export default function MessageBubble({
     message,
     nextMessage,
     prevMessage,
+    nickName,
 }: MessageBubbleProps) {
     const hasPrevMess =
         prevMessage && prevMessage.senderId === message.senderId;
@@ -35,8 +37,9 @@ export default function MessageBubble({
             )}
         >
             {isGroupChat && !isOwnMessage && !hasPrevMess && (
-                <div className='absolute -top-4 left-4 z-10 text-xs text-slate-500'>
-                    {message.sender.name} {message.sender.surname}
+                <div className='absolute -top-4 left-4 z-10 w-full text-xs text-nowrap text-slate-500'>
+                    {nickName ??
+                        `${message.sender.name} ${message.sender.surname}`}
                 </div>
             )}
             {message.attachments && message.attachments.length > 0 && (

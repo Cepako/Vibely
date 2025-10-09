@@ -61,7 +61,7 @@ class MessageApi {
         data: UpdateConversationNameData
     ): Promise<Conversation> {
         const response = await this.request<MessageResponse>(
-            `/conversations/${conversationId}/participants/nickname`,
+            `/conversations/${conversationId}`,
             {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },

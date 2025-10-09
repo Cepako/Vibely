@@ -393,7 +393,7 @@ export class MessageService implements IMessageService {
 
             const [newConversation] = await db
                 .insert(conversations)
-                .values({ type: conversationType })
+                .values({ type: conversationType, name: data.name || null })
                 .returning();
 
             if (!newConversation) {
@@ -741,7 +741,7 @@ export class MessageService implements IMessageService {
             await db
                 .update(conversations)
                 .set({
-                    ...(data.name && { name: data.name }),
+                    name: data.name !== '' ? data.name : null,
                     updatedAt: new Date().toISOString(),
                 })
                 .where(eq(conversations.id, conversationId));

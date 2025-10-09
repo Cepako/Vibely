@@ -1,24 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { IconSearch, IconX, IconCheck } from '@tabler/icons-react';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { useFriends } from '../profile/hooks/useFriendship';
 import UserAvatar from '../ui/UserAvatar';
+import { useMessages } from './hooks/useMessages';
+import { cn } from '../../utils/utils';
 
 interface NewConversationModalProps {
     onClose: () => void;
-    onCreateConversation: (participantIds: number[]) => Promise<void>;
 }
 
 export const NewConversationModal: React.FC<NewConversationModalProps> = ({
     onClose,
-    onCreateConversation,
 }) => {
     const currentUser = useCurrentUser();
     const friendsQuery = useFriends(currentUser.data?.id ?? 0);
+    const { createConversation, conversations = [] } = useMessages(null);
 
     const [selectedFriends, setSelectedFriends] = useState<number[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
-    const [creating, setCreating] = useState(false);
+    const [groupName, setGroupName] = useState('');
 
     const handleFriendToggle = (friendId: number) => {
         setSelectedFriends((prev) =>
@@ -31,20 +32,20 @@ export const NewConversationModal: React.FC<NewConversationModalProps> = ({
     const handleCreateConversation = async () => {
         if (selectedFriends.length === 0) return;
 
-        try {
-            setCreating(true);
-            await onCreateConversation(selectedFriends);
-            handleClose();
-        } catch (error) {
-            console.error('Failed to create conversation:', error);
-        } finally {
-            setCreating(false);
-        }
+        await createConversation(
+            selectedFriends,
+            selectedFriends.length > 1 && groupName.trim()
+                ? groupName.trim()
+                : undefined,
+            selectedFriends.length > 1 ? 'group' : 'direct'
+        );
+        handleClose();
     };
 
     const handleClose = () => {
         setSelectedFriends([]);
         setSearchTerm('');
+        setGroupName('');
         onClose();
     };
 
@@ -61,6 +62,24 @@ export const NewConversationModal: React.FC<NewConversationModalProps> = ({
             .toLowerCase()
             .includes(searchTerm.toLowerCase())
     );
+
+    const hasExistingConversation = useMemo(() => {
+        const meId = currentUser.data?.id;
+        if (!meId || selectedFriends.length === 0) return false;
+
+        if (selectedFriends.length === 1) {
+            const friendId = selectedFriends[0];
+            return conversations.some((c) => {
+                if (c.type !== 'direct') return false;
+                const ids = c.participants.map((p) => p.userId);
+                return (
+                    ids.length === 2 &&
+                    ids.includes(meId) &&
+                    ids.includes(friendId)
+                );
+            });
+        }
+    }, [conversations, selectedFriends, currentUser.data]);
 
     return (
         <div
@@ -92,6 +111,21 @@ export const NewConversationModal: React.FC<NewConversationModalProps> = ({
                         />
                     </div>
                 </div>
+
+                {selectedFriends.length > 1 && (
+                    <div className='mb-4'>
+                        <label className='mb-2 block text-sm font-medium text-slate-700'>
+                            Group name (optional)
+                        </label>
+                        <input
+                            type='text'
+                            placeholder='Enter group name...'
+                            value={groupName}
+                            onChange={(e) => setGroupName(e.target.value)}
+                            className='focus:border-primary-500 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none'
+                        />
+                    </div>
+                )}
 
                 {selectedFriends.length > 0 && (
                     <div className='mb-5 border-b border-slate-200 pb-5'>
@@ -215,18 +249,24 @@ export const NewConversationModal: React.FC<NewConversationModalProps> = ({
                     Cancel
                 </button>
                 <button
-                    className='bg-primary-500 hover:bg-primary-600 flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg px-4 py-2 text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50'
-                    onClick={handleCreateConversation}
-                    disabled={selectedFriends.length === 0 || creating}
-                >
-                    {creating ? (
-                        <>
-                            <div className='h-4 w-4 animate-spin rounded-full border-2 border-transparent border-t-white'></div>
-                            Creating...
-                        </>
-                    ) : (
-                        `Create${selectedFriends.length > 1 ? ' Group' : ''} Chat`
+                    className={cn(
+                        'bg-primary-500 hover:bg-primary-600 flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg px-4 py-2 text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50',
+                        {
+                            'cursor-not-allowed opacity-60':
+                                hasExistingConversation,
+                        }
                     )}
+                    onClick={handleCreateConversation}
+                    disabled={
+                        selectedFriends.length === 0 || hasExistingConversation
+                    }
+                    title={
+                        hasExistingConversation
+                            ? 'Conversation with selected participant already exists'
+                            : undefined
+                    }
+                >
+                    Create {selectedFriends.length > 1 ? ' Group' : ''} Chat
                 </button>
             </div>
         </div>

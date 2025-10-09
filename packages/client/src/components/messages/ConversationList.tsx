@@ -36,7 +36,9 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                 (p) => p.userId !== user?.id
             )!;
             return {
-                name: `${otherParticipant.user.name} ${otherParticipant.user.surname}`,
+                name:
+                    otherParticipant.nickname ??
+                    `${otherParticipant.user.name} ${otherParticipant.user.surname}`,
                 avatar: (
                     <UserAvatar
                         user={otherParticipant.user as User}
@@ -53,9 +55,10 @@ export const ConversationList: React.FC<ConversationListProps> = ({
 
             return {
                 name:
-                    participantNames.length > 0
+                    conversation.name ??
+                    (participantNames.length > 0
                         ? `${participantNames.join(', ')}${conversation.participants.length > 3 ? ` +${conversation.participants.length - 3}` : ''}`
-                        : 'Group Chat',
+                        : 'Group Chat'),
                 avatar: (
                     <div className='bg-primary-200 text-primary-700 flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full font-semibold'>
                         <IconUsersGroup />

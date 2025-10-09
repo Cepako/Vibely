@@ -10,6 +10,7 @@ import type {
     UpdateConversationNameData,
     UpdateParticipantNicknameData,
 } from '../../../types/message';
+import toast from 'react-hot-toast';
 
 interface UseMessagesReturn {
     conversations: Conversation[];
@@ -46,7 +47,7 @@ interface UseMessagesReturn {
 }
 
 export const useMessages = (
-    conversationId: number | null
+    conversationId?: number | null
 ): UseMessagesReturn => {
     const { user } = useAuth();
     const queryClient = useQueryClient();
@@ -97,15 +98,22 @@ export const useMessages = (
         CreateConversationData
     >({
         mutationFn: (data) => messageApiService.createConversation(data),
-        onSuccess: (newConversation) => {
+        onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['conversations'] });
+            toast.success('Conversation created');
         },
-        onError: (err: any) =>
+        onError: (err: any) => {
             setError(
                 err instanceof Error
                     ? err.message
                     : 'Failed to create conversation'
-            ),
+            );
+            toast.error(
+                err instanceof Error
+                    ? err.message
+                    : 'Failed to create conversation'
+            );
+        },
     });
 
     const updateConversationNameMutation = useMutation<
@@ -115,8 +123,11 @@ export const useMessages = (
     >({
         mutationFn: ({ conversationId, data }) =>
             messageApiService.updateConversationName(conversationId, data),
-        onSuccess: () => {
+        onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ['conversations'] });
+            variables.data.name === ''
+                ? toast.success('Conversation name removed')
+                : toast.success('Conversation name updated');
         },
         onError: (err: any) =>
             setError(
@@ -133,8 +144,11 @@ export const useMessages = (
     >({
         mutationFn: ({ conversationId, data }) =>
             messageApiService.updateParticipantNickname(conversationId, data),
-        onSuccess: () => {
+        onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ['conversations'] });
+            variables.data.nickname === ''
+                ? toast.success('Nickname removed')
+                : toast.success('Nickname updated');
         },
         onError: (err: any) =>
             setError(
@@ -151,6 +165,7 @@ export const useMessages = (
             messageApiService.addParticipant(conversationId, userId),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['conversations'] });
+            toast.success(`Participant added`);
         },
         onError: (err: any) =>
             setError(

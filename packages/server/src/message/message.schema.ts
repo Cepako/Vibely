@@ -19,11 +19,12 @@ export const CreateMessageSchema = Type.Object({
 
 export const CreateConversationSchema = Type.Object({
     participantIds: Type.Array(Type.Number(), { minItems: 1, maxItems: 50 }),
+    name: Type.Optional(Type.String({ maxLength: 100 })),
     type: Type.Optional(ConversationType),
 });
 
 export const UpdateConversationNameSchema = Type.Object({
-    name: Type.Optional(Type.String({ minLength: 1, maxLength: 100 })),
+    name: Type.Optional(Type.String({ maxLength: 100 })),
 });
 
 export const UpdateParticipantNicknameSchema = Type.Object({
@@ -54,6 +55,7 @@ export type CreateMessageType = {
 
 export type CreateConversationType = {
     participantIds: number[];
+    name?: string;
     type?: 'direct' | 'group';
 };
 
