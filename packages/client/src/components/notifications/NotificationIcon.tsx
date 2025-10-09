@@ -2,7 +2,6 @@ import React from 'react';
 import {
     IconBell,
     IconHeart,
-    IconMessage,
     IconUsers,
     IconCalendar,
     IconMessageCircle,
@@ -28,13 +27,6 @@ export const NotificationIcon: React.FC<NotificationIconProps> = ({
                 <IconUsers
                     {...iconProps}
                     className={`${className} text-primary-500`}
-                />
-            );
-        case 'messages':
-            return (
-                <IconMessage
-                    {...iconProps}
-                    className={`${className} text-green-500`}
                 />
             );
         case 'post_reactions':

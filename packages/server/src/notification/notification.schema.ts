@@ -2,7 +2,6 @@ import { Type } from '@sinclair/typebox';
 
 export const NotificationTypeEnum = [
     'friendships',
-    'messages',
     'post_reactions',
     'comment_reactions',
     'comments',

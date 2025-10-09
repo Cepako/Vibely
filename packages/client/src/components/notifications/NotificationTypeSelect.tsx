@@ -4,7 +4,6 @@ import {
     IconBell,
     IconCalendar,
     IconHeart,
-    IconMessage,
     IconMessageCircle,
     IconMessageCircleHeart,
     IconPhoto,
@@ -35,10 +34,6 @@ const notificationData: Record<
     friendships: {
         label: 'Friendships',
         icon: <IconUsers size={18} />,
-    },
-    messages: {
-        label: 'Messages',
-        icon: <IconMessage size={18} />,
     },
     events: {
         label: 'Events',
@@ -93,13 +88,6 @@ export default function NotificationTypeSelect({
             label: 'Friendships',
             icon: <IconUsers />,
             onClick: () => setFilterType('friendships'),
-            className: 'p-2',
-        },
-        {
-            id: 'messages',
-            label: 'Messages',
-            icon: <IconMessage />,
-            onClick: () => setFilterType('messages'),
             className: 'p-2',
         },
         {

@@ -1,12 +1,13 @@
 import type { User } from '../../types/user';
 import { cn } from '../../utils/utils';
+import type { Friend } from '../profile/hooks/useFriendship';
 
 export default function UserAvatar({
     user,
     size = 'md',
     onClick,
 }: {
-    user: User;
+    user: User | Friend;
     size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'xxl';
     onClick?: () => void;
 }) {

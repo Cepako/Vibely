@@ -19,6 +19,7 @@ import notificationRoutes from './notification/notification.routes';
 import { commentReactionRoutes } from './commentReaction/commentReaction.routes';
 import { eventRoutes } from './event/event.routes';
 import { exploreRoutes } from './explore/explore.routes';
+import { messageRoutes } from './message/message.routes';
 
 const server = Fastify({
     logger: true,
@@ -77,6 +78,7 @@ server.register(
         api.register(commentReactionRoutes, { prefix: '/comment-reaction' });
         api.register(eventRoutes, { prefix: '/events' });
         api.register(exploreRoutes, { prefix: '/explore' });
+        api.register(messageRoutes, { prefix: '/message' });
     },
     { prefix: '/api' }
 );

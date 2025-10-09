@@ -232,20 +232,6 @@ export class NotificationService {
         });
     }
 
-    async notifyNewMessage(
-        fromUserId: number,
-        toUserId: number,
-        fromUserName: string,
-        conversationId: number
-    ): Promise<void> {
-        await this.createNotification({
-            userId: toUserId,
-            type: 'messages',
-            content: `${fromUserName} sent you a message`,
-            relatedId: conversationId,
-        });
-    }
-
     async notifyEventInvitation(
         organizerId: number,
         invitedUserId: number,

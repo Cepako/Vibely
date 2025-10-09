@@ -22,7 +22,6 @@ export const useWebSocket = ({
     const maxReconnectAttempts = 5;
     const mountedRef = useRef(true);
 
-    // Store callbacks in refs to avoid dependency issues
     const onMessageRef = useRef(onMessage);
     const onConnectRef = useRef(onConnect);
     const onDisconnectRef = useRef(onDisconnect);
@@ -87,7 +86,6 @@ export const useWebSocket = ({
                     event.reason
                 );
 
-                // Only auto-reconnect on unexpected closures
                 if (
                     enabled &&
                     mountedRef.current &&
@@ -118,7 +116,7 @@ export const useWebSocket = ({
         } catch (error) {
             console.error('Error creating WebSocket connection:', error);
         }
-    }, [url, enabled]); // Only depend on url and enabled
+    }, [url, enabled]);
 
     useEffect(() => {
         mountedRef.current = true;

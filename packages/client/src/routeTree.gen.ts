@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as RegistrationRouteImport } from './routes/registration'
+import { Route as MessagesRouteImport } from './routes/messages'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as NotificationsIndexRouteImport } from './routes/notifications/index'
 import { Route as MessagesIndexRouteImport } from './routes/messages/index'
@@ -18,11 +19,17 @@ import { Route as ExploreIndexRouteImport } from './routes/explore/index'
 import { Route as EventsIndexRouteImport } from './routes/events/index'
 import { Route as ProfileProfileIdRouteImport } from './routes/profile/$profileId'
 import { Route as PostPostIdRouteImport } from './routes/post/$postId'
+import { Route as MessagesConversationIdRouteImport } from './routes/messages/$conversationId'
 import { Route as EventsEventIdRouteImport } from './routes/events/$eventId'
 
 const RegistrationRoute = RegistrationRouteImport.update({
   id: '/registration',
   path: '/registration',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MessagesRoute = MessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -36,9 +43,9 @@ const NotificationsIndexRoute = NotificationsIndexRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const MessagesIndexRoute = MessagesIndexRouteImport.update({
-  id: '/messages/',
-  path: '/messages/',
-  getParentRoute: () => rootRouteImport,
+  id: '/',
+  path: '/',
+  getParentRoute: () => MessagesRoute,
 } as any)
 const HomeIndexRoute = HomeIndexRouteImport.update({
   id: '/home/',
@@ -65,6 +72,11 @@ const PostPostIdRoute = PostPostIdRouteImport.update({
   path: '/post/$postId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MessagesConversationIdRoute = MessagesConversationIdRouteImport.update({
+  id: '/$conversationId',
+  path: '/$conversationId',
+  getParentRoute: () => MessagesRoute,
+} as any)
 const EventsEventIdRoute = EventsEventIdRouteImport.update({
   id: '/events/$eventId',
   path: '/events/$eventId',
@@ -73,20 +85,23 @@ const EventsEventIdRoute = EventsEventIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/messages': typeof MessagesRouteWithChildren
   '/registration': typeof RegistrationRoute
   '/events/$eventId': typeof EventsEventIdRoute
+  '/messages/$conversationId': typeof MessagesConversationIdRoute
   '/post/$postId': typeof PostPostIdRoute
   '/profile/$profileId': typeof ProfileProfileIdRoute
   '/events': typeof EventsIndexRoute
   '/explore': typeof ExploreIndexRoute
   '/home': typeof HomeIndexRoute
-  '/messages': typeof MessagesIndexRoute
+  '/messages/': typeof MessagesIndexRoute
   '/notifications': typeof NotificationsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/registration': typeof RegistrationRoute
   '/events/$eventId': typeof EventsEventIdRoute
+  '/messages/$conversationId': typeof MessagesConversationIdRoute
   '/post/$postId': typeof PostPostIdRoute
   '/profile/$profileId': typeof ProfileProfileIdRoute
   '/events': typeof EventsIndexRoute
@@ -98,8 +113,10 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/messages': typeof MessagesRouteWithChildren
   '/registration': typeof RegistrationRoute
   '/events/$eventId': typeof EventsEventIdRoute
+  '/messages/$conversationId': typeof MessagesConversationIdRoute
   '/post/$postId': typeof PostPostIdRoute
   '/profile/$profileId': typeof ProfileProfileIdRoute
   '/events/': typeof EventsIndexRoute
@@ -112,20 +129,23 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/messages'
     | '/registration'
     | '/events/$eventId'
+    | '/messages/$conversationId'
     | '/post/$postId'
     | '/profile/$profileId'
     | '/events'
     | '/explore'
     | '/home'
-    | '/messages'
+    | '/messages/'
     | '/notifications'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/registration'
     | '/events/$eventId'
+    | '/messages/$conversationId'
     | '/post/$postId'
     | '/profile/$profileId'
     | '/events'
@@ -136,8 +156,10 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/messages'
     | '/registration'
     | '/events/$eventId'
+    | '/messages/$conversationId'
     | '/post/$postId'
     | '/profile/$profileId'
     | '/events/'
@@ -149,6 +171,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  MessagesRoute: typeof MessagesRouteWithChildren
   RegistrationRoute: typeof RegistrationRoute
   EventsEventIdRoute: typeof EventsEventIdRoute
   PostPostIdRoute: typeof PostPostIdRoute
@@ -156,7 +179,6 @@ export interface RootRouteChildren {
   EventsIndexRoute: typeof EventsIndexRoute
   ExploreIndexRoute: typeof ExploreIndexRoute
   HomeIndexRoute: typeof HomeIndexRoute
-  MessagesIndexRoute: typeof MessagesIndexRoute
   NotificationsIndexRoute: typeof NotificationsIndexRoute
 }
 
@@ -167,6 +189,13 @@ declare module '@tanstack/react-router' {
       path: '/registration'
       fullPath: '/registration'
       preLoaderRoute: typeof RegistrationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/messages': {
+      id: '/messages'
+      path: '/messages'
+      fullPath: '/messages'
+      preLoaderRoute: typeof MessagesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -185,10 +214,10 @@ declare module '@tanstack/react-router' {
     }
     '/messages/': {
       id: '/messages/'
-      path: '/messages'
-      fullPath: '/messages'
+      path: '/'
+      fullPath: '/messages/'
       preLoaderRoute: typeof MessagesIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof MessagesRoute
     }
     '/home/': {
       id: '/home/'
@@ -225,6 +254,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PostPostIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/messages/$conversationId': {
+      id: '/messages/$conversationId'
+      path: '/$conversationId'
+      fullPath: '/messages/$conversationId'
+      preLoaderRoute: typeof MessagesConversationIdRouteImport
+      parentRoute: typeof MessagesRoute
+    }
     '/events/$eventId': {
       id: '/events/$eventId'
       path: '/events/$eventId'
@@ -235,8 +271,23 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface MessagesRouteChildren {
+  MessagesConversationIdRoute: typeof MessagesConversationIdRoute
+  MessagesIndexRoute: typeof MessagesIndexRoute
+}
+
+const MessagesRouteChildren: MessagesRouteChildren = {
+  MessagesConversationIdRoute: MessagesConversationIdRoute,
+  MessagesIndexRoute: MessagesIndexRoute,
+}
+
+const MessagesRouteWithChildren = MessagesRoute._addFileChildren(
+  MessagesRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  MessagesRoute: MessagesRouteWithChildren,
   RegistrationRoute: RegistrationRoute,
   EventsEventIdRoute: EventsEventIdRoute,
   PostPostIdRoute: PostPostIdRoute,
@@ -244,7 +295,6 @@ const rootRouteChildren: RootRouteChildren = {
   EventsIndexRoute: EventsIndexRoute,
   ExploreIndexRoute: ExploreIndexRoute,
   HomeIndexRoute: HomeIndexRoute,
-  MessagesIndexRoute: MessagesIndexRoute,
   NotificationsIndexRoute: NotificationsIndexRoute,
 }
 export const routeTree = rootRouteImport

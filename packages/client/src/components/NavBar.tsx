@@ -14,6 +14,7 @@ import { useCurrentUser } from './hooks/useCurrentUser';
 import { useNotifications } from './notifications/hooks/useNotifications';
 import { useEffect } from 'react';
 import UserAvatar from './ui/UserAvatar';
+import { useMessagesUnreadCount } from './messages/hooks/useMessagesUnreadCount';
 
 interface NavBarProps {
     view?: 'home' | 'messages' | 'events' | 'explore' | 'me' | 'notifications';
@@ -24,6 +25,7 @@ export default function NavBar({ view }: NavBarProps) {
     const { logout, user } = useAuth();
     const { data, isLoading } = useCurrentUser();
     const { fetchUnreadCount, unreadCount } = useNotifications();
+    const { totalUnread: totalUnreadCount } = useMessagesUnreadCount();
 
     useEffect(() => {
         fetchUnreadCount();
@@ -64,6 +66,11 @@ export default function NavBar({ view }: NavBarProps) {
                 >
                     <IconMessages />
                     Messages
+                    {totalUnreadCount > 0 && (
+                        <span className='bg-primary-500 absolute top-[50%] right-2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-xs text-white'>
+                            {totalUnreadCount > 99 ? '99+' : totalUnreadCount}
+                        </span>
+                    )}
                 </div>
                 <div
                     className={cn(

@@ -3,7 +3,6 @@ export type NotificationType =
     | 'comments'
     | 'comment_reactions'
     | 'friendships'
-    | 'messages'
     | 'events'
     | 'post_reactions';
 

@@ -107,6 +107,31 @@ class WebSocketManager {
         });
     }
 
+    emitEventToUser(userId: number, event: any): void {
+        const userConnections = this.getNotificationConnections(userId);
+        if (userConnections.length === 0) {
+            console.log(`No active notification sockets for user ${userId}`);
+            return;
+        }
+
+        userConnections.forEach((socket: WebSocket, index: number) => {
+            if (socket.readyState === WebSocket.OPEN) {
+                try {
+                    socket.send(JSON.stringify(event));
+                } catch (err) {
+                    console.error(
+                        `Error sending event to user ${userId}, conn ${index}:`,
+                        err
+                    );
+                }
+            } else {
+                console.log(
+                    `Notification socket ${index} for user ${userId} not open (state ${socket.readyState})`
+                );
+            }
+        });
+    }
+
     addChatConnection(conversationId: number, connectionData: any): void {
         if (!this.chatClients.has(conversationId)) {
             this.chatClients.set(conversationId, []);
