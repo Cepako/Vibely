@@ -57,7 +57,7 @@ export default function ForYouTab() {
                 <h2 className='mb-4 text-xl font-semibold text-slate-900'>
                     Friends For You
                 </h2>
-                <div className='bg-primary-100 flex h-full max-h-[77.5vh] flex-col gap-3 overflow-y-auto rounded-lg p-3'>
+                <div className='bg-primary-100 flex max-h-[77.5vh] flex-col gap-3 overflow-y-auto rounded-lg p-3'>
                     {interestBased?.data?.friends?.map((user) => (
                         <UserCard key={user.id} user={user} />
                     ))}
@@ -74,7 +74,7 @@ export default function ForYouTab() {
                 <h2 className='mb-4 text-xl font-semibold text-slate-900'>
                     Events For You
                 </h2>
-                <div className='bg-primary-100 flex h-full max-h-[77.5vh] flex-col gap-3 overflow-y-auto rounded-lg p-3'>
+                <div className='bg-primary-100 flex max-h-[77.5vh] flex-col gap-3 overflow-y-auto rounded-lg p-3'>
                     {interestBased?.data?.events?.map((event) => (
                         <EventCard key={event.id} event={event} />
                     ))}

@@ -24,6 +24,8 @@ interface WebSocketContextType {
     setNotifications: (notifications: NotificationData[]) => void;
     // subscribe to chat events coming over the notification websocket
     addChatListener: (cb: (event: any) => void) => () => void;
+    onlineUsers: number[];
+    isUserOnline: (userId?: number | null) => boolean;
 }
 
 const WebSocketContext = createContext<WebSocketContextType | null>(null);
@@ -48,6 +50,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     const { user, logout } = useAuth();
     const [notifications, setNotifications] = useState<NotificationData[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
+    const [onlineUsers, setOnlineUsers] = React.useState<number[]>([]);
 
     const websocketUrl = useMemo(() => {
         return user?.id
@@ -74,12 +77,41 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
         );
     }, []);
 
+    const isUserOnline = useCallback(
+        (userId?: number | null) => {
+            if (!userId) return false;
+            return onlineUsers.includes(userId);
+        },
+        [onlineUsers]
+    );
+
     const { isConnected } = useWebSocket({
         url: websocketUrl || '',
         enabled: !!websocketUrl,
         onMessage: useCallback(
             (message: any) => {
                 console.log('Notification WebSocket message:', message);
+
+                if (message.type === 'presence_init') {
+                    // message.data = number[]
+                    setOnlineUsers(
+                        Array.isArray(message.data) ? message.data : []
+                    );
+                    return;
+                }
+
+                if (message.type === 'presence') {
+                    const { userId, isOnline } = message.data || {};
+                    setOnlineUsers((prev) => {
+                        if (isOnline) {
+                            if (prev.includes(userId)) return prev;
+                            return [userId, ...prev];
+                        } else {
+                            return prev.filter((id) => id !== userId);
+                        }
+                    });
+                    return;
+                }
 
                 if (message.type === 'notification') {
                     setNotifications((prev) =>
@@ -197,6 +229,8 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
             setUnreadCount,
             updateNotifications,
             setNotifications: setNotificationsMethod,
+            onlineUsers,
+            isUserOnline,
             addChatListener,
         }),
         [
@@ -206,6 +240,8 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
             addNotification,
             updateNotifications,
             setNotificationsMethod,
+            onlineUsers,
+            isUserOnline,
             addChatListener,
         ]
     );

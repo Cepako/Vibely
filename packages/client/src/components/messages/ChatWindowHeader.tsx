@@ -4,6 +4,8 @@ import { GroupSettingsModal } from './GroupSettingsModal';
 import type { Conversation } from '../../types/message';
 import { useAuth } from '../auth/AuthProvider';
 import PrivateSettingsModal from './PrivateSettingsModal';
+import { useWebSocketContext } from '../providers/WebSocketProvider';
+import Tooltip from '../ui/Tooltip';
 
 export function ChatWindowHeader({
     conversation,
@@ -13,6 +15,7 @@ export function ChatWindowHeader({
     const dialog = useDialog(false);
     const { type, participants } = conversation;
     const { user } = useAuth();
+    const { isUserOnline, onlineUsers } = useWebSocketContext();
 
     const getConversationInfo = () => {
         if (!conversation) return { name: '', isOnline: false };
@@ -27,7 +30,7 @@ export function ChatWindowHeader({
                     ? (otherParticipant.nickname ??
                       `${otherParticipant.user.name} ${otherParticipant.user.surname}`)
                     : 'Unknown User',
-                isOnline: otherParticipant?.user.isOnline || false,
+                isOnline: isUserOnline(otherParticipant?.user.id) || false,
             };
         } else {
             const participantNames = participants
@@ -40,18 +43,31 @@ export function ChatWindowHeader({
                     (participantNames.length > 0
                         ? `${participantNames.join(', ')}${participants.length > 3 ? ` +${participants.length - 3}` : ''}`
                         : 'Group Chat'),
-                isOnline: false,
+                isOnline:
+                    (onlineUsers.length > 0 &&
+                        conversation.participants.some(
+                            (p) =>
+                                onlineUsers.includes(p.userId) &&
+                                p.userId !== user?.id
+                        )) ||
+                    false,
             };
         }
     };
 
-    const { name } = getConversationInfo();
+    const { name, isOnline } = getConversationInfo();
 
     return (
         <>
             <div className='flex items-center justify-between gap-3 p-4'>
-                <h2 className='text-xl font-semibold'>{name}</h2>
-
+                <h2 className='relative text-xl font-semibold'>
+                    {isOnline && (
+                        <Tooltip content='Online' delay={100}>
+                            <div className='absolute top-[50%] -left-3 h-2 w-2 -translate-1/2 rounded-full bg-green-500'></div>
+                        </Tooltip>
+                    )}
+                    {name}
+                </h2>
                 <button
                     className='hover:text-primary-600 cursor-pointer'
                     onClick={dialog.openDialog}

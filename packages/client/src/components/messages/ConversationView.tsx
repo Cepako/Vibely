@@ -33,8 +33,13 @@ export function ConversationView({
         return <div className='p-4'>Conversation not found</div>;
     }
 
-    if (loading && messages.length === 0) {
-        return <div className='p-4'>Loading...</div>;
+    if (loading) {
+        return (
+            <div className='flex h-full w-full flex-col items-center justify-center text-slate-500'>
+                <div className='border-t-primary-500 mb-4 h-8 w-8 animate-spin rounded-full border-2 border-slate-200'></div>
+                <p>Loading conversation...</p>
+            </div>
+        );
     }
 
     return (

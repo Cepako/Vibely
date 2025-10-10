@@ -17,11 +17,20 @@ class WebSocketManager {
     addNotificationConnection(userId: number, socket: WebSocket): void {
         console.log(` Adding notification connection for user ${userId}`);
 
+        const prev = this.websocketClients.get(userId) || [];
+        const wasOffline = prev.length === 0;
         if (!this.websocketClients.has(userId)) {
             this.websocketClients.set(userId, []);
         }
-
         this.websocketClients.get(userId)!.push(socket);
+
+        // send current online list to this new socket
+        this.sendPresenceInitToSocket(socket);
+
+        // broadcast that user became online only if previously offline
+        if (wasOffline) {
+            this.broadcastPresenceChange(userId, true);
+        }
 
         console.log(
             ` User ${userId} now has ${this.websocketClients.get(userId)!.length} notification connections`
@@ -49,6 +58,8 @@ class WebSocketManager {
             console.log(
                 ` Removed user ${userId} from notification clients (no connections left)`
             );
+            // broadcast that user went offline
+            this.broadcastPresenceChange(userId, false);
         }
     }
 
@@ -181,6 +192,43 @@ class WebSocketManager {
                 })
             ),
         };
+    }
+
+    // Return array of currently online user ids (users with at least one notification socket)
+    getOnlineUserIds(): number[] {
+        return Array.from(this.websocketClients.keys());
+    }
+
+    // Send presence init (current online list) to a single socket
+    sendPresenceInitToSocket(socket: WebSocket) {
+        try {
+            const message = JSON.stringify({
+                type: 'presence_init',
+                data: this.getOnlineUserIds(),
+            });
+            socket.send(message);
+        } catch (err) {
+            console.error('Failed to send presence_init', err);
+        }
+    }
+
+    // Broadcast a single presence change (userId went online/offline) to all notification sockets
+    broadcastPresenceChange(userId: number, isOnline: boolean) {
+        const payload = JSON.stringify({
+            type: 'presence',
+            data: { userId, isOnline },
+        });
+        for (const [, connections] of this.websocketClients.entries()) {
+            connections.forEach((sock) => {
+                if (sock.readyState === WebSocket.OPEN) {
+                    try {
+                        sock.send(payload);
+                    } catch (err) {
+                        console.error('Failed to broadcast presence', err);
+                    }
+                }
+            });
+        }
     }
 }
 

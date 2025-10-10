@@ -10,6 +10,8 @@ import {
 import { useAuth } from '../auth/AuthProvider';
 import UserAvatar from '../ui/UserAvatar';
 import type { User } from '../../types/user';
+import { useWebSocketContext } from '../providers/WebSocketProvider';
+import Tooltip from '../ui/Tooltip';
 
 interface ConversationListProps {
     conversations: Conversation[];
@@ -28,9 +30,10 @@ export const ConversationList: React.FC<ConversationListProps> = ({
 }) => {
     const { user } = useAuth();
     const [searchTerm, setSearchTerm] = useState('');
+    const { isUserOnline, onlineUsers } = useWebSocketContext();
 
     const getConversationInfo = (conversation: Conversation) => {
-        if (conversation.participants.length === 2) {
+        if (conversation.type === 'direct') {
             // 1-on-1 conversation
             const otherParticipant = conversation.participants.find(
                 (p) => p.userId !== user?.id
@@ -45,7 +48,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                         size='lg'
                     />
                 ),
-                isOnline: otherParticipant.user.isOnline || false,
+                isOnline: isUserOnline(otherParticipant.user.id) || false,
             };
         } else {
             const participantNames = conversation.participants
@@ -64,7 +67,14 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                         <IconUsersGroup />
                     </div>
                 ),
-                isOnline: false,
+                isOnline:
+                    (onlineUsers.length > 0 &&
+                        conversation.participants.some(
+                            (p) =>
+                                onlineUsers.includes(p.userId) &&
+                                p.userId !== user?.id
+                        )) ||
+                    false,
             };
         }
     };
@@ -164,11 +174,14 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                                 >
                                     <div className='relative mr-3 flex-shrink-0'>
                                         {avatar}
-                                        {isOnline &&
-                                            conversation.participants.length ===
-                                                2 && (
+                                        {isOnline && (
+                                            <Tooltip
+                                                content='Online'
+                                                delay={100}
+                                            >
                                                 <div className='absolute right-0 bottom-0 h-3 w-3 rounded-full border-2 border-white bg-green-500'></div>
-                                            )}
+                                            </Tooltip>
+                                        )}
                                     </div>
 
                                     <div className='min-w-0 flex-1'>
