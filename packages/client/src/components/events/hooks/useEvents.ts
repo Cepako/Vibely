@@ -1,25 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import type { Event, EventTab } from '../../../types/events';
-
-const apiCall = async (endpoint: string, options: RequestInit = {}) => {
-    const response = await fetch(`/api${endpoint}`, {
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers,
-        },
-        ...options,
-        credentials: 'include',
-    });
-
-    if (!response.ok) {
-        const errorData = await response
-            .json()
-            .catch(() => ({ error: 'Request failed' }));
-        throw new Error(errorData.error || `HTTP ${response.status}`);
-    }
-
-    return response.json();
-};
+import { apiClient } from '../../../lib/apiClient';
 
 const getEndpointByTab = (tab: EventTab): string => {
     switch (tab) {
@@ -39,7 +20,7 @@ export function useEvents(tab: EventTab) {
         queryKey: ['events', tab],
         queryFn: async (): Promise<Event[]> => {
             const endpoint = getEndpointByTab(tab);
-            const response = await apiCall(endpoint);
+            const response = await apiClient.get(endpoint);
             return response.data || [];
         },
         staleTime: 1000 * 5,

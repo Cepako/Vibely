@@ -7,31 +7,12 @@ import type {
     UpdateConversationNameData,
     UpdateParticipantNicknameData,
 } from '../../types/message';
+import { apiClient } from '../../lib/apiClient';
 
 class MessageApi {
-    private async request<T = any>(
-        endpoint: string,
-        options: RequestInit = {}
-    ): Promise<T> {
-        const response = await fetch(`/api/message${endpoint}`, {
-            ...options,
-            headers: {
-                ...options.headers,
-            },
-            credentials: 'include',
-        });
-
-        if (!response.ok) {
-            const error = await response.json().catch(() => ({}));
-            throw new Error(error?.message || `HTTP ${response.status}`);
-        }
-
-        return response.json();
-    }
-
     async getConversations(limit = 20, offset = 0): Promise<Conversation[]> {
-        const response = await this.request<MessageResponse>(
-            `/conversations?limit=${limit}&offset=${offset}`
+        const response = await apiClient.get<MessageResponse>(
+            `/message/conversations?limit=${limit}&offset=${offset}`
         );
         const data = response?.data;
         if (Array.isArray(data)) return data as Conversation[];
@@ -39,8 +20,8 @@ class MessageApi {
     }
 
     async getConversation(conversationId: number): Promise<Conversation> {
-        const response = await this.request<MessageResponse>(
-            `/conversations/${conversationId}`
+        const response = await apiClient.get<MessageResponse>(
+            `/message/conversations/${conversationId}`
         );
         return response?.data as Conversation;
     }
@@ -48,11 +29,10 @@ class MessageApi {
     async createConversation(
         data: CreateConversationData
     ): Promise<Conversation> {
-        const response = await this.request<MessageResponse>('/conversations', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data),
-        });
+        const response = await apiClient.post<MessageResponse>(
+            '/message/conversations',
+            data
+        );
         return response?.data as Conversation;
     }
 
@@ -60,13 +40,9 @@ class MessageApi {
         conversationId: number,
         data: UpdateConversationNameData
     ): Promise<Conversation> {
-        const response = await this.request<MessageResponse>(
-            `/conversations/${conversationId}`,
-            {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data),
-            }
+        const response = await apiClient.patch<MessageResponse>(
+            `/message/conversations/${conversationId}`,
+            data
         );
         return response?.data as Conversation;
     }
@@ -75,13 +51,9 @@ class MessageApi {
         conversationId: number,
         data: UpdateParticipantNicknameData
     ): Promise<void> {
-        await this.request(
-            `/conversations/${conversationId}/participants/nickname`,
-            {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data),
-            }
+        await apiClient.patch(
+            `/message/conversations/${conversationId}/participants/nickname`,
+            data
         );
     }
 
@@ -89,22 +61,18 @@ class MessageApi {
         conversationId: number,
         userId: number
     ): Promise<void> {
-        await this.request(`/conversations/${conversationId}/participants`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId }),
-        });
+        await apiClient.post(
+            `/message/conversations/${conversationId}/participants`,
+            { userId }
+        );
     }
 
     async removeParticipant(
         conversationId: number,
         userId: number
     ): Promise<void> {
-        await this.request(
-            `/conversations/${conversationId}/participants/${userId}`,
-            {
-                method: 'DELETE',
-            }
+        await apiClient.delete(
+            `/message/conversations/${conversationId}/participants/${userId}`
         );
     }
 
@@ -113,8 +81,8 @@ class MessageApi {
         limit = 50,
         offset = 0
     ): Promise<Message[]> {
-        const response = await this.request<MessageResponse>(
-            `/messages?conversationId=${conversationId}&limit=${limit}&offset=${offset}`
+        const response = await apiClient.get<MessageResponse>(
+            `/message/messages?conversationId=${conversationId}&limit=${limit}&offset=${offset}`
         );
         const data = response?.data;
         if (Array.isArray(data)) return data as Message[];
@@ -139,18 +107,11 @@ class MessageApi {
             } else if (data.contentType) {
                 formData.append('contentType', data.contentType);
             }
-            const response = await fetch(`/api/message/messages`, {
-                method: 'POST',
-                credentials: 'include',
-                body: formData,
-            });
+            const result = await apiClient.upload<any>(
+                `/message/messages`,
+                formData
+            );
 
-            if (!response.ok) {
-                const error = await response.json().catch(() => ({}));
-                throw new Error(error?.message || `HTTP ${response.status}`);
-            }
-
-            const result = await response.json();
             if (!result?.success || !result?.data) {
                 throw new Error(
                     result?.message || 'Invalid response from server'
@@ -165,21 +126,17 @@ class MessageApi {
     }
 
     async markMessagesAsRead(messageIds: number[]): Promise<void> {
-        await this.request('/messages/read', {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ messageIds }),
-        });
+        await apiClient.patch('/message/messages/read', { messageIds });
     }
 
     async deleteMessage(messageId: number): Promise<void> {
-        await this.request(`/messages/${messageId}`, { method: 'DELETE' });
+        await apiClient.delete(`/message/messages/${messageId}`);
     }
 
     async leaveConversation(conversationId: number): Promise<void> {
-        await this.request(`/conversations/${conversationId}/leave`, {
-            method: 'DELETE',
-        });
+        await apiClient.delete(
+            `/message/conversations/${conversationId}/leave`
+        );
     }
 }
 

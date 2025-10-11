@@ -1,33 +1,15 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-
-async function changeProfileImage({
-    data,
-    profileId,
-}: {
-    data: FormData;
-    profileId: number;
-}) {
-    const response = await fetch(
-        `/api/user/profile/edit/picture/${profileId}`,
-        {
-            method: 'POST',
-            body: data,
-            credentials: 'include',
-        }
-    );
-
-    if (!response.ok) {
-        throw new Error('Profile image change failed');
-    }
-
-    return await response.json();
-}
+import { apiClient } from '../../../lib/apiClient';
 
 export function useChangeProfileImage(profileId: number) {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: (data: FormData) => changeProfileImage({ data, profileId }),
+        mutationFn: async (data: FormData) =>
+            await apiClient.upload(
+                `/user/profile/edit/picture/${profileId}`,
+                data
+            ),
         onSuccess: (data) => {
             const { message } = data;
             toast.success(message, {

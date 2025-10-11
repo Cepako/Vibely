@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { apiClient } from '../../../lib/apiClient';
 
 export interface Friend {
     id: number;
@@ -51,178 +52,69 @@ export type FriendshipStatus =
     | 'blocked_by_them'
     | 'self';
 
-const baseUrl = '/api/friendship';
+const baseUrl = '/friendship';
 
 const friendshipService = {
     async getFriends(userId: number): Promise<Friend[]> {
-        const response = await fetch(`${baseUrl}/${userId}/friends`, {
-            credentials: 'include',
-        });
-
-        if (!response.ok) {
-            throw new Error('Failed to fetch friends');
-        }
-
-        return response.json();
+        return await apiClient.get<Friend[]>(`${baseUrl}/${userId}/friends`);
     },
 
     async getFriendRequests(): Promise<FriendRequest[]> {
-        const response = await fetch(`${baseUrl}/friend-requests`, {
-            credentials: 'include',
-        });
-
-        if (!response.ok) {
-            throw new Error('Failed to fetch friend requests');
-        }
-
-        return response.json();
+        return await apiClient.get<FriendRequest[]>(
+            `${baseUrl}/friend-requests`
+        );
     },
 
     async getSentFriendRequests(): Promise<SentRequest[]> {
-        const response = await fetch(`${baseUrl}/friend-requests/sent`, {
-            credentials: 'include',
-        });
-
-        if (!response.ok) {
-            throw new Error('Failed to fetch sent friend requests');
-        }
-
-        return response.json();
+        return await apiClient.get<SentRequest[]>(
+            `${baseUrl}/friend-requests/sent`
+        );
     },
 
     async sendFriendRequest(friendId: number): Promise<{ message: string }> {
-        const response = await fetch(`${baseUrl}/friend-requests`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            credentials: 'include',
-            body: JSON.stringify({ friendId }),
-        });
-
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Failed to send friend request');
-        }
-
-        return response.json();
+        return await apiClient.post(`${baseUrl}/friend-requests`, { friendId });
     },
 
     async respondToFriendRequest(
         friendshipId: number,
         status: 'accepted' | 'rejected'
     ): Promise<{ message: string }> {
-        const response = await fetch(
+        return await apiClient.put(
             `${baseUrl}/friend-requests/${friendshipId}`,
-            {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                credentials: 'include',
-                body: JSON.stringify({ status }),
-            }
+            { status }
         );
-
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(
-                error.error || 'Failed to respond to friend request'
-            );
-        }
-
-        return response.json();
     },
 
     async cancelFriendRequest(
         friendshipId: number
     ): Promise<{ message: string }> {
-        const response = await fetch(
-            `${baseUrl}/friend-requests/${friendshipId}`,
-            {
-                method: 'DELETE',
-                credentials: 'include',
-            }
+        return await apiClient.delete(
+            `${baseUrl}/friend-requests/${friendshipId}`
         );
-
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Failed to cancel friend request');
-        }
-
-        return response.json();
     },
 
     async removeFriend(friendId: number): Promise<{ message: string }> {
-        const response = await fetch(`${baseUrl}/friends/${friendId}`, {
-            method: 'DELETE',
-            credentials: 'include',
-        });
-
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Failed to remove friend');
-        }
-
-        return response.json();
+        return await apiClient.delete(`${baseUrl}/friends/${friendId}`);
     },
 
     async blockUser(userId: number): Promise<{ message: string }> {
-        const response = await fetch(`${baseUrl}/blocks`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            credentials: 'include',
-            body: JSON.stringify({ userId }),
-        });
-
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Failed to block user');
-        }
-
-        return response.json();
+        return await apiClient.post(`${baseUrl}/blocks`, { userId });
     },
 
     async unblockUser(userId: number): Promise<{ message: string }> {
-        const response = await fetch(`${baseUrl}/blocks/${userId}`, {
-            method: 'DELETE',
-            credentials: 'include',
-        });
-
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Failed to unblock user');
-        }
-
-        return response.json();
+        return await apiClient.delete(`${baseUrl}/blocks/${userId}`);
     },
 
     async getBlockedUsers(): Promise<BlockedUser[]> {
-        const response = await fetch(`${baseUrl}/blocks`, {
+        return await apiClient.get<BlockedUser[]>(`${baseUrl}/blocks`, {
             credentials: 'include',
         });
-
-        if (!response.ok) {
-            throw new Error('Failed to fetch blocked users');
-        }
-
-        return response.json();
     },
 
     async getFriendshipStatus(
         userId: number
     ): Promise<{ status: FriendshipStatus }> {
-        const response = await fetch(`${baseUrl}/friendship-status/${userId}`, {
-            credentials: 'include',
-        });
-
-        if (!response.ok) {
-            throw new Error('Failed to get friendship status');
-        }
-
-        return response.json();
+        return await apiClient.get(`${baseUrl}/friendship-status/${userId}`);
     },
 };
 

@@ -1,6 +1,7 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useAuth } from '../../auth/AuthProvider';
 import type { Post } from '../../../types/post';
+import { apiClient } from '../../../lib/apiClient';
 
 interface HomeFeedResponse {
     posts: Post[];
@@ -15,19 +16,9 @@ const fetchHomeFeed = async (
     limit: number = 20,
     offset: number = 0
 ): Promise<HomeFeedResponse> => {
-    const response = await fetch(
-        `/api/post/home-feed?limit=${limit}&offset=${offset}`,
-        {
-            method: 'GET',
-            credentials: 'include',
-        }
+    return await apiClient.get<HomeFeedResponse>(
+        `/post/home-feed?limit=${limit}&offset=${offset}`
     );
-
-    if (!response.ok) {
-        throw new Error('Failed to fetch home feed');
-    }
-
-    return response.json();
 };
 
 export const useHomeFeed = (limit: number = 20) => {

@@ -6,155 +6,63 @@ import type {
 } from '../../../types/comment';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../auth/AuthProvider';
+import { apiClient } from '../../../lib/apiClient';
 
 const commentsApi = {
-    async getPostComments(postId: number): Promise<Comment[]> {
-        const response = await fetch(
-            `/api/comment-reaction/posts/${postId}/comments`,
-            {
-                credentials: 'include',
-            }
+    async getPostComments(postId: number): Promise<Array<Comment>> {
+        return await apiClient.get<Array<Comment>>(
+            `/comment-reaction/posts/${postId}/comments`
         );
-
-        if (!response.ok) {
-            const error = await response
-                .json()
-                .catch(() => ({ error: 'Failed to fetch comments' }));
-            throw new Error(error.error || 'Failed to fetch comments');
-        }
-
-        return response.json();
     },
 
     async createComment(
         postId: number,
         data: CreateCommentData
     ): Promise<{ message: string; comment: Comment }> {
-        const response = await fetch(
-            `/api/comment-reaction/posts/${postId}/comments`,
-            {
-                method: 'POST',
-                credentials: 'include',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(data),
-            }
-        );
-
-        if (!response.ok) {
-            const error = await response
-                .json()
-                .catch(() => ({ error: 'Failed to create comment' }));
-            throw new Error(error.error || 'Failed to create comment');
-        }
-
-        return response.json();
+        return await apiClient.post<{
+            message: string;
+            comment: Comment;
+        }>(`/comment-reaction/posts/${postId}/comments`, data);
     },
 
     async updateComment(
         commentId: number,
         content: string
     ): Promise<{ message: string; comment: Comment }> {
-        const response = await fetch(
-            `/api/comment-reaction/comments/${commentId}`,
-            {
-                method: 'PUT',
-                credentials: 'include',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ content }),
-            }
+        return await apiClient.put<{ message: string; comment: Comment }>(
+            `/comment-reaction/comments/${commentId}`,
+            { content }
         );
-
-        if (!response.ok) {
-            const error = await response
-                .json()
-                .catch(() => ({ error: 'Failed to update comment' }));
-            throw new Error(error.error || 'Failed to update comment');
-        }
-
-        return response.json();
     },
 
     async deleteComment(commentId: number): Promise<{ message: string }> {
-        const response = await fetch(
-            `/api/comment-reaction/comments/${commentId}`,
-            {
-                method: 'DELETE',
-                credentials: 'include',
-            }
+        return await apiClient.delete<{ message: string }>(
+            `/comment-reaction/comments/${commentId}`
         );
-
-        if (!response.ok) {
-            const error = await response
-                .json()
-                .catch(() => ({ error: 'Failed to delete comment' }));
-            throw new Error(error.error || 'Failed to delete comment');
-        }
-
-        return response.json();
     },
 
     async toggleCommentLike(
         commentId: number
     ): Promise<{ message: string; liked: boolean }> {
-        const response = await fetch(
-            `/api/comment-reaction/comments/${commentId}/like`,
-            {
-                method: 'POST',
-                credentials: 'include',
-            }
-        );
-
-        if (!response.ok) {
-            const error = await response
-                .json()
-                .catch(() => ({ error: 'Failed to toggle comment like' }));
-            throw new Error(error.error || 'Failed to toggle comment like');
-        }
-
-        return response.json();
+        return await apiClient.post<{
+            message: string;
+            liked: boolean;
+        }>(`/comment-reaction/comments/${commentId}/like`);
     },
 
     async getCommentLikeInfo(commentId: number): Promise<CommentLikeInfo> {
-        const response = await fetch(
-            `/api/comment-reaction/comments/${commentId}/likes`,
-            {
-                credentials: 'include',
-            }
+        return await apiClient.get<CommentLikeInfo>(
+            `/comment-reaction/comments/${commentId}/likes`
         );
-
-        if (!response.ok) {
-            const error = await response
-                .json()
-                .catch(() => ({ error: 'Failed to get comment like info' }));
-            throw new Error(error.error || 'Failed to get comment like info');
-        }
-
-        return response.json();
     },
 
     async togglePostLike(
         postId: number
     ): Promise<{ message: string; liked: boolean }> {
-        const response = await fetch(
-            `/api/comment-reaction/posts/${postId}/like`,
-            {
-                method: 'POST',
-                credentials: 'include',
-            }
-        );
-
-        if (!response.ok) {
-            const error = await response
-                .json()
-                .catch(() => ({ error: 'Failed to toggle post like' }));
-            throw new Error(error.error || 'Failed to toggle post like');
-        }
-
-        return response.json();
+        return await apiClient.post<{
+            message: string;
+            liked: boolean;
+        }>(`/comment-reaction/posts/${postId}/like`);
     },
 };
 

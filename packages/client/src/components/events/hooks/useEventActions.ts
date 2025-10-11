@@ -4,34 +4,14 @@ import type {
     Event,
     EventParticipant,
 } from '../../../types/events';
-
-const apiCall = async (endpoint: string, options: RequestInit = {}) => {
-    const response = await fetch(`/api${endpoint}`, {
-        headers: {
-            ...options.headers,
-        },
-        ...options,
-        credentials: 'include',
-    });
-
-    if (!response.ok) {
-        const errorData = await response
-            .json()
-            .catch(() => ({ error: 'Request failed' }));
-        throw new Error(errorData.error || `HTTP ${response.status}`);
-    }
-
-    return response.json();
-};
+import { apiClient } from '../../../lib/apiClient';
 
 export function useEventActions() {
     const queryClient = useQueryClient();
 
     const joinEventMutation = useMutation({
         mutationFn: async (eventId: number) => {
-            return await apiCall(`/events/${eventId}/join`, {
-                method: 'POST',
-            });
+            return await apiClient.post(`/events/${eventId}/join`);
         },
         onSuccess: (_, eventId) => {
             queryClient.invalidateQueries({ queryKey: ['event', eventId] });
@@ -48,9 +28,7 @@ export function useEventActions() {
 
     const leaveEventMutation = useMutation({
         mutationFn: async (eventId: number) => {
-            return await apiCall(`/events/${eventId}/leave`, {
-                method: 'DELETE',
-            });
+            return await apiClient.delete(`/events/${eventId}/leave`);
         },
         onSuccess: (_, eventId) => {
             queryClient.invalidateQueries({
@@ -75,12 +53,8 @@ export function useEventActions() {
             eventId: number;
             status: 'going' | 'declined';
         }) => {
-            return await apiCall(`/events/${eventId}/respond`, {
-                method: 'POST',
-                body: JSON.stringify({ status }),
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+            return await apiClient.post(`/events/${eventId}/respond`, {
+                status,
             });
         },
         onSuccess: (_, variables) => {
@@ -100,13 +74,7 @@ export function useEventActions() {
 
     const createEventMutation = useMutation({
         mutationFn: async (eventData: CreateEventData): Promise<Event> => {
-            const response = await apiCall('/events/create', {
-                method: 'POST',
-                body: JSON.stringify(eventData),
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            });
+            const response = await apiClient.post('/events/create', eventData);
             return response.data;
         },
         onSuccess: () => {
@@ -128,13 +96,10 @@ export function useEventActions() {
             eventId: number;
             eventData: Partial<CreateEventData>;
         }): Promise<Event> => {
-            const response = await apiCall(`/events/${eventId}`, {
-                method: 'PUT',
-                body: JSON.stringify(eventData),
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            });
+            const response = await apiClient.put(
+                `/events/${eventId}`,
+                eventData
+            );
             return response.data;
         },
         onSuccess: (_, variables) => {
@@ -153,9 +118,7 @@ export function useEventActions() {
 
     const deleteEventMutation = useMutation({
         mutationFn: async (eventId: number) => {
-            return await apiCall(`/events/${eventId}`, {
-                method: 'DELETE',
-            });
+            return await apiClient.delete(`/events/${eventId}`);
         },
         onSuccess: (_, eventId) => {
             queryClient.invalidateQueries({
@@ -180,12 +143,8 @@ export function useEventActions() {
             eventId: number;
             userIds: number[];
         }) => {
-            return await apiCall(`/events/${eventId}/invite`, {
-                method: 'POST',
-                body: JSON.stringify({ userIds }),
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+            return await apiClient.post(`/events/${eventId}/invite`, {
+                userIds,
             });
         },
         onSuccess: (_, variables) => {
@@ -213,12 +172,9 @@ export function useEventActions() {
             name: string;
             description?: string;
         }) => {
-            const response = await apiCall('/events/categories', {
-                method: 'POST',
-                body: JSON.stringify({ name, description }),
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+            const response = await apiClient.post('/events/categories', {
+                name,
+                description,
             });
             return response.data;
         },
@@ -283,7 +239,9 @@ export function useEventParticipants(eventId: number, enabled: boolean = true) {
     return useQuery<Array<EventParticipant>>({
         queryKey: ['event-participants', eventId],
         queryFn: async () => {
-            const response = await apiCall(`/events/${eventId}/participants`);
+            const response = await apiClient.get(
+                `/events/${eventId}/participants`
+            );
             return response.data;
         },
         enabled: enabled && !!eventId,
@@ -297,7 +255,7 @@ export function useEventDetail(eventId: number, enabled: boolean = true) {
     return useQuery({
         queryKey: ['event', eventId],
         queryFn: async (): Promise<Event> => {
-            const response = await apiCall(`/events/${eventId}`);
+            const response = await apiClient.get(`/events/${eventId}`);
             return response.data;
         },
         enabled: enabled && !!eventId,
@@ -331,7 +289,7 @@ export function useSearchEvents(
             if (filters?.location)
                 searchParams.append('location', filters.location);
 
-            const response = await apiCall(
+            const response = await apiClient.get(
                 `/events/search?${searchParams.toString()}`
             );
             return response.data;

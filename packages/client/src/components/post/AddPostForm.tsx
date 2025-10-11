@@ -245,7 +245,11 @@ function AddPostForm({ profileId, onClose }: AddPostFormProps) {
                     <button
                         type='submit'
                         onClick={handleSubmit(onSubmit)}
-                        disabled={!isFormValid || createPostMutation.isPending}
+                        disabled={
+                            !isFormValid ||
+                            !selectedFile ||
+                            createPostMutation.isPending
+                        }
                         className='bg-primary-600 hover:bg-primary-700 flex-1 cursor-pointer rounded-lg px-4 py-2 text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50'
                     >
                         {createPostMutation.isPending ? 'Posting...' : 'Post'}

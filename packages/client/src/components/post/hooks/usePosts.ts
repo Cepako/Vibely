@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ContentType, Post, PrivacyLevel } from '../../../types/post';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../auth/AuthProvider';
+import { apiClient } from '../../../lib/apiClient';
 
 export interface CreatePostData {
     content: string;
@@ -17,32 +18,11 @@ export interface UpdatePostData {
 
 const postsApi = {
     async getPostById(postId: number): Promise<Post> {
-        const response = await fetch(`/api/post/single/${postId}`, {
-            credentials: 'include',
-        });
-
-        if (!response.ok) {
-            if (response.status === 404) {
-                throw new Error(
-                    'Post not found or you do not have permission to view it'
-                );
-            }
-            throw new Error('Failed to fetch post');
-        }
-
-        return response.json();
+        return await apiClient.get<Post>(`/post/single/${postId}`);
     },
 
     async getPosts(profileId: number): Promise<Post[]> {
-        const response = await fetch(`/api/post/${profileId}`, {
-            credentials: 'include',
-        });
-
-        if (!response.ok) {
-            throw new Error('Failed to fetch posts');
-        }
-
-        return response.json();
+        return await apiClient.get<Post[]>(`/post/${profileId}`);
     },
 
     async createPost(
@@ -57,53 +37,21 @@ const postsApi = {
             formData.append('file', data.file);
         }
 
-        const response = await fetch('/api/post/create', {
-            method: 'POST',
-            credentials: 'include',
-            body: formData,
-        });
-
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Failed to create post');
-        }
-
-        return response.json();
+        return await apiClient.upload<{ message: string; post: Post }>(
+            '/post/create',
+            formData
+        );
     },
 
     async updatePost(
         postId: number,
         data: UpdatePostData
     ): Promise<{ message: string; post: Post }> {
-        const response = await fetch(`/api/post/${postId}/edit`, {
-            method: 'PUT',
-            credentials: 'include',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(data),
-        });
-
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Failed to update post');
-        }
-
-        return response.json();
+        return await apiClient.put(`/api/post/${postId}/edit`, data);
     },
 
     async deletePost(postId: number): Promise<{ message: string }> {
-        const response = await fetch(`/api/post/${postId}`, {
-            method: 'DELETE',
-            credentials: 'include',
-        });
-
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Failed to delete post');
-        }
-
-        return response.json();
+        return await apiClient.delete(`/api/post/${postId}`);
     },
 };
 

@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
+import { apiClient } from '../../../lib/apiClient';
 
 export type EditFormData = {
     region?: string;
@@ -8,33 +9,11 @@ export type EditFormData = {
     interests?: number[];
 };
 
-async function editData({
-    data,
-    profileId,
-}: {
-    data: EditFormData;
-    profileId: number;
-}) {
-    const response = await fetch(`/api/user/profile/edit/${profileId}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-        credentials: 'include',
-    });
-
-    if (!response.ok) {
-        throw new Error('Profile edit failed');
-    }
-
-    return await response.json();
-}
-
 export function useEditProfile(profileId: number) {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: (data: EditFormData) => editData({ data, profileId }),
+        mutationFn: async (data: EditFormData) =>
+            await apiClient.post(`/user/profile/edit/${profileId}`, data),
         onSuccess: (data) => {
             const { message } = data;
             toast.success(message, {

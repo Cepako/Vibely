@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
 import { IconBubbleText } from '@tabler/icons-react';
 
 export const Route = createFileRoute('/messages/')({

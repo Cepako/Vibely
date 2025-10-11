@@ -1,26 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
+import { apiClient } from '../../../lib/apiClient';
 
-const apiCall = async (endpoint: string, options: RequestInit = {}) => {
-    const response = await fetch(`/api${endpoint}`, {
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers,
-        },
-        ...options,
-        credentials: 'include',
-    });
-
-    if (!response.ok) {
-        const errorData = await response
-            .json()
-            .catch(() => ({ error: 'Request failed' }));
-        throw new Error(errorData.error || `HTTP ${response.status}`);
-    }
-
-    return response.json();
-};
-
-// Types matching backend exactly
 export interface PotentialFriend {
     id: number;
     name: string;
@@ -184,7 +164,7 @@ export const usePotentialFriends = (limit = 20, filters?: ExploreFilters) => {
                 params.append('maxAge', filters.ageRange.max.toString());
             if (filters?.gender) params.append('gender', filters.gender);
 
-            const response = await apiCall(
+            const response = await apiClient.get(
                 `/explore/friends/potential?${params}`
             );
             return response;
@@ -211,7 +191,7 @@ export const useRecommendedEvents = (limit = 20, filters?: EventFilters) => {
             if (filters?.privacyLevel)
                 params.append('privacyLevel', filters.privacyLevel);
 
-            const response = await apiCall(
+            const response = await apiClient.get(
                 `/explore/events/recommended?${params}`
             );
             return response;
@@ -225,7 +205,9 @@ export const useTrendingContent = (limit = 10) => {
     return useQuery<SuccessResponse<TrendingContent>>({
         queryKey: ['explore', 'trending', limit],
         queryFn: async () => {
-            const response = await apiCall(`/explore/trending?limit=${limit}`);
+            const response = await apiClient.get(
+                `/explore/trending?limit=${limit}`
+            );
             return response;
         },
         staleTime: 2 * 60 * 1000, // 2 minutes for trending content
@@ -249,7 +231,9 @@ export const useSearchPeople = (
                 params.append('region', filters.location.region);
             if (filters?.gender) params.append('gender', filters.gender);
 
-            const response = await apiCall(`/explore/people/search?${params}`);
+            const response = await apiClient.get(
+                `/explore/people/search?${params}`
+            );
             return response;
         },
         enabled: query.length >= 2, // Only search if query is at least 2 characters
@@ -262,7 +246,7 @@ export const useInterestBasedRecommendations = (limit = 10) => {
     return useQuery<InterestBasedResponse>({
         queryKey: ['explore', 'interest-based', limit],
         queryFn: async () => {
-            const response = await apiCall(
+            const response = await apiClient.get(
                 `/explore/recommendations/interests?limit=${limit}`
             );
             return response;
@@ -282,7 +266,7 @@ export const useExploreStats = () => {
     >({
         queryKey: ['explore', 'stats'],
         queryFn: async () => {
-            const response = await apiCall('/explore/stats');
+            const response = await apiClient.get('/explore/stats');
             return response;
         },
         staleTime: 15 * 60 * 1000, // 15 minutes

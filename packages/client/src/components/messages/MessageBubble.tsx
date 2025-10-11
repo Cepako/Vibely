@@ -87,7 +87,6 @@ interface AttachmentProps {
 }
 
 function Attachment({ attachment }: AttachmentProps) {
-    console.log(attachment);
     const name =
         attachment.originalFileName ||
         attachment.fileUrl.split('/').pop() ||

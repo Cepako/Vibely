@@ -1,8 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useAuth } from '../../auth/AuthProvider';
 import { useWebSocketContext } from '../../providers/WebSocketProvider';
-
-const API_BASE = '/api';
+import { apiClient } from '../../../lib/apiClient';
 
 export const useNotifications = () => {
     const [loading, setLoading] = useState(false);
@@ -38,13 +37,10 @@ export const useNotifications = () => {
                 if (unreadOnly) params.set('unread', 'true');
                 if (search && search.trim()) params.set('q', search.trim());
 
-                const res = await fetch(
-                    `${API_BASE}/notification?${params.toString()}`,
-                    { credentials: 'include' }
+                const payload = await apiClient.get(
+                    `/notification?${params.toString()}`
                 );
-                if (!res.ok) throw new Error('Failed to fetch notifications');
 
-                const payload = await res.json();
                 const data = Array.isArray(payload)
                     ? payload
                     : Array.isArray(payload?.notifications)
@@ -88,17 +84,7 @@ export const useNotifications = () => {
         if (!user?.id) return;
 
         try {
-            const response = await fetch(
-                `${API_BASE}/notification/unread-count`,
-                {
-                    credentials: 'include',
-                }
-            );
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const data = await response.json();
+            const data = await apiClient.get('/notification/unread-count');
             setUnreadCount(data.unreadCount || 0);
         } catch (error) {
             console.error('Error fetching unread count:', error);
@@ -108,17 +94,7 @@ export const useNotifications = () => {
     const markAsRead = useCallback(
         async (notificationId: number) => {
             try {
-                const response = await fetch(
-                    `${API_BASE}/notification/${notificationId}/read`,
-                    {
-                        method: 'PATCH',
-                        credentials: 'include',
-                    }
-                );
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
+                await apiClient.patch(`/notification/${notificationId}/read`);
 
                 const current = notificationsRef.current ?? [];
                 const updated = current.map((notification) =>
@@ -145,14 +121,7 @@ export const useNotifications = () => {
 
     const markAllAsRead = useCallback(async () => {
         try {
-            const response = await fetch(`${API_BASE}/notification/read-all`, {
-                method: 'PATCH',
-                credentials: 'include',
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
+            await apiClient.patch('/notification/read-all');
 
             const current = notificationsRef.current ?? [];
             const updated = current.map((notification) => ({

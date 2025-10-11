@@ -4,7 +4,7 @@ import Input from '../ui/Input';
 import Button from '../ui/Button';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '../auth/AuthProvider';
 
 type LoginFormData = {
     email: string;
@@ -15,7 +15,7 @@ export default function LoginView() {
     const [isError, setIsError] = useState(false);
     const { register, handleSubmit } = useForm<LoginFormData>();
     const navigate = useNavigate();
-    const queryClient = useQueryClient();
+    const { refreshUser } = useAuth();
 
     const onSubmit: SubmitHandler<LoginFormData> = async (data) => {
         setIsError(false);
@@ -30,10 +30,18 @@ export default function LoginView() {
 
         if (!response.ok) {
             setIsError(true);
-        } else {
-            queryClient.invalidateQueries({ queryKey: ['verify'] });
-            setTimeout(() => navigate({ to: '/home' }), 100);
+            return;
         }
+
+        const user = await refreshUser();
+        if (!user) {
+            setIsError(true);
+            return;
+        }
+
+        const redirectPath = sessionStorage.getItem('redirectAfterLogin');
+        sessionStorage.removeItem('redirectAfterLogin');
+        navigate({ to: redirectPath || '/home' });
     };
 
     return (
