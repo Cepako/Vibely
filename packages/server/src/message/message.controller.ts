@@ -310,7 +310,6 @@ export class MessageController {
             let data: CreateMessageType;
             let file;
 
-            // Handle multipart form data
             if (request.isMultipart()) {
                 const parts = request.parts();
                 const formData: any = {};
@@ -332,32 +331,57 @@ export class MessageController {
                     }
                 }
 
-                if (!formData.conversationId || !formData.content) {
+                if (!formData.conversationId) {
                     return reply.code(400).send({
                         success: false,
-                        message: 'conversationId and content are required',
+                        message: 'conversationId is required',
                     });
                 }
 
-                data = {
-                    conversationId: parseInt(formData.conversationId),
-                    content: formData.content,
-                    contentType: formData.contentType || 'text',
-                };
+                if (!formData.content && !file) {
+                    return reply.code(400).send({
+                        success: false,
+                        message: 'content or file is required',
+                    });
+                }
 
-                if (isNaN(data.conversationId)) {
+                const conversationId = parseInt(formData.conversationId);
+                if (isNaN(conversationId)) {
                     return reply.code(400).send({
                         success: false,
                         message: 'Invalid conversationId',
                     });
                 }
+
+                let contentType = formData.contentType || 'text';
+                if (file && file.mimetype) {
+                    if (file.mimetype.startsWith('image/'))
+                        contentType = 'image';
+                    else if (file.mimetype.startsWith('video/'))
+                        contentType = 'video';
+                    else contentType = 'file';
+                }
+
+                const contentValue = formData.content?.trim();
+                data = {
+                    conversationId,
+                    content:
+                        contentValue && contentValue.length > 0
+                            ? contentValue
+                            : null,
+                    contentType,
+                };
             } else {
                 data = request.body as CreateMessageType;
 
-                if (!data.conversationId || !data.content) {
+                if (
+                    !data.conversationId ||
+                    (!data.content && !data.contentType)
+                ) {
                     return reply.code(400).send({
                         success: false,
-                        message: 'conversationId and content are required',
+                        message:
+                            'conversationId and content (or contentType) are required',
                     });
                 }
             }

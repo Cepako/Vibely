@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm/relations";
-import { users, friendships, conversations, messages, notifications, posts, postReactions, conversationParticipants, comments, eventCategories, events, eventParticipants, messageAttachments, userReports, userBlocks, interests, userInterests, commentReactions } from "./schema";
+import { users, friendships, notifications, posts, postReactions, conversations, conversationParticipants, comments, eventCategories, events, eventParticipants, messages, messageAttachments, userReports, userBlocks, interests, userInterests, commentReactions } from "./schema";
 
 export const friendshipsRelations = relations(friendships, ({one}) => ({
 	user_friendId: one(users, {
@@ -21,7 +21,6 @@ export const usersRelations = relations(users, ({many}) => ({
 	friendships_userId: many(friendships, {
 		relationName: "friendships_userId_users_id"
 	}),
-	messages: many(messages),
 	notifications: many(notifications),
 	postReactions: many(postReactions),
 	conversationParticipants: many(conversationParticipants),
@@ -29,6 +28,7 @@ export const usersRelations = relations(users, ({many}) => ({
 	events: many(events),
 	eventParticipants: many(eventParticipants),
 	posts: many(posts),
+	messages: many(messages),
 	userReports_reportedId: many(userReports, {
 		relationName: "userReports_reportedId_users_id"
 	}),
@@ -43,23 +43,6 @@ export const usersRelations = relations(users, ({many}) => ({
 	}),
 	userInterests: many(userInterests),
 	commentReactions: many(commentReactions),
-}));
-
-export const messagesRelations = relations(messages, ({one, many}) => ({
-	conversation: one(conversations, {
-		fields: [messages.conversationId],
-		references: [conversations.id]
-	}),
-	user: one(users, {
-		fields: [messages.senderId],
-		references: [users.id]
-	}),
-	messageAttachments: many(messageAttachments),
-}));
-
-export const conversationsRelations = relations(conversations, ({many}) => ({
-	messages: many(messages),
-	conversationParticipants: many(conversationParticipants),
 }));
 
 export const notificationsRelations = relations(notifications, ({one}) => ({
@@ -98,6 +81,11 @@ export const conversationParticipantsRelations = relations(conversationParticipa
 		fields: [conversationParticipants.userId],
 		references: [users.id]
 	}),
+}));
+
+export const conversationsRelations = relations(conversations, ({many}) => ({
+	conversationParticipants: many(conversationParticipants),
+	messages: many(messages),
 }));
 
 export const commentsRelations = relations(comments, ({one, many}) => ({
@@ -151,6 +139,18 @@ export const messageAttachmentsRelations = relations(messageAttachments, ({one})
 	message: one(messages, {
 		fields: [messageAttachments.messageId],
 		references: [messages.id]
+	}),
+}));
+
+export const messagesRelations = relations(messages, ({one, many}) => ({
+	messageAttachments: many(messageAttachments),
+	conversation: one(conversations, {
+		fields: [messages.conversationId],
+		references: [conversations.id]
+	}),
+	user: one(users, {
+		fields: [messages.senderId],
+		references: [users.id]
 	}),
 }));
 

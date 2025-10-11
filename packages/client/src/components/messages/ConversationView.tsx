@@ -30,7 +30,11 @@ export function ConversationView({
         conversations.find((c) => c.id === conversationId) || null;
 
     if (!conversation) {
-        return <div className='p-4'>Conversation not found</div>;
+        return (
+            <div className='flex h-full w-full items-center justify-center p-4 text-2xl font-semibold text-slate-700'>
+                Conversation not found
+            </div>
+        );
     }
 
     if (loading) {

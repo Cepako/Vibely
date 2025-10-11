@@ -2,8 +2,8 @@ export interface Message {
     id: number;
     conversationId: number;
     senderId: number;
-    content: string;
-    contentType: 'text' | 'image' | 'video';
+    content: string | null;
+    contentType: 'text' | 'image' | 'video' | 'file' | null;
     isRead: boolean;
     createdAt: string;
 }
@@ -17,8 +17,9 @@ export interface MessageAttachment {
     id: number;
     messageId: number;
     fileUrl: string;
-    fileType: 'image' | 'video' | 'pdf';
+    fileType: 'image' | 'video' | 'document';
     fileSize: number;
+    originalFileName?: string | null;
     createdAt: string;
 }
 export type ConversationType = 'direct' | 'group';

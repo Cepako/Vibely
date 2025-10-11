@@ -1,9 +1,9 @@
 import { pgTable, index, foreignKey, unique, check, serial, integer, timestamp, varchar, text, boolean, date, pgEnum } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 
-export const contentType = pgEnum("content_type", ['text', 'video', 'image'])
+export const contentType = pgEnum("content_type", ['text', 'video', 'image', 'file'])
 export const conversationType = pgEnum("conversation_type", ['direct', 'group'])
-export const fileType = pgEnum("file_type", ['image', 'video', 'pdf'])
+export const fileType = pgEnum("file_type", ['image', 'video', 'document'])
 export const friendshipStatusType = pgEnum("friendship_status_type", ['pending', 'accepted', 'blocked'])
 export const genderType = pgEnum("gender_type", ['male', 'female'])
 export const notificationRelatedType = pgEnum("notification_related_type", ['posts', 'comments', 'friendships', 'events', 'post_reactions', 'comment_reactions'])
@@ -48,30 +48,6 @@ export const eventCategories = pgTable("event_categories", {
 }, (table) => [
 	index("idx_event_categories_name").using("btree", table.name.asc().nullsLast().op("text_ops")),
 	unique("event_categories_name_key").on(table.name),
-]);
-
-export const messages = pgTable("messages", {
-	id: serial().primaryKey().notNull(),
-	conversationId: integer("conversation_id").notNull(),
-	senderId: integer("sender_id").notNull(),
-	content: text().notNull(),
-	contentType: contentType("content_type").default('text'),
-	isRead: boolean("is_read").default(false),
-	createdAt: timestamp("created_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
-}, (table) => [
-	index("idx_messages_conversation_id").using("btree", table.conversationId.asc().nullsLast().op("int4_ops")),
-	index("idx_messages_created_at").using("btree", table.createdAt.asc().nullsLast().op("timestamp_ops")),
-	index("idx_messages_sender_id").using("btree", table.senderId.asc().nullsLast().op("int4_ops")),
-	foreignKey({
-			columns: [table.conversationId],
-			foreignColumns: [conversations.id],
-			name: "messages_conversation_id_fkey"
-		}).onDelete("cascade"),
-	foreignKey({
-			columns: [table.senderId],
-			foreignColumns: [users.id],
-			name: "messages_sender_id_fkey"
-		}).onDelete("cascade"),
 ]);
 
 export const notifications = pgTable("notifications", {
@@ -221,22 +197,6 @@ export const eventParticipants = pgTable("event_participants", {
 	unique("event_participants_event_id_user_id_key").on(table.eventId, table.userId),
 ]);
 
-export const messageAttachments = pgTable("message_attachments", {
-	id: serial().primaryKey().notNull(),
-	messageId: integer("message_id").notNull(),
-	fileUrl: varchar("file_url", { length: 255 }).notNull(),
-	fileType: fileType("file_type").notNull(),
-	fileSize: integer("file_size").notNull(),
-	createdAt: timestamp("created_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
-}, (table) => [
-	index("idx_message_attachments_message_id").using("btree", table.messageId.asc().nullsLast().op("int4_ops")),
-	foreignKey({
-			columns: [table.messageId],
-			foreignColumns: [messages.id],
-			name: "message_attachments_message_id_fkey"
-		}).onDelete("cascade"),
-]);
-
 export const interests = pgTable("interests", {
 	id: serial().primaryKey().notNull(),
 	name: varchar({ length: 100 }).notNull(),
@@ -274,6 +234,47 @@ export const conversations = pgTable("conversations", {
 	name: varchar({ length: 100 }),
 }, (table) => [
 	index("idx_conversations_type").using("btree", table.type.asc().nullsLast().op("enum_ops")),
+]);
+
+export const messageAttachments = pgTable("message_attachments", {
+	id: serial().primaryKey().notNull(),
+	messageId: integer("message_id").notNull(),
+	fileUrl: varchar("file_url", { length: 255 }).notNull(),
+	fileType: fileType("file_type").notNull(),
+	fileSize: integer("file_size").notNull(),
+	createdAt: timestamp("created_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
+	originalFileName: varchar("original_file_name", { length: 255 }),
+}, (table) => [
+	index("idx_message_attachments_message_id").using("btree", table.messageId.asc().nullsLast().op("int4_ops")),
+	foreignKey({
+			columns: [table.messageId],
+			foreignColumns: [messages.id],
+			name: "message_attachments_message_id_fkey"
+		}).onDelete("cascade"),
+]);
+
+export const messages = pgTable("messages", {
+	id: serial().primaryKey().notNull(),
+	conversationId: integer("conversation_id").notNull(),
+	senderId: integer("sender_id").notNull(),
+	content: text(),
+	contentType: contentType("content_type").default('text'),
+	isRead: boolean("is_read").default(false),
+	createdAt: timestamp("created_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+	index("idx_messages_conversation_id").using("btree", table.conversationId.asc().nullsLast().op("int4_ops")),
+	index("idx_messages_created_at").using("btree", table.createdAt.asc().nullsLast().op("timestamp_ops")),
+	index("idx_messages_sender_id").using("btree", table.senderId.asc().nullsLast().op("int4_ops")),
+	foreignKey({
+			columns: [table.conversationId],
+			foreignColumns: [conversations.id],
+			name: "messages_conversation_id_fkey"
+		}).onDelete("cascade"),
+	foreignKey({
+			columns: [table.senderId],
+			foreignColumns: [users.id],
+			name: "messages_sender_id_fkey"
+		}).onDelete("cascade"),
 ]);
 
 export const userReports = pgTable("user_reports", {

@@ -83,14 +83,15 @@ export const ConversationList: React.FC<ConversationListProps> = ({
         const { name } = getConversationInfo(conversation);
         return (
             name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            conversation.lastMessage?.content
-                .toLowerCase()
-                .includes(searchTerm.toLowerCase())
+            (conversation.lastMessage?.content &&
+                conversation.lastMessage.content
+                    .toLowerCase()
+                    .includes(searchTerm.toLowerCase()))
         );
     });
 
-    const formatMessagePreview = (content: string, maxLength = 50) => {
-        return content.length > maxLength
+    const formatMessagePreview = (content?: string, maxLength = 50) => {
+        return content && content.length > maxLength
             ? `${content.substring(0, maxLength)}...`
             : content;
     };
@@ -209,19 +210,25 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                                                         .contentType ===
                                                     'image' ? (
                                                         <span className='italic'>
-                                                            📷 Photo
+                                                            Photo
                                                         </span>
                                                     ) : conversation.lastMessage
                                                           .contentType ===
                                                       'video' ? (
                                                         <span className='italic'>
-                                                            🎥 Video
+                                                            Video
+                                                        </span>
+                                                    ) : conversation.lastMessage
+                                                          .contentType ===
+                                                      'file' ? (
+                                                        <span className='italic'>
+                                                            File
                                                         </span>
                                                     ) : (
                                                         formatMessagePreview(
                                                             conversation
                                                                 .lastMessage
-                                                                .content
+                                                                .content ?? ''
                                                         )
                                                     )}
                                                 </p>

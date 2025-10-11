@@ -6,6 +6,7 @@ import {
     IconSend,
     IconDotsVertical,
     IconRobot,
+    IconX,
 } from '@tabler/icons-react';
 import { useAuth } from '../auth/AuthProvider';
 import UserAvatar from '../ui/UserAvatar';
@@ -56,15 +57,35 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         adjustTextareaHeight();
     }, [messageText]);
 
+    useEffect(() => {
+        return () => {
+            if (previewUrl) {
+                try {
+                    URL.revokeObjectURL(previewUrl);
+                } catch (e) {}
+            }
+        };
+    }, [previewUrl]);
+
     const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (file) {
+            const maxSize = 50 * 1024 * 1024;
+            if (file.size > maxSize) {
+                alert('File size must be less than 50MB');
+                return;
+            }
+
             setSelectedFile(file);
 
-            // Create preview URL for images
-            if (file.type.startsWith('image/')) {
+            if (
+                file.type.startsWith('image/') ||
+                file.type.startsWith('video/')
+            ) {
                 const url = URL.createObjectURL(file);
                 setPreviewUrl(url);
+            } else {
+                setPreviewUrl(null);
             }
         }
     };
@@ -199,7 +220,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                                             )}
 
                                             <div
-                                                className={`group relative max-w-xs lg:max-w-md ${isOwnMessage ? 'order-1' : ''}`}
+                                                className={`relative max-w-xs lg:max-w-md ${isOwnMessage ? 'order-1' : ''}`}
                                             >
                                                 <MessageBubble
                                                     isOwnMessage={isOwnMessage}
@@ -237,21 +258,33 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                     <div className='mb-3'>
                         <div className='relative inline-block overflow-hidden rounded-lg bg-slate-100'>
                             {previewUrl ? (
-                                <img
-                                    src={previewUrl}
-                                    alt='Preview'
-                                    className='max-h-20 max-w-32 object-cover'
-                                />
+                                selectedFile?.type.startsWith('image/') ? (
+                                    <img
+                                        src={previewUrl}
+                                        alt='Preview'
+                                        className='max-h-40 max-w-56 object-cover'
+                                    />
+                                ) : selectedFile?.type.startsWith('video/') ? (
+                                    <video
+                                        src={previewUrl}
+                                        controls
+                                        className='max-h-40 max-w-56 object-cover'
+                                    />
+                                ) : (
+                                    <div className='p-4 text-slate-600'>
+                                        <span>📄 {selectedFile.name}</span>
+                                    </div>
+                                )
                             ) : (
                                 <div className='p-4 text-slate-600'>
                                     <span>📄 {selectedFile.name}</span>
                                 </div>
                             )}
                             <button
-                                className='bg-opacity-50 hover:bg-opacity-70 absolute top-1 right-1 flex h-5 w-5 items-center justify-center rounded-full bg-black text-white transition-colors'
+                                className='bg-opacity-50 hover:bg-opacity-70 absolute top-1 right-1 flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-black text-white transition-colors hover:bg-slate-700'
                                 onClick={removeFile}
                             >
-                                ×
+                                <IconX size={14} />
                             </button>
                         </div>
                     </div>
@@ -270,7 +303,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                         type='file'
                         ref={fileInputRef}
                         onChange={handleFileSelect}
-                        accept='image/*,video/*'
                         className='hidden'
                     />
 

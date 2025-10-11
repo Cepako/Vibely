@@ -4,6 +4,7 @@ export const MessageContentType = Type.Union([
     Type.Literal('text'),
     Type.Literal('image'),
     Type.Literal('video'),
+    Type.Literal('file'),
 ]);
 
 export const ConversationType = Type.Union([
@@ -13,7 +14,7 @@ export const ConversationType = Type.Union([
 
 export const CreateMessageSchema = Type.Object({
     conversationId: Type.Number(),
-    content: Type.String({ minLength: 1, maxLength: 2000 }),
+    content: Type.Optional(Type.String({ minLength: 1, maxLength: 2000 })),
     contentType: Type.Optional(MessageContentType),
 });
 
@@ -49,8 +50,8 @@ export const GetConversationsQuerySchema = Type.Object({
 
 export type CreateMessageType = {
     conversationId: number;
-    content: string;
-    contentType?: 'text' | 'image' | 'video';
+    content?: string;
+    contentType?: 'text' | 'image' | 'video' | 'file';
 };
 
 export type CreateConversationType = {

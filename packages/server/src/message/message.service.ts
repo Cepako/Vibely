@@ -18,7 +18,8 @@ import {
     ConversationWithDetails,
     MessageAttachment,
 } from './message.model';
-import { handleFileUpload, FileInput } from '../utils/handleFileUpload';
+import { FileInput } from '../utils/handleFileUpload';
+import { handleFileUpload } from '../utils/handleFileUpload';
 import { NotificationService } from '../notification/notification.service';
 import { websocketManager } from '../ws/websocketManager';
 
@@ -96,122 +97,86 @@ export class MessageService implements IMessageService {
         file?: FileInput
     ): Promise<MessageWithSender> {
         try {
-            const participation =
-                await db.query.conversationParticipants.findFirst({
-                    where: and(
-                        eq(
-                            conversationParticipants.conversationId,
-                            data.conversationId
-                        ),
-                        eq(conversationParticipants.userId, userId)
-                    ),
-                });
-
-            if (!participation) {
-                throw new Error(
-                    'User is not a participant of this conversation'
-                );
-            }
-
-            const [newMessage] = await db
+            const createdRows = await db
                 .insert(messages)
                 .values({
                     conversationId: data.conversationId,
                     senderId: userId,
-                    content: data.content,
-                    contentType: data.contentType || 'text',
+                    content: data.content ?? null,
+                    contentType: data.contentType ?? 'text',
                     isRead: false,
                 })
                 .returning();
 
-            if (!newMessage) {
+            const created = createdRows[0];
+            if (!created) {
                 throw new Error('Failed to create message');
             }
 
-            let attachment: MessageAttachment | null = null;
+            const attachments: MessageAttachment[] = [];
             if (file) {
-                const allowedTypes =
-                    data.contentType === 'image'
-                        ? ['image/']
-                        : data.contentType === 'video'
-                          ? ['video/']
-                          : ['image/', 'video/', 'application/pdf'];
-
                 const fileUrl = await handleFileUpload(file, {
-                    allowedTypes,
-                    maxSizeInMB: data.contentType === 'video' ? 100 : 10,
+                    allowedTypes: [
+                        'image/',
+                        'video/',
+                        'application/',
+                        'text/',
+                        'audio/',
+                    ],
+                    maxSizeInMB: 50,
                     subFolder: 'messages',
                 });
 
-                if (fileUrl) {
-                    const fileType = file.mimetype.startsWith('image/')
-                        ? 'image'
-                        : file.mimetype.startsWith('video/')
-                          ? 'video'
-                          : 'pdf';
+                let fileType: 'image' | 'video' | 'document' = 'document';
 
-                    const [newAttachment] = await db
-                        .insert(messageAttachments)
-                        .values({
-                            messageId: newMessage.id,
-                            fileUrl,
-                            fileType,
-                            fileSize: file.buffer.length,
-                        })
-                        .returning();
+                if (file.mimetype?.startsWith('image/')) {
+                    fileType = 'image';
+                } else if (file.mimetype?.startsWith('video/')) {
+                    fileType = 'video';
+                } else {
+                    fileType = 'document';
+                }
 
-                    if (newAttachment) {
-                        attachment = {
-                            id: newAttachment.id,
-                            messageId: newAttachment.messageId,
-                            fileUrl: newAttachment.fileUrl,
-                            fileType: newAttachment.fileType as
-                                | 'image'
-                                | 'video'
-                                | 'pdf',
-                            fileSize: newAttachment.fileSize,
-                            createdAt:
-                                newAttachment.createdAt ||
-                                new Date().toISOString(),
-                        };
-                    }
+                const inserted = await db
+                    .insert(messageAttachments)
+                    .values({
+                        messageId: created.id,
+                        fileUrl,
+                        fileType,
+                        fileSize: file.buffer?.length ?? 0,
+                        originalFileName: file.filename ?? null,
+                    } as any)
+                    .returning();
+
+                const att = inserted[0];
+                if (att) {
+                    attachments.push({
+                        id: att.id,
+                        messageId: att.messageId,
+                        fileUrl: att.fileUrl,
+                        fileType: att.fileType,
+                        fileSize: att.fileSize,
+                        originalFileName: att.originalFileName ?? null,
+                        createdAt: att.createdAt ?? new Date().toISOString(),
+                    });
                 }
             }
 
-            const sender = await db.query.users.findFirst({
-                where: eq(users.id, userId),
-                columns: {
-                    id: true,
-                    name: true,
-                    surname: true,
-                    profilePictureUrl: true,
-                },
-            });
-
-            if (!sender) {
-                throw new Error('Sender not found');
-            }
-
-            await db
-                .update(conversations)
-                .set({
-                    updatedAt: new Date().toISOString(),
-                })
-                .where(eq(conversations.id, data.conversationId));
-
             const messageWithSender: MessageWithSender = {
-                id: newMessage.id,
-                conversationId: newMessage.conversationId,
-                senderId: newMessage.senderId,
-                content: newMessage.content,
-                contentType: newMessage.contentType as
-                    | 'text'
-                    | 'image'
-                    | 'video',
-                isRead: newMessage.isRead || false,
-                createdAt: newMessage.createdAt || new Date().toISOString(),
-                sender: sender,
-                ...(attachment && { attachments: [attachment] }),
+                id: created.id,
+                conversationId: created.conversationId,
+                senderId: created.senderId,
+                content: created.content ?? null,
+                contentType: created.contentType,
+                isRead: created.isRead ?? false,
+                createdAt: created.createdAt ?? new Date().toISOString(),
+                sender: {
+                    id: userId,
+                    name: '',
+                    surname: '',
+                    profilePictureUrl: null,
+                },
+                ...(attachments.length > 0 ? { attachments } : {}),
             };
 
             this.broadcastMessageToConversation(
@@ -245,8 +210,8 @@ export class MessageService implements IMessageService {
             }
 
             return messageWithSender;
-        } catch (error) {
-            throw new Error(`Failed to create message: ${error}`);
+        } catch (err) {
+            throw new Error(`Failed to create message: ${err}`);
         }
     }
 
@@ -309,8 +274,9 @@ export class MessageService implements IMessageService {
                             id: att.id,
                             messageId: att.messageId,
                             fileUrl: att.fileUrl,
-                            fileType: att.fileType as 'image' | 'video' | 'pdf',
+                            fileType: att.fileType,
                             fileSize: att.fileSize,
+                            originalFileName: att.originalFileName ?? null,
                             createdAt:
                                 att.createdAt || new Date().toISOString(),
                         })),

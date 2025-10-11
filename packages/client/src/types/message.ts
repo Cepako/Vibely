@@ -3,15 +3,15 @@ export interface User {
     name: string;
     surname: string;
     profilePictureUrl?: string | null;
-    nickname?: string | null;
 }
 
 export interface MessageAttachment {
     id: number;
     messageId: number;
     fileUrl: string;
-    fileType: 'image' | 'video' | 'pdf';
+    fileType: 'image' | 'video' | 'document';
     fileSize: number;
+    originalFileName?: string | null;
     createdAt: string;
 }
 
@@ -19,8 +19,8 @@ export interface Message {
     id: number;
     conversationId: number;
     senderId: number;
-    content: string;
-    contentType: 'text' | 'image' | 'video';
+    content: string | null;
+    contentType: 'text' | 'image' | 'video' | 'file';
     isRead: boolean;
     createdAt: string;
     sender: User;
@@ -51,7 +51,7 @@ export interface Conversation {
 export interface CreateMessageData {
     conversationId: number;
     content: string;
-    contentType?: 'text' | 'image' | 'video';
+    contentType?: 'text' | 'image' | 'video' | 'file';
     file?: File;
 }
 

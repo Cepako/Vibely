@@ -125,11 +125,20 @@ class MessageApi {
         try {
             const formData = new FormData();
             formData.append('conversationId', data.conversationId.toString());
-            formData.append('content', data.content || '');
-            if (data.contentType)
-                formData.append('contentType', data.contentType);
-            if (data.file) formData.append('file', data.file);
+            if (data.content) formData.append('content', data.content);
 
+            if (data.file) {
+                if (data.file.type.startsWith('image/')) {
+                    formData.append('contentType', 'image');
+                } else if (data.file.type.startsWith('video/')) {
+                    formData.append('contentType', 'video');
+                } else {
+                    formData.append('contentType', 'file');
+                }
+                formData.append('file', data.file);
+            } else if (data.contentType) {
+                formData.append('contentType', data.contentType);
+            }
             const response = await fetch(`/api/message/messages`, {
                 method: 'POST',
                 credentials: 'include',

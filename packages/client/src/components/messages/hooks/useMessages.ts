@@ -292,11 +292,12 @@ export const useMessages = (
                 const messageData: CreateMessageData = {
                     conversationId: conversationId,
                     content,
-                    contentType: file
-                        ? file.type.startsWith('image/')
-                            ? 'image'
-                            : 'video'
-                        : 'text',
+                    contentType: (() => {
+                        if (!file) return 'text';
+                        if (file.type.startsWith('image/')) return 'image';
+                        if (file.type.startsWith('video/')) return 'video';
+                        return 'file';
+                    })(),
                     file,
                 };
                 await sendMessageMutation.mutateAsync(messageData);
