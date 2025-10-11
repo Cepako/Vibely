@@ -54,6 +54,7 @@ export function Nicknames({
                                             onClick={() =>
                                                 handleRemove(p.userId)
                                             }
+                                            title='Remove participant'
                                             className='cursor-pointer text-rose-500 hover:text-rose-600'
                                         >
                                             <IconUserX size={18} />

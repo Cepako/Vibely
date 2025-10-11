@@ -11,13 +11,13 @@ import { Dialog, useDialog } from '../ui/Dialog';
 import { useRef, useState } from 'react';
 import { useChangeProfileImage } from './hooks/useChangeProfileImage';
 import UserAvatar from '../ui/UserAvatar';
+import { useWebSocketContext } from '../providers/WebSocketProvider';
 
 interface ProfileImageProps {
     user: {
         id: number;
         name: string;
         surname: string;
-        isOnline: boolean;
         lastLoginAt?: string;
         profilePictureUrl?: string;
     };
@@ -28,8 +28,9 @@ export default function ProfileImage({
     user,
     isOwnProfile,
 }: ProfileImageProps) {
-    const { name, profilePictureUrl, isOnline, lastLoginAt, id } = user;
-
+    const { name, profilePictureUrl, lastLoginAt, id } = user;
+    const { isUserOnline } = useWebSocketContext();
+    const isOnline = isUserOnline(id);
     return (
         <div className='relative flex-shrink-0'>
             <div className='flex h-30 w-30 items-center justify-center overflow-hidden rounded-full border-2 border-slate-300'>

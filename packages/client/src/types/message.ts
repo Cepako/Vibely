@@ -3,7 +3,6 @@ export interface User {
     name: string;
     surname: string;
     profilePictureUrl?: string | null;
-    isOnline?: boolean;
     nickname?: string | null;
 }
 

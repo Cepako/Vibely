@@ -2,39 +2,24 @@ import { IconCalendar, IconMapPin } from '@tabler/icons-react';
 import { useNavigate } from '@tanstack/react-router';
 import { getEventStatus } from '../../utils/eventStatus';
 import { useEvents } from '../events/hooks/useEvents';
-
-// Keep mock data for active users for now
-const activeUsers = [
-    {
-        id: 1,
-        name: 'Jamie Lewis',
-        avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=32&h=32&fit=crop&crop=face',
-        status: 'online',
-    },
-    {
-        id: 2,
-        name: 'Casey Wong',
-        avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b47c?w=32&h=32&fit=crop&crop=face',
-        status: 'online',
-    },
-    {
-        id: 3,
-        name: 'Taylor Reed',
-        avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=32&h=32&fit=crop&crop=face',
-        status: 'online',
-    },
-    {
-        id: 4,
-        name: 'Sam Johnson',
-        avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=32&h=32&fit=crop&crop=face',
-        status: 'online',
-    },
-];
+import { useCurrentUser } from '../hooks/useCurrentUser';
+import { useFriends } from '../profile/hooks/useFriendship';
+import { useWebSocketContext } from '../providers/WebSocketProvider';
+import UserAvatar from '../ui/UserAvatar';
 
 export default function Sidebar() {
     const navigate = useNavigate();
 
     const upcomingEvents = useEvents('upcoming');
+
+    const currentUser = useCurrentUser();
+    const friendsQuery = useFriends(currentUser.data?.id ?? 0);
+    const ws = useWebSocketContext();
+    const onlineUsers = ws?.onlineUsers ?? [];
+
+    const activeFriends = (friendsQuery.data || []).filter((f: any) =>
+        onlineUsers.includes(f.id)
+    );
 
     const formatEventDate = (startTime: string) => {
         const eventDate = new Date(startTime);
@@ -151,14 +136,36 @@ export default function Sidebar() {
                         Active Now
                     </h3>
                     <span className='text-xs text-gray-500'>
-                        {activeUsers.length} online
+                        {activeFriends.length} online
                     </span>
                 </div>
 
                 <div className='space-y-1'>
-                    {activeUsers.map((user) => (
-                        <ActiveUser key={user.id} user={user} />
-                    ))}
+                    {friendsQuery.isLoading ? (
+                        <div className='space-y-2'>
+                            {[1, 2, 3].map((i) => (
+                                <div
+                                    key={i}
+                                    className='flex animate-pulse items-center gap-3 rounded-lg p-2'
+                                >
+                                    <div className='h-8 w-8 rounded-full bg-gray-200' />
+                                    <div className='h-4 w-24 rounded bg-gray-200' />
+                                </div>
+                            ))}
+                        </div>
+                    ) : activeFriends.length > 0 ? (
+                        activeFriends.map((user: any) => (
+                            <ActiveUser
+                                key={user.id}
+                                user={user}
+                                navigate={navigate}
+                            />
+                        ))
+                    ) : (
+                        <div className='rounded-lg bg-gray-50 p-3 text-center text-sm text-gray-500'>
+                            No friends online
+                        </div>
+                    )}
                 </div>
 
                 <button
@@ -220,21 +227,27 @@ function EventCard({
 
 interface ActiveUserProps {
     user: any;
+    navigate: any;
 }
 
-function ActiveUser({ user }: ActiveUserProps) {
+function ActiveUser({ user, navigate }: ActiveUserProps) {
+    const handleClick = () => {
+        navigate({
+            to: '/profile/$userId',
+            params: { userId: user.id.toString() },
+        });
+    };
     return (
-        <div className='flex cursor-pointer items-center space-x-3 rounded-lg px-2 py-2 hover:bg-gray-50'>
+        <div
+            className='flex cursor-pointer items-center space-x-3 rounded-lg px-2 py-2 hover:bg-gray-50'
+            onClick={handleClick}
+        >
             <div className='relative'>
-                <img
-                    src={user.avatar}
-                    alt={user.name}
-                    className='h-8 w-8 rounded-full object-cover'
-                />
+                <UserAvatar user={user} size='sm' />
                 <div className='absolute -right-0.5 -bottom-0.5 h-3 w-3 rounded-full border-2 border-white bg-green-500'></div>
             </div>
             <span className='text-sm font-medium text-gray-900'>
-                {user.name}
+                {user.name} {user.surname}
             </span>
         </div>
     );

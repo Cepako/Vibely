@@ -18,5 +18,4 @@ export type User = {
     createdAt: string;
     updatedAt: string;
     role: Role;
-    isOnline: boolean;
 };

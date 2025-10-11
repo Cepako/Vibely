@@ -210,7 +210,7 @@ export class MessageService implements IMessageService {
                     | 'video',
                 isRead: newMessage.isRead || false,
                 createdAt: newMessage.createdAt || new Date().toISOString(),
-                sender: { ...sender, isOnline: null },
+                sender: sender,
                 ...(attachment && { attachments: [attachment] }),
             };
 
@@ -303,7 +303,6 @@ export class MessageService implements IMessageService {
                     createdAt: msg.createdAt || new Date().toISOString(),
                     sender: {
                         ...msg.user,
-                        isOnline: null,
                     },
                     ...(msg.messageAttachments.length > 0 && {
                         attachments: msg.messageAttachments.map((att) => ({
@@ -359,7 +358,6 @@ export class MessageService implements IMessageService {
                     name: true,
                     surname: true,
                     profilePictureUrl: true,
-                    isOnline: true,
                     status: true,
                 },
             });
@@ -442,7 +440,6 @@ export class MessageService implements IMessageService {
                                                 name: true,
                                                 surname: true,
                                                 profilePictureUrl: true,
-                                                isOnline: true,
                                             },
                                         },
                                     },
@@ -523,7 +520,7 @@ export class MessageService implements IMessageService {
                               createdAt:
                                   lastMessage.createdAt ||
                                   new Date().toISOString(),
-                              sender: { ...lastMessage.user, isOnline: null },
+                              sender: lastMessage.user,
                           }
                         : undefined,
                     unreadCount,
@@ -571,7 +568,6 @@ export class MessageService implements IMessageService {
                                     name: true,
                                     surname: true,
                                     profilePictureUrl: true,
-                                    isOnline: true,
                                 },
                             },
                         },
@@ -643,7 +639,7 @@ export class MessageService implements IMessageService {
                           isRead: lastMessage.isRead || false,
                           createdAt:
                               lastMessage.createdAt || new Date().toISOString(),
-                          sender: { ...lastMessage.user, isOnline: null },
+                          sender: lastMessage.user,
                       }
                     : undefined,
                 unreadCount,

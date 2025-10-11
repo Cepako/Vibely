@@ -5,7 +5,6 @@ export interface Friend {
     name: string;
     surname: string;
     profilePictureUrl?: string;
-    isOnline: boolean;
     friendshipId: number;
     since: string;
 }

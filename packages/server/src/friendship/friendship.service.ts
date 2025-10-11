@@ -49,7 +49,6 @@ export class FriendshipService implements IFriendshipService {
                         name: true,
                         surname: true,
                         profilePictureUrl: true,
-                        isOnline: true,
                     },
                 },
                 user_friendId: {
@@ -58,7 +57,6 @@ export class FriendshipService implements IFriendshipService {
                         name: true,
                         surname: true,
                         profilePictureUrl: true,
-                        isOnline: true,
                     },
                 },
             },

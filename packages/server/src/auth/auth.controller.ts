@@ -46,7 +46,6 @@ export default class AuthController {
 
             const { id } = payload;
 
-            this.authService.updateOnlineStatus(id, false);
             this.authService.updateLastLoginAt(id);
         }
 

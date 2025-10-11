@@ -5,6 +5,7 @@ import { useFriends } from '../profile/hooks/useFriendship';
 import UserAvatar from '../ui/UserAvatar';
 import { useMessages } from './hooks/useMessages';
 import { cn } from '../../utils/utils';
+import { useWebSocketContext } from '../providers/WebSocketProvider';
 
 interface NewConversationModalProps {
     onClose: () => void;
@@ -16,6 +17,7 @@ export const NewConversationModal: React.FC<NewConversationModalProps> = ({
     const currentUser = useCurrentUser();
     const friendsQuery = useFriends(currentUser.data?.id ?? 0);
     const { createConversation, conversations = [] } = useMessages(null);
+    const { isUserOnline } = useWebSocketContext();
 
     const [selectedFriends, setSelectedFriends] = useState<number[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
@@ -189,6 +191,7 @@ export const NewConversationModal: React.FC<NewConversationModalProps> = ({
                                 const isSelected = selectedFriends.includes(
                                     friend.id
                                 );
+                                const isOnline = isUserOnline(friend.id);
 
                                 return (
                                     <div
@@ -204,7 +207,7 @@ export const NewConversationModal: React.FC<NewConversationModalProps> = ({
                                     >
                                         <div className='relative mr-3 flex-shrink-0'>
                                             <UserAvatar user={friend} />
-                                            {friend.isOnline && (
+                                            {isOnline && (
                                                 <div className='absolute right-0 bottom-0 h-3 w-3 rounded-full border-2 border-white bg-green-500'></div>
                                             )}
                                         </div>
@@ -214,9 +217,9 @@ export const NewConversationModal: React.FC<NewConversationModalProps> = ({
                                                 {friend.name} {friend.surname}
                                             </h4>
                                             <span
-                                                className={`text-sm ${friend.isOnline ? 'text-green-600' : 'text-slate-500'}`}
+                                                className={`text-sm ${isOnline ? 'text-green-600' : 'text-slate-500'}`}
                                             >
-                                                {friend.isOnline
+                                                {isOnline
                                                     ? 'Online'
                                                     : 'Offline'}
                                             </span>

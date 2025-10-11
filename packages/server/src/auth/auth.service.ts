@@ -12,7 +12,6 @@ interface IAuthService {
     verifyToken: (token: string) => Payload;
     login: (email: string, password: string) => Promise<string>;
     updateLastLoginAt: (userId: number) => Promise<void>;
-    updateOnlineStatus: (userId: number, status: boolean) => Promise<void>;
 }
 
 export class AuthService implements IAuthService {
@@ -55,7 +54,6 @@ export class AuthService implements IAuthService {
             throw new InvalidCredentials();
         }
 
-        this.updateOnlineStatus(user.id, true);
         return this.generateToken(user);
     }
 
@@ -63,13 +61,6 @@ export class AuthService implements IAuthService {
         await db
             .update(users)
             .set({ lastLoginAt: new Date().toISOString() })
-            .where(eq(users.id, userId));
-    }
-
-    async updateOnlineStatus(userId: number, status: boolean) {
-        await db
-            .update(users)
-            .set({ isOnline: status })
             .where(eq(users.id, userId));
     }
 

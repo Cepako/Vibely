@@ -4,11 +4,11 @@ import { sql } from "drizzle-orm"
 export const contentType = pgEnum("content_type", ['text', 'video', 'image'])
 export const conversationType = pgEnum("conversation_type", ['direct', 'group'])
 export const fileType = pgEnum("file_type", ['image', 'video', 'pdf'])
-export const friendshipStatusType = pgEnum("friendship_status_type", ['pending', 'accepted', 'rejected', 'blocked'])
+export const friendshipStatusType = pgEnum("friendship_status_type", ['pending', 'accepted', 'blocked'])
 export const genderType = pgEnum("gender_type", ['male', 'female'])
 export const notificationRelatedType = pgEnum("notification_related_type", ['posts', 'comments', 'friendships', 'events', 'post_reactions', 'comment_reactions'])
 export const participantStatusType = pgEnum("participant_status_type", ['invited', 'going', 'declined'])
-export const postContentType = pgEnum("post_content_type", ['photo', 'video', 'album'])
+export const postContentType = pgEnum("post_content_type", ['photo', 'video'])
 export const privacyLevelType = pgEnum("privacy_level_type", ['public', 'friends', 'private'])
 export const reportStatusType = pgEnum("report_status_type", ['pending', 'reviewing', 'resolved', 'dismissed'])
 export const userRoleType = pgEnum("user_role_type", ['user', 'admin'])
@@ -364,7 +364,6 @@ export const users = pgTable("users", {
 	createdAt: timestamp("created_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
 	updatedAt: timestamp("updated_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
 	role: userRoleType().default('user').notNull(),
-	isOnline: boolean("is_online").default(false),
 }, (table) => [
 	index("idx_users_email").using("btree", table.email.asc().nullsLast().op("text_ops")),
 	index("idx_users_status").using("btree", table.status.asc().nullsLast().op("enum_ops")),

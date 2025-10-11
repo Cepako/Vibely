@@ -6,16 +6,11 @@ import {
     eventParticipants,
     posts,
     userInterests,
-    interests,
-    eventCategories,
-    postReactions,
-    comments,
 } from '../db/schema';
 import {
     and,
     eq,
     or,
-    not,
     inArray,
     notInArray,
     desc,
@@ -23,7 +18,6 @@ import {
     gte,
     lte,
     sql,
-    count,
 } from 'drizzle-orm';
 import { FriendshipService } from '../friendship/friendship.service';
 import { EventService, EventWithDetails } from '../event/event.service';
