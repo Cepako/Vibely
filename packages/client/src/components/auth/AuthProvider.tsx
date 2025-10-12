@@ -1,7 +1,6 @@
-import { createContext, useContext, useEffect } from 'react';
+import { createContext, useContext, useEffect, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { setAuthErrorCallback } from '../../lib/apiClient';
-import { useRouter } from '@tanstack/react-router';
 
 type UserPayload = {
     id: number;
@@ -21,7 +20,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const queryClient = useQueryClient();
-    const router = useRouter();
+    const isRedirectingRef = useRef(false);
 
     const { data, isLoading, refetch } = useQuery<UserPayload | null>({
         queryKey: ['verify'],
@@ -48,10 +47,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     const logout = async () => {
-        await fetch('/api/auth/logout', {
-            method: 'POST',
-            credentials: 'include',
-        });
+        try {
+            await fetch('/api/auth/logout', {
+                method: 'POST',
+                credentials: 'include',
+            });
+        } catch (error) {
+            console.error('Logout error:', error);
+        }
         queryClient.clear();
 
         const currentPath = window.location.pathname;
@@ -59,22 +62,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             sessionStorage.setItem('redirectAfterLogin', currentPath);
         }
 
-        router.navigate({ to: '/' });
+        window.location.href = '/';
     };
 
     useEffect(() => {
         setAuthErrorCallback(() => {
+            if (isRedirectingRef.current) return;
+            isRedirectingRef.current = true;
+
             queryClient.setQueryData(['verify'], null);
             queryClient.clear();
 
             const currentPath = window.location.pathname;
             if (currentPath !== '/') {
                 sessionStorage.setItem('redirectAfterLogin', currentPath);
+                sessionStorage.setItem('sessionExpired', 'true');
             }
 
-            router.navigate({ to: '/' });
+            window.location.href = '/';
         });
-    }, [queryClient, router]);
+    }, [queryClient]);
 
     return (
         <AuthContext.Provider

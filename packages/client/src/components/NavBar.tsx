@@ -38,6 +38,10 @@ export default function NavBar({ view }: NavBarProps) {
     const handleNavigate = (view: string) => navigate({ to: `/${view}` });
     const userId = user?.id ? user.id.toString() : '1';
 
+    const handleLogout = async () => {
+        await logout();
+    };
+
     return (
         <div className='flex h-screen max-w-[290px] min-w-[290px] flex-col border-r border-slate-300 bg-white p-5'>
             <h1
@@ -130,10 +134,7 @@ export default function NavBar({ view }: NavBarProps) {
 
                 <div
                     className='justify-centergap-1 hover:text-primary-500 flex cursor-pointer items-center rounded-md px-3 py-2 text-xl duration-200'
-                    onClick={() => {
-                        logout();
-                        setTimeout(() => navigate({ to: '/' }), 100);
-                    }}
+                    onClick={handleLogout}
                 >
                     <IconLogout size={20} /> Logout
                 </div>

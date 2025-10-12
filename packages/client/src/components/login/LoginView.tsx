@@ -3,8 +3,9 @@ import VibelyIcon from '../ui/VibelyIcon';
 import Input from '../ui/Input';
 import Button from '../ui/Button';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../auth/AuthProvider';
+import toast from 'react-hot-toast';
 
 type LoginFormData = {
     email: string;
@@ -13,35 +14,62 @@ type LoginFormData = {
 
 export default function LoginView() {
     const [isError, setIsError] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
     const { register, handleSubmit } = useForm<LoginFormData>();
     const navigate = useNavigate();
     const { refreshUser } = useAuth();
 
+    useEffect(() => {
+        const sessionExpired = sessionStorage.getItem('sessionExpired');
+        if (sessionExpired === 'true') {
+            sessionStorage.removeItem('sessionExpired');
+            toast.error('Your session has expired. Please log in again.', {
+                duration: 5000,
+                position: 'top-center',
+            });
+        }
+    }, []);
+
     const onSubmit: SubmitHandler<LoginFormData> = async (data) => {
         setIsError(false);
-        const { email, password } = data;
-        const response = await fetch('/api/auth/login', {
-            method: 'POST',
-            body: JSON.stringify({ email, password }),
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
+        setIsLoading(true);
 
-        if (!response.ok) {
+        try {
+            const { email, password } = data;
+            const response = await fetch('/api/auth/login', {
+                method: 'POST',
+                body: JSON.stringify({ email, password }),
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            if (!response.ok) {
+                setIsError(true);
+                return;
+            }
+
+            const user = await refreshUser();
+            if (!user) {
+                setIsError(true);
+                return;
+            }
+
+            await new Promise((resolve) => setTimeout(resolve, 100));
+
+            const redirectPath = sessionStorage.getItem('redirectAfterLogin');
+            if (redirectPath) {
+                sessionStorage.removeItem('redirectAfterLogin');
+                navigate({ to: redirectPath as any });
+            } else {
+                navigate({ to: '/home' });
+            }
+        } catch (error) {
+            console.error('Login error:', error);
             setIsError(true);
-            return;
+        } finally {
+            setIsLoading(false);
         }
-
-        const user = await refreshUser();
-        if (!user) {
-            setIsError(true);
-            return;
-        }
-
-        const redirectPath = sessionStorage.getItem('redirectAfterLogin');
-        sessionStorage.removeItem('redirectAfterLogin');
-        navigate({ to: redirectPath || '/home' });
     };
 
     return (
@@ -79,7 +107,9 @@ export default function LoginView() {
                         })}
                     />
 
-                    <Button type='submit'>Login</Button>
+                    <Button type='submit' disabled={isLoading}>
+                        {isLoading ? 'Logging in...' : 'Login'}
+                    </Button>
                 </form>
                 <div className='text-gray-500'>
                     Don't have an account?{' '}
