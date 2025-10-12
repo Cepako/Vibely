@@ -1,12 +1,18 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useMessages } from './hooks/useMessages';
 import { Dialog } from '../ui/Dialog';
-import { IconX, IconUserPlus, IconTrash } from '@tabler/icons-react';
+import {
+    IconX,
+    IconUserPlus,
+    IconTrash,
+    IconDoorExit,
+} from '@tabler/icons-react';
 import { useFriends } from '../profile/hooks/useFriendship';
 import { useAuth } from '../auth/AuthProvider';
 import type { Conversation } from '../../types/message';
 import { Nicknames } from './Nicknames';
 import { IconDeviceFloppy } from '@tabler/icons-react';
+import { useNavigate } from '@tanstack/react-router';
 
 interface GroupSettingsModalProps {
     isOpen: boolean;
@@ -20,13 +26,17 @@ export function GroupSettingsModal({
     conversation,
 }: GroupSettingsModalProps) {
     const user = useAuth();
-    const { updateConversationName, addParticipant } = useMessages(
-        conversation.id
-    );
+    const navigate = useNavigate();
+    const { updateConversationName, addParticipant, leaveConversation } =
+        useMessages(conversation.id);
 
     const [newName, setNewName] = useState(conversation.name || '');
 
     const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+
+    useEffect(() => {
+        setNewName(conversation.name || '');
+    }, [conversation.id, conversation.name]);
 
     const isCurrentUserIsAdmin = conversation.participants.some(
         (p) => p.userId === user.user?.id && p.role === 'admin'
@@ -55,6 +65,11 @@ export function GroupSettingsModal({
         setSelectedUserId(null);
     };
 
+    const handleLeaveConversation = async () => {
+        leaveConversation(conversation.id);
+        navigate({ to: '/messages' });
+    };
+
     return (
         <Dialog isOpen={isOpen} onClose={onClose} size='lg'>
             <div className='flex flex-col gap-3 p-6'>
@@ -76,7 +91,7 @@ export function GroupSettingsModal({
                     </h3>
                     <div className='flex gap-2'>
                         <input
-                            value={conversation.name || ''}
+                            value={newName}
                             onChange={(e) => setNewName(e.target.value)}
                             className='focus:border-primary-500 flex-1 rounded-lg border border-slate-200 px-3 py-1 outline-none'
                             placeholder='Set group name...'
@@ -140,6 +155,14 @@ export function GroupSettingsModal({
                         </div>
                     </div>
                 )}
+                <div className='mt-2 flex justify-end'>
+                    <button
+                        className='flex cursor-pointer items-center gap-1 rounded-xl bg-rose-600 px-3 py-1 text-white duration-150 hover:bg-rose-700'
+                        onClick={handleLeaveConversation}
+                    >
+                        Leave conversation <IconDoorExit size={18} />
+                    </button>
+                </div>
             </div>
         </Dialog>
     );

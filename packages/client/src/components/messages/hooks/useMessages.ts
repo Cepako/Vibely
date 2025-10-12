@@ -129,12 +129,16 @@ export const useMessages = (
                 ? toast.success('Conversation name removed')
                 : toast.success('Conversation name updated');
         },
-        onError: (err: any) =>
+        onError: (err: any, variables) => {
+            variables.data.name === ''
+                ? toast.error('Failed to remove conversation name')
+                : toast.error('Failed to update conversation name');
             setError(
                 err instanceof Error
                     ? err.message
                     : 'Failed to update conversation name'
-            ),
+            );
+        },
     });
 
     const updateParticipantNicknameMutation = useMutation<
@@ -150,10 +154,12 @@ export const useMessages = (
                 ? toast.success('Nickname removed')
                 : toast.success('Nickname updated');
         },
-        onError: (err: any) =>
+        onError: (err: any) => {
+            toast.error('Failed to update nickname');
             setError(
                 err instanceof Error ? err.message : 'Failed to update nickname'
-            ),
+            );
+        },
     });
 
     const addParticipantMutation = useMutation<
@@ -167,10 +173,12 @@ export const useMessages = (
             queryClient.invalidateQueries({ queryKey: ['conversations'] });
             toast.success(`Participant added`);
         },
-        onError: (err: any) =>
+        onError: (err: any) => {
+            toast.error(`Failed to add participant`);
             setError(
                 err instanceof Error ? err.message : 'Failed to add participant'
-            ),
+            );
+        },
     });
 
     const removeParticipantMutation = useMutation<
@@ -242,13 +250,16 @@ export const useMessages = (
                     queryKey: ['messages', conversationIdToLeave],
                 });
             }
+            toast.success('Leaved sucessfully!');
         },
-        onError: (err: any) =>
+        onError: (err: any) => {
+            toast.error('Failed to leave conversation!');
             setError(
                 err instanceof Error
                     ? err.message
                     : 'Failed to leave conversation'
-            ),
+            );
+        },
     });
 
     const loadConversations = useCallback(async (): Promise<void> => {
