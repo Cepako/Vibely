@@ -16,7 +16,7 @@ import DropdownMenu, { type DropdownMenuItem } from '../ui/DropdownMenu';
 import UserAvatar from '../ui/UserAvatar';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
-import { useWebSocketContext } from '../providers/WebSocketProvider';
+import { useNotificationWebSocketContext } from '../providers/NotificationWebSocketProvider';
 
 interface FriendCardProps {
     friend: Friend;
@@ -33,7 +33,7 @@ export default function FriendCard({
     const blockUserMutation = useBlockUser();
     const sendRequest = useSendFriendRequest();
     const [requestSent, setRequestSent] = useState(false);
-    const { isUserOnline } = useWebSocketContext();
+    const { isUserOnline } = useNotificationWebSocketContext();
     const isOnline = isUserOnline(friend.id);
 
     const handleRemoveFriend = async () => {

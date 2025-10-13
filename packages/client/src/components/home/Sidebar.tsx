@@ -4,7 +4,7 @@ import { getEventStatus } from '../../utils/eventStatus';
 import { useEvents } from '../events/hooks/useEvents';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { useFriends } from '../profile/hooks/useFriendship';
-import { useWebSocketContext } from '../providers/WebSocketProvider';
+import { useNotificationWebSocketContext } from '../providers/NotificationWebSocketProvider';
 import UserAvatar from '../ui/UserAvatar';
 
 export default function Sidebar() {
@@ -14,7 +14,7 @@ export default function Sidebar() {
 
     const currentUser = useCurrentUser();
     const friendsQuery = useFriends(currentUser.data?.id ?? 0);
-    const ws = useWebSocketContext();
+    const ws = useNotificationWebSocketContext();
     const onlineUsers = ws?.onlineUsers ?? [];
 
     const activeFriends = (friendsQuery.data || []).filter((f: any) =>

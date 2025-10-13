@@ -215,6 +215,9 @@ export const useMessages = (
                         )
                 );
             }
+            queryClient.invalidateQueries({
+                queryKey: ['conversations', 'unreadCount'],
+            });
             queryClient.invalidateQueries({ queryKey: ['conversations'] });
         },
         onError: (err: any) =>

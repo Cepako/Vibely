@@ -92,8 +92,13 @@ class WebSocketManager {
 
             if (socket.readyState === WebSocket.OPEN) {
                 try {
+                    const messageType =
+                        notification.type === 'new_message'
+                            ? 'new_message'
+                            : 'notification';
+
                     const message = JSON.stringify({
-                        type: 'notification',
+                        type: messageType,
                         data: notification,
                     });
 

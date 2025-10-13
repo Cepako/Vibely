@@ -1,8 +1,6 @@
-import { useEffect } from 'react';
 import { useMessages } from './hooks/useMessages';
 import { ConversationList } from './ConversationList';
 import { NewConversationModal } from './NewConversationModal';
-import { useWebSocketContext } from '../providers/WebSocketProvider';
 import { Outlet, useNavigate, useParams } from '@tanstack/react-router';
 import { Dialog, useDialog } from '../ui/Dialog';
 
@@ -14,21 +12,7 @@ export default function MessagesView() {
         ? Number(params.conversationId)
         : null;
 
-    const { conversations, loading, error, loadConversations, loadMessages } =
-        useMessages(conversationId);
-
-    const { addChatListener } = useWebSocketContext();
-
-    useEffect(() => {
-        const unsub = addChatListener((msg: any) => {
-            loadConversations();
-            if (conversationId && msg.conversationId === conversationId) {
-                loadMessages(conversationId);
-            }
-        });
-
-        return () => unsub();
-    }, [addChatListener, conversationId, loadConversations, loadMessages]);
+    const { conversations, loading, error } = useMessages(conversationId);
 
     const handleSelectConversation = (conversation: any) => {
         navigate({

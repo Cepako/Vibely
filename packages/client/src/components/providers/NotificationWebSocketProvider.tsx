@@ -9,47 +9,53 @@ import React, {
 import { useAuth } from '../auth/AuthProvider';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { type NotificationData } from '../../types/notification';
+import { useQueryClient } from '@tanstack/react-query';
 
-interface WebSocketContextType {
+interface NotificationWebSocketContextType {
     isConnected: boolean;
     notifications: NotificationData[];
     unreadCount: number;
+    unreadMessagesCount: number;
     addNotification: (notification: NotificationData) => void;
     setUnreadCount: (count: number | ((prev: number) => number)) => void;
+    setUnreadMessagesCount: (
+        count: number | ((prev: number) => number)
+    ) => void;
     updateNotifications: (
         updater:
             | NotificationData[]
             | ((prev: NotificationData[]) => NotificationData[])
     ) => void;
     setNotifications: (notifications: NotificationData[]) => void;
-    // subscribe to chat events coming over the notification websocket
-    addChatListener: (cb: (event: any) => void) => () => void;
     onlineUsers: number[];
     isUserOnline: (userId?: number | null) => boolean;
 }
 
-const WebSocketContext = createContext<WebSocketContextType | null>(null);
+const NotificationWebSocketContext =
+    createContext<NotificationWebSocketContextType | null>(null);
 
-export const useWebSocketContext = () => {
-    const context = useContext(WebSocketContext);
+export const useNotificationWebSocketContext = () => {
+    const context = useContext(NotificationWebSocketContext);
     if (!context) {
         throw new Error(
-            'useWebSocketContext must be used within WebSocketProvider'
+            'useNotificationWebSocketContext must be used within WebSocketProvider'
         );
     }
     return context;
 };
 
-interface WebSocketProviderProps {
+interface NotificationWebSocketProviderProps {
     children: React.ReactNode;
 }
 
-export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
-    children,
-}) => {
+export const NotificationWebSocketProvider: React.FC<
+    NotificationWebSocketProviderProps
+> = ({ children }) => {
     const { user, logout } = useAuth();
+    const queryClient = useQueryClient();
     const [notifications, setNotifications] = useState<NotificationData[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
+    const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
     const [onlineUsers, setOnlineUsers] = React.useState<number[]>([]);
 
     const websocketUrl = useMemo(() => {
@@ -93,7 +99,6 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
                 console.log('Notification WebSocket message:', message);
 
                 if (message.type === 'presence_init') {
-                    // message.data = number[]
                     setOnlineUsers(
                         Array.isArray(message.data) ? message.data : []
                     );
@@ -113,6 +118,16 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
                     return;
                 }
 
+                if (message.type === 'new_message') {
+                    setUnreadMessagesCount((prev) => prev + 1);
+
+                    queryClient.invalidateQueries({
+                        queryKey: ['conversations'],
+                    });
+
+                    return;
+                }
+
                 if (message.type === 'notification') {
                     setNotifications((prev) =>
                         dedupeAndSort([message.data, ...(prev ?? [])])
@@ -128,15 +143,6 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
                             tag: `notification-${message.data.id}`,
                         });
                     }
-                } else if (message.type === 'chat_message') {
-                    const data = message.data;
-                    chatListenersRef.current.forEach((cb) => {
-                        try {
-                            cb(data);
-                        } catch (err) {
-                            console.error('chat listener error', err);
-                        }
-                    });
                 } else if (message.type === 'connected') {
                     console.log(
                         'Connected to notifications WebSocket:',
@@ -150,7 +156,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
                     logout();
                 }
             },
-            [logout]
+            [logout, queryClient, dedupeAndSort]
         ),
         onConnect: useCallback(() => {
             console.log('Connected to notifications WebSocket');
@@ -159,15 +165,6 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
             console.log('Disconnected from notifications WebSocket');
         }, []),
     });
-
-    const chatListenersRef = React.useRef(new Set<(e: any) => void>());
-
-    const addChatListener = useCallback((cb: (e: any) => void) => {
-        chatListenersRef.current.add(cb);
-        return () => {
-            chatListenersRef.current.delete(cb);
-        };
-    }, []);
 
     useEffect(() => {
         if (user?.id && Notification.permission === 'default') {
@@ -182,14 +179,17 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
         }
     }, [user?.id]);
 
-    const addNotification = useCallback((notification: NotificationData) => {
-        setNotifications((prev) =>
-            dedupeAndSort([notification, ...(prev ?? [])])
-        );
-        if (!notification.isRead) {
-            setUnreadCount((prev) => prev + 1);
-        }
-    }, []);
+    const addNotification = useCallback(
+        (notification: NotificationData) => {
+            setNotifications((prev) =>
+                dedupeAndSort([notification, ...(prev ?? [])])
+            );
+            if (!notification.isRead) {
+                setUnreadCount((prev) => prev + 1);
+            }
+        },
+        [dedupeAndSort]
+    );
 
     const updateNotifications = useCallback(
         (
@@ -210,7 +210,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
                 setNotifications(dedupeAndSort(updater ?? []));
             }
         },
-        []
+        [dedupeAndSort]
     );
 
     const setNotificationsMethod = useCallback(
@@ -225,30 +225,31 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
             isConnected,
             notifications,
             unreadCount,
+            unreadMessagesCount,
             addNotification,
             setUnreadCount,
+            setUnreadMessagesCount,
             updateNotifications,
             setNotifications: setNotificationsMethod,
             onlineUsers,
             isUserOnline,
-            addChatListener,
         }),
         [
             isConnected,
             notifications,
             unreadCount,
+            unreadMessagesCount,
             addNotification,
             updateNotifications,
             setNotificationsMethod,
             onlineUsers,
             isUserOnline,
-            addChatListener,
         ]
     );
 
     return (
-        <WebSocketContext.Provider value={contextValue}>
+        <NotificationWebSocketContext.Provider value={contextValue}>
             {children}
-        </WebSocketContext.Provider>
+        </NotificationWebSocketContext.Provider>
     );
 };

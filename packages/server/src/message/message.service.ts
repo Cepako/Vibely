@@ -22,6 +22,8 @@ import { FileInput } from '../utils/handleFileUpload';
 import { handleFileUpload } from '../utils/handleFileUpload';
 import { NotificationService } from '../notification/notification.service';
 import { websocketManager } from '../ws/websocketManager';
+import UserService from '@/user/user.service';
+import { FriendshipService } from '@/friendship/friendship.service';
 
 interface IMessageService {
     createMessage(
@@ -86,9 +88,13 @@ interface IMessageService {
 
 export class MessageService implements IMessageService {
     private notificationService: NotificationService;
+    private userService: UserService;
+    private friendshipService: FriendshipService;
 
     constructor() {
         this.notificationService = new NotificationService();
+        this.friendshipService = new FriendshipService();
+        this.userService = new UserService(this.friendshipService);
     }
 
     async createMessage(
@@ -162,6 +168,10 @@ export class MessageService implements IMessageService {
                 }
             }
 
+            const sender = await this.userService.findUserById(
+                created.senderId
+            );
+
             const messageWithSender: MessageWithSender = {
                 id: created.id,
                 conversationId: created.conversationId,
@@ -172,41 +182,35 @@ export class MessageService implements IMessageService {
                 createdAt: created.createdAt ?? new Date().toISOString(),
                 sender: {
                     id: userId,
-                    name: '',
-                    surname: '',
-                    profilePictureUrl: null,
+                    name: sender?.name ?? '',
+                    surname: sender?.surname ?? '',
+                    profilePictureUrl: sender?.profilePictureUrl ?? null,
                 },
                 ...(attachments.length > 0 ? { attachments } : {}),
             };
 
             this.broadcastMessageToConversation(
                 data.conversationId,
-                messageWithSender,
-                userId
+                messageWithSender
             );
 
-            try {
-                const parts = await db.query.conversationParticipants.findMany({
-                    where: eq(
-                        conversationParticipants.conversationId,
-                        data.conversationId
-                    ),
-                    columns: { userId: true },
-                });
-                const recipientIds = Array.from(
-                    new Set(
-                        parts.map((p) => p.userId).filter((id) => id !== userId)
+            const recipients = await db
+                .select({ userId: conversationParticipants.userId })
+                .from(conversationParticipants)
+                .where(
+                    and(
+                        eq(
+                            conversationParticipants.conversationId,
+                            data.conversationId
+                        ),
+                        ne(conversationParticipants.userId, userId)
                     )
                 );
 
-                for (const rid of recipientIds) {
-                    websocketManager.emitEventToUser(rid, {
-                        type: 'chat_message',
-                        data: messageWithSender,
-                    });
-                }
-            } catch (err) {
-                console.error('Failed to emit chat events to recipients', err);
+            for (const recipient of recipients) {
+                this.notificationService.createNewMessageNotification(
+                    recipient.userId
+                );
             }
 
             return messageWithSender;
@@ -949,21 +953,19 @@ export class MessageService implements IMessageService {
 
     private broadcastMessageToConversation(
         conversationId: number,
-        message: MessageWithSender,
-        senderId: number
+        message: MessageWithSender
     ): void {
         try {
             const connections =
                 websocketManager.getChatConnections(conversationId);
+            const payload = JSON.stringify({
+                type: 'chat_message',
+                data: message,
+            });
             connections.forEach((conn) => {
-                if (conn.userId !== senderId && conn.socket.readyState === 1) {
+                if (conn.socket.readyState === 1) {
                     // WebSocket.OPEN = 1
-                    conn.socket.send(
-                        JSON.stringify({
-                            type: 'new_message',
-                            data: message,
-                        })
-                    );
+                    conn.socket.send(payload);
                 }
             });
         } catch (error) {

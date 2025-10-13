@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { ChatWindow } from './ChatWindow';
 import { useMessages } from './hooks/useMessages';
+import { useChatWebSocket } from '../providers/ChatWebSocketProvider';
 
 export function ConversationView({
     conversationId,
@@ -13,12 +14,14 @@ export function ConversationView({
         loading,
         sending,
         loadMessages,
-        sendMessage,
-        deleteMessage,
+        markAsRead,
     } = useMessages(conversationId);
+
+    const { sendMessage } = useChatWebSocket();
 
     useEffect(() => {
         if (!Number.isFinite(conversationId)) return;
+        markAsRead(messages.map((m) => m.id));
         loadMessages(conversationId);
     }, [conversationId, conversations, loadMessages]);
 
@@ -51,7 +54,6 @@ export function ConversationView({
             conversation={conversation}
             messages={messages}
             onSendMessage={sendMessage}
-            onDeleteMessage={deleteMessage}
             loading={loading}
             sending={sending}
         />

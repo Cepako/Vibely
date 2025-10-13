@@ -5,7 +5,7 @@ import { useFriends } from '../profile/hooks/useFriendship';
 import UserAvatar from '../ui/UserAvatar';
 import { useMessages } from './hooks/useMessages';
 import { cn } from '../../utils/utils';
-import { useWebSocketContext } from '../providers/WebSocketProvider';
+import { useNotificationWebSocketContext } from '../providers/NotificationWebSocketProvider';
 
 interface NewConversationModalProps {
     onClose: () => void;
@@ -17,7 +17,7 @@ export const NewConversationModal: React.FC<NewConversationModalProps> = ({
     const currentUser = useCurrentUser();
     const friendsQuery = useFriends(currentUser.data?.id ?? 0);
     const { createConversation, conversations = [] } = useMessages(null);
-    const { isUserOnline } = useWebSocketContext();
+    const { isUserOnline } = useNotificationWebSocketContext();
 
     const [selectedFriends, setSelectedFriends] = useState<number[]>([]);
     const [searchTerm, setSearchTerm] = useState('');

@@ -25,7 +25,7 @@ export default function NavBar({ view }: NavBarProps) {
     const { logout, user } = useAuth();
     const { data, isLoading } = useCurrentUser();
     const { fetchUnreadCount, unreadCount } = useNotifications();
-    const { totalUnread: totalUnreadCount } = useMessagesUnreadCount();
+    const { unreadMessagesCount } = useMessagesUnreadCount();
 
     useEffect(() => {
         fetchUnreadCount();
@@ -70,9 +70,11 @@ export default function NavBar({ view }: NavBarProps) {
                 >
                     <IconMessages />
                     Messages
-                    {totalUnreadCount > 0 && (
+                    {unreadMessagesCount > 0 && (
                         <span className='bg-primary-500 absolute top-[50%] right-2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-xs text-white'>
-                            {totalUnreadCount > 99 ? '99+' : totalUnreadCount}
+                            {unreadMessagesCount > 99
+                                ? '99+'
+                                : unreadMessagesCount}
                         </span>
                     )}
                 </div>

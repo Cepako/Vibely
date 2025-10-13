@@ -6,7 +6,9 @@
             "request": "launch",
             "name": "Debug Server",
             "runtimeExecutable": "npx",
-            "runtimeArgs": ["tsx", "packages/server/src/index.ts"],
+            "runtimeArgs": ["tsx", "src/index.ts"],
+            "cwd": "${workspaceFolder}/packages/server",
+
             "skipFiles": ["<node_internals>/**"],
             "envFile": "${workspaceFolder}/packages/server/.env",
             "env": {

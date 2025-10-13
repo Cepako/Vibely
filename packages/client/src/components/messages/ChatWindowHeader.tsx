@@ -4,7 +4,7 @@ import { GroupSettingsModal } from './GroupSettingsModal';
 import type { Conversation } from '../../types/message';
 import { useAuth } from '../auth/AuthProvider';
 import PrivateSettingsModal from './PrivateSettingsModal';
-import { useWebSocketContext } from '../providers/WebSocketProvider';
+import { useNotificationWebSocketContext } from '../providers/NotificationWebSocketProvider';
 import Tooltip from '../ui/Tooltip';
 
 export function ChatWindowHeader({
@@ -15,7 +15,7 @@ export function ChatWindowHeader({
     const dialog = useDialog(false);
     const { type, participants } = conversation;
     const { user } = useAuth();
-    const { isUserOnline, onlineUsers } = useWebSocketContext();
+    const { isUserOnline, onlineUsers } = useNotificationWebSocketContext();
 
     const getConversationInfo = () => {
         if (!conversation) return { name: '', isOnline: false };

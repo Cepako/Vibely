@@ -50,25 +50,6 @@ export const eventCategories = pgTable("event_categories", {
 	unique("event_categories_name_key").on(table.name),
 ]);
 
-export const notifications = pgTable("notifications", {
-	id: serial().primaryKey().notNull(),
-	userId: integer("user_id").notNull(),
-	type: notificationRelatedType().notNull(),
-	content: text().notNull(),
-	relatedId: integer("related_id"),
-	isRead: boolean("is_read").default(false),
-	createdAt: timestamp("created_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
-}, (table) => [
-	index("idx_notifications_created_at").using("btree", table.createdAt.asc().nullsLast().op("timestamp_ops")),
-	index("idx_notifications_is_read").using("btree", table.isRead.asc().nullsLast().op("bool_ops")),
-	index("idx_notifications_user_id").using("btree", table.userId.asc().nullsLast().op("int4_ops")),
-	foreignKey({
-			columns: [table.userId],
-			foreignColumns: [users.id],
-			name: "notifications_user_id_fkey"
-		}).onDelete("cascade"),
-]);
-
 export const postReactions = pgTable("post_reactions", {
 	id: serial().primaryKey().notNull(),
 	postId: integer("post_id").notNull(),
@@ -195,6 +176,25 @@ export const eventParticipants = pgTable("event_participants", {
 			name: "event_participants_user_id_fkey"
 		}).onDelete("cascade"),
 	unique("event_participants_event_id_user_id_key").on(table.eventId, table.userId),
+]);
+
+export const notifications = pgTable("notifications", {
+	id: serial().primaryKey().notNull(),
+	userId: integer("user_id").notNull(),
+	type: notificationRelatedType().notNull(),
+	content: text().notNull(),
+	relatedId: integer("related_id"),
+	isRead: boolean("is_read").default(false),
+	createdAt: timestamp("created_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+	index("idx_notifications_created_at").using("btree", table.createdAt.asc().nullsLast().op("timestamp_ops")),
+	index("idx_notifications_is_read").using("btree", table.isRead.asc().nullsLast().op("bool_ops")),
+	index("idx_notifications_user_id").using("btree", table.userId.asc().nullsLast().op("int4_ops")),
+	foreignKey({
+			columns: [table.userId],
+			foreignColumns: [users.id],
+			name: "notifications_user_id_fkey"
+		}).onDelete("cascade"),
 ]);
 
 export const interests = pgTable("interests", {

@@ -164,6 +164,12 @@ export class NotificationService {
         websocketManager.emitNotificationToUser(userId, notification);
     }
 
+    createNewMessageNotification(userId: number): void {
+        websocketManager.emitNotificationToUser(userId, {
+            type: 'new_message',
+        });
+    }
+
     async createNotification(
         data: CreateNotificationType
     ): Promise<NotificationType> {

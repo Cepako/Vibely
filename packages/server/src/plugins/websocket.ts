@@ -3,9 +3,11 @@ import fastifyWebsocket from '@fastify/websocket';
 import { Type } from '@sinclair/typebox';
 import WebSocket from 'ws';
 import { websocketManager } from '../ws/websocketManager';
+import { MessageService } from '@/message/message.service';
 
 const websocketPlugin: FastifyPluginAsync = async (fastify) => {
     await fastify.register(fastifyWebsocket);
+    const messageService = new MessageService();
 
     fastify.register(async function (fastify) {
         fastify.get(
@@ -152,27 +154,18 @@ const websocketPlugin: FastifyPluginAsync = async (fastify) => {
                     );
                 }
 
-                socket.on('message', (message: Buffer) => {
+                socket.on('message', async (message: Buffer) => {
                     try {
                         const data = JSON.parse(message.toString());
                         fastify.log.info('Chat message received:', data);
 
-                        const conversationConnections =
-                            websocketManager.getChatConnections(conversationId);
-                        conversationConnections.forEach((conn: any) => {
-                            if (
-                                conn.userId !== userId &&
-                                conn.socket.readyState === WebSocket.OPEN
-                            ) {
-                                conn.socket.send(
-                                    JSON.stringify({
-                                        type: 'chat_message',
-                                        data: data,
-                                        from: userId,
-                                    })
-                                );
-                            }
-                        });
+                        if (data.type === 'chat_message') {
+                            await messageService.createMessage(userId, {
+                                content: data.content,
+                                conversationId,
+                                contentType: 'text',
+                            });
+                        }
                     } catch (error) {
                         fastify.log.error(
                             'Invalid chat message format:',

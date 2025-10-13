@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useAuth } from '../../auth/AuthProvider';
-import { useWebSocketContext } from '../../providers/WebSocketProvider';
+import { useNotificationWebSocketContext } from '../../providers/NotificationWebSocketProvider';
 import { apiClient } from '../../../lib/apiClient';
 
 export const useNotifications = () => {
@@ -13,7 +13,7 @@ export const useNotifications = () => {
         setUnreadCount,
         updateNotifications,
         setNotifications,
-    } = useWebSocketContext();
+    } = useNotificationWebSocketContext();
 
     const notificationsRef = useRef<typeof notifications>(notifications);
     useEffect(() => {

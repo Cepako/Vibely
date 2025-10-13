@@ -18,7 +18,6 @@ interface ChatWindowProps {
     conversation: Conversation;
     messages: Message[];
     onSendMessage: (content: string, file?: File) => Promise<void>;
-    onDeleteMessage: (messageId: number) => Promise<void>;
     loading: boolean;
     sending: boolean;
 }

@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm/relations";
-import { users, friendships, notifications, posts, postReactions, conversations, conversationParticipants, comments, eventCategories, events, eventParticipants, messages, messageAttachments, userReports, userBlocks, interests, userInterests, commentReactions } from "./schema";
+import { users, friendships, posts, postReactions, conversations, conversationParticipants, comments, eventCategories, events, eventParticipants, notifications, messages, messageAttachments, userReports, userBlocks, interests, userInterests, commentReactions } from "./schema";
 
 export const friendshipsRelations = relations(friendships, ({one}) => ({
 	user_friendId: one(users, {
@@ -21,12 +21,12 @@ export const usersRelations = relations(users, ({many}) => ({
 	friendships_userId: many(friendships, {
 		relationName: "friendships_userId_users_id"
 	}),
-	notifications: many(notifications),
 	postReactions: many(postReactions),
 	conversationParticipants: many(conversationParticipants),
 	comments: many(comments),
 	events: many(events),
 	eventParticipants: many(eventParticipants),
+	notifications: many(notifications),
 	posts: many(posts),
 	messages: many(messages),
 	userReports_reportedId: many(userReports, {
@@ -43,13 +43,6 @@ export const usersRelations = relations(users, ({many}) => ({
 	}),
 	userInterests: many(userInterests),
 	commentReactions: many(commentReactions),
-}));
-
-export const notificationsRelations = relations(notifications, ({one}) => ({
-	user: one(users, {
-		fields: [notifications.userId],
-		references: [users.id]
-	}),
 }));
 
 export const postReactionsRelations = relations(postReactions, ({one}) => ({
@@ -131,6 +124,13 @@ export const eventParticipantsRelations = relations(eventParticipants, ({one}) =
 	}),
 	user: one(users, {
 		fields: [eventParticipants.userId],
+		references: [users.id]
+	}),
+}));
+
+export const notificationsRelations = relations(notifications, ({one}) => ({
+	user: one(users, {
+		fields: [notifications.userId],
 		references: [users.id]
 	}),
 }));

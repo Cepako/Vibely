@@ -11,7 +11,7 @@ import { Dialog, useDialog } from '../ui/Dialog';
 import { useRef, useState } from 'react';
 import { useChangeProfileImage } from './hooks/useChangeProfileImage';
 import UserAvatar from '../ui/UserAvatar';
-import { useWebSocketContext } from '../providers/WebSocketProvider';
+import { useNotificationWebSocketContext } from '../providers/NotificationWebSocketProvider';
 
 interface ProfileImageProps {
     user: {
@@ -29,7 +29,7 @@ export default function ProfileImage({
     isOwnProfile,
 }: ProfileImageProps) {
     const { name, profilePictureUrl, lastLoginAt, id } = user;
-    const { isUserOnline } = useWebSocketContext();
+    const { isUserOnline } = useNotificationWebSocketContext();
     const isOnline = isUserOnline(id);
     return (
         <div className='relative flex-shrink-0'>

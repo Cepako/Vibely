@@ -10,7 +10,7 @@ import {
 import { useAuth } from '../auth/AuthProvider';
 import UserAvatar from '../ui/UserAvatar';
 import type { User } from '../../types/user';
-import { useWebSocketContext } from '../providers/WebSocketProvider';
+import { useNotificationWebSocketContext } from '../providers/NotificationWebSocketProvider';
 import Tooltip from '../ui/Tooltip';
 
 interface ConversationListProps {
@@ -30,7 +30,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
 }) => {
     const { user } = useAuth();
     const [searchTerm, setSearchTerm] = useState('');
-    const { isUserOnline, onlineUsers } = useWebSocketContext();
+    const { isUserOnline, onlineUsers } = useNotificationWebSocketContext();
 
     const getConversationInfo = (conversation: Conversation) => {
         if (conversation.type === 'direct') {
