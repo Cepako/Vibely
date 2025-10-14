@@ -1,14 +1,13 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { messageApiService } from '../../messages/MessageApi';
-import { useNotificationWebSocketContext } from '../../providers/NotificationWebSocketProvider';
-import { useEffect } from 'react';
 
 export const useMessagesUnreadCount = () => {
     const queryClient = useQueryClient();
-    const { setUnreadMessagesCount, unreadMessagesCount } =
-        useNotificationWebSocketContext();
 
-    const { data: unreadCount = 0, isLoading } = useQuery<number, Error>({
+    const { data: unreadMessagesCount = 0, isLoading } = useQuery<
+        number,
+        Error
+    >({
         queryKey: ['conversations', 'unreadCount'],
         queryFn: async () => {
             const conversations = await messageApiService.getConversations();
@@ -20,10 +19,6 @@ export const useMessagesUnreadCount = () => {
 
         staleTime: 30000,
     });
-
-    useEffect(() => {
-        setUnreadMessagesCount(unreadCount);
-    }, [unreadCount, setUnreadMessagesCount]);
 
     return {
         unreadMessagesCount,

@@ -21,7 +21,6 @@ export function ConversationView({
 
     useEffect(() => {
         if (!Number.isFinite(conversationId)) return;
-        markAsRead(messages.map((m) => m.id));
         loadMessages(conversationId);
     }, [conversationId, conversations, loadMessages]);
 
@@ -56,6 +55,7 @@ export function ConversationView({
             onSendMessage={sendMessage}
             loading={loading}
             sending={sending}
+            markAsRead={markAsRead}
         />
     );
 }

@@ -20,6 +20,10 @@ interface ChatWindowProps {
     onSendMessage: (content: string, file?: File) => Promise<void>;
     loading: boolean;
     sending: boolean;
+    markAsRead: (
+        messagesIds: Array<number>,
+        countToDecrement: number
+    ) => Promise<void>;
 }
 
 export const ChatWindow: React.FC<ChatWindowProps> = ({
@@ -28,6 +32,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     onSendMessage,
     loading,
     sending,
+    markAsRead,
 }) => {
     const { user } = useAuth();
     const [messageText, setMessageText] = useState('');
@@ -38,7 +43,10 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        messagesEndRef.current?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'end',
+        });
     };
 
     const adjustTextareaHeight = () => {
@@ -50,6 +58,14 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
     useEffect(() => {
         scrollToBottom();
+        const unreadMessages = messages.filter(
+            (m) => !m.isRead && m.senderId !== user?.id
+        );
+
+        if (unreadMessages.length > 0) {
+            const unreadMessageIds = unreadMessages.map((m) => m.id);
+            markAsRead(unreadMessageIds, unreadMessages.length);
+        }
     }, [messages]);
 
     useEffect(() => {

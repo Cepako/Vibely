@@ -15,12 +15,8 @@ interface NotificationWebSocketContextType {
     isConnected: boolean;
     notifications: NotificationData[];
     unreadCount: number;
-    unreadMessagesCount: number;
     addNotification: (notification: NotificationData) => void;
     setUnreadCount: (count: number | ((prev: number) => number)) => void;
-    setUnreadMessagesCount: (
-        count: number | ((prev: number) => number)
-    ) => void;
     updateNotifications: (
         updater:
             | NotificationData[]
@@ -55,7 +51,6 @@ export const NotificationWebSocketProvider: React.FC<
     const queryClient = useQueryClient();
     const [notifications, setNotifications] = useState<NotificationData[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
-    const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
     const [onlineUsers, setOnlineUsers] = React.useState<number[]>([]);
 
     const websocketUrl = useMemo(() => {
@@ -119,7 +114,10 @@ export const NotificationWebSocketProvider: React.FC<
                 }
 
                 if (message.type === 'new_message') {
-                    setUnreadMessagesCount((prev) => prev + 1);
+                    queryClient.setQueryData<number>(
+                        ['conversations', 'unreadCount'],
+                        (oldData = 0) => oldData + 1
+                    );
 
                     queryClient.invalidateQueries({
                         queryKey: ['conversations'],
@@ -225,10 +223,8 @@ export const NotificationWebSocketProvider: React.FC<
             isConnected,
             notifications,
             unreadCount,
-            unreadMessagesCount,
             addNotification,
             setUnreadCount,
-            setUnreadMessagesCount,
             updateNotifications,
             setNotifications: setNotificationsMethod,
             onlineUsers,
@@ -238,7 +234,6 @@ export const NotificationWebSocketProvider: React.FC<
             isConnected,
             notifications,
             unreadCount,
-            unreadMessagesCount,
             addNotification,
             updateNotifications,
             setNotificationsMethod,

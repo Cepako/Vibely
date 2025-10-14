@@ -27,7 +27,10 @@ interface UseMessagesReturn {
         name?: string,
         type?: 'direct' | 'group'
     ) => Promise<void>;
-    markAsRead: (messageIds: number[]) => Promise<void>;
+    markAsRead: (
+        messageIds: number[],
+        countToDecrement: number
+    ) => Promise<void>;
     deleteMessage: (messageId: number) => Promise<void>;
     leaveConversation: (conversationId: number) => Promise<void>;
     updateConversationName: (
@@ -199,29 +202,57 @@ export const useMessages = (
             ),
     });
 
-    const markAsReadMutation = useMutation<void, Error, number[]>({
-        mutationFn: (messageIds) =>
+    const markAsReadMutation = useMutation<
+        void,
+        Error,
+        { messageIds: number[]; countToDecrement: number }
+    >({
+        mutationFn: ({ messageIds }) =>
             messageApiService.markMessagesAsRead(messageIds),
+        onMutate: async ({ messageIds, countToDecrement }) => {
+            await queryClient.cancelQueries({
+                queryKey: ['conversations', 'unreadCount'],
+            });
 
-        onSuccess: (_, messageIds) => {
-            if (conversationId) {
-                queryClient.setQueryData<Message[]>(
-                    ['messages', conversationId],
+            const previousUnreadCount = queryClient.getQueryData<number>([
+                'conversations',
+                'unreadCount',
+            ]);
+
+            queryClient.setQueryData<number>(
+                ['conversations', 'unreadCount'],
+                (old = 0) => Math.max(0, old - countToDecrement)
+            );
+
+            const conversations =
+                queryClient.getQueryData<Conversation[]>(['conversations']) ||
+                [];
+            if (conversations.find((c) => c.id === conversationId)) {
+                queryClient.setQueryData<Conversation[]>(
+                    ['conversations'],
                     (old = []) =>
-                        old.map((m) =>
-                            messageIds.includes(m.id)
-                                ? { ...m, isRead: true }
-                                : m
+                        old.map((c) =>
+                            c.id === conversationId
+                                ? {
+                                      ...c,
+                                      unreadCount: Math.max(
+                                          0,
+                                          c.unreadCount - countToDecrement
+                                      ),
+                                  }
+                                : c
                         )
                 );
             }
-            queryClient.invalidateQueries({
-                queryKey: ['conversations', 'unreadCount'],
-            });
-            queryClient.invalidateQueries({ queryKey: ['conversations'] });
+
+            return { previousUnreadCount };
         },
+
         onError: (err: any) =>
             console.error('Failed to mark messages as read', err),
+        onSettled: () => {
+            queryClient.invalidateQueries({ queryKey: ['conversations'] });
+        },
     });
 
     const deleteMessageMutation = useMutation<void, Error, number>({
@@ -403,10 +434,16 @@ export const useMessages = (
     );
 
     const markAsRead = useCallback(
-        async (messageIds: number[]): Promise<void> => {
+        async (
+            messageIds: number[],
+            countToDecrement: number
+        ): Promise<void> => {
             if (messageIds.length === 0) return;
             try {
-                await markAsReadMutation.mutateAsync(messageIds);
+                await markAsReadMutation.mutateAsync({
+                    messageIds,
+                    countToDecrement,
+                });
             } catch (err) {
                 console.error(err);
             }
@@ -435,16 +472,6 @@ export const useMessages = (
         },
         [leaveConversationMutation]
     );
-
-    useEffect(() => {
-        if (!conversationId || messages.length === 0) return;
-        const unreadMessages = messages
-            .filter((msg) => !msg.isRead && msg.senderId !== user?.id)
-            .map((m) => m.id);
-        if (unreadMessages.length > 0) {
-            markAsRead(unreadMessages);
-        }
-    }, [conversationId, messages, user?.id, markAsRead]);
 
     const loading = conversationsLoading || messagesLoading;
 
