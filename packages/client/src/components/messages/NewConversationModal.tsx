@@ -3,9 +3,9 @@ import { IconSearch, IconX, IconCheck } from '@tabler/icons-react';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { useFriends } from '../profile/hooks/useFriendship';
 import UserAvatar from '../ui/UserAvatar';
-import { useMessages } from './hooks/useMessages';
 import { cn } from '../../utils/utils';
 import { useNotificationWebSocketContext } from '../providers/NotificationWebSocketProvider';
+import { useConversations } from './hooks/useConversations';
 
 interface NewConversationModalProps {
     onClose: () => void;
@@ -16,7 +16,7 @@ export const NewConversationModal: React.FC<NewConversationModalProps> = ({
 }) => {
     const currentUser = useCurrentUser();
     const friendsQuery = useFriends(currentUser.data?.id ?? 0);
-    const { createConversation, conversations = [] } = useMessages(null);
+    const { createConversation, conversations = [] } = useConversations();
     const { isUserOnline } = useNotificationWebSocketContext();
 
     const [selectedFriends, setSelectedFriends] = useState<number[]>([]);
@@ -34,13 +34,14 @@ export const NewConversationModal: React.FC<NewConversationModalProps> = ({
     const handleCreateConversation = async () => {
         if (selectedFriends.length === 0) return;
 
-        await createConversation(
-            selectedFriends,
-            selectedFriends.length > 1 && groupName.trim()
-                ? groupName.trim()
-                : undefined,
-            selectedFriends.length > 1 ? 'group' : 'direct'
-        );
+        await createConversation({
+            participantIds: selectedFriends,
+            name:
+                selectedFriends.length > 1 && groupName.trim()
+                    ? groupName.trim()
+                    : undefined,
+            type: selectedFriends.length > 1 ? 'group' : 'direct',
+        });
         handleClose();
     };
 

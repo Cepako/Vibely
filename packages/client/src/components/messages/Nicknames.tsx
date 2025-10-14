@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import type { Conversation } from '../../types/message';
-import { useMessages } from './hooks/useMessages';
 import { IconDeviceFloppy, IconTrash, IconUserX } from '@tabler/icons-react';
 import { useAuth } from '../auth/AuthProvider';
+import { useConversation } from './hooks/useConversation';
 
 export function Nicknames({
     conversation,
@@ -12,7 +12,7 @@ export function Nicknames({
     isCurrentUserIsAdmin?: boolean;
 }) {
     const { user } = useAuth();
-    const { updateParticipantNickname, removeParticipant } = useMessages(
+    const { updateParticipantNickname, removeParticipant } = useConversation(
         conversation.id
     );
 
@@ -23,17 +23,17 @@ export function Nicknames({
     const handleNicknameChange = async (userId: number) => {
         const nickname = editingNick[userId]?.trim();
         if (nickname) {
-            await updateParticipantNickname(conversation.id, userId, nickname);
+            updateParticipantNickname(userId, nickname);
         }
     };
 
     const handleRemoveNickname = async (userId: number) => {
-        await updateParticipantNickname(conversation.id, userId, '');
+        updateParticipantNickname(userId, '');
         setEditingNick((prev) => ({ ...prev, [userId]: '' }));
     };
 
     const handleRemove = async (userId: number) => {
-        await removeParticipant(conversation.id, userId);
+        removeParticipant(userId);
     };
 
     return (

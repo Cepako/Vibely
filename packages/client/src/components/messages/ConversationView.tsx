@@ -1,7 +1,7 @@
-import { useEffect } from 'react';
 import { ChatWindow } from './ChatWindow';
 import { useMessages } from './hooks/useMessages';
 import { useChatWebSocket } from '../providers/ChatWebSocketProvider';
+import { useConversation } from './hooks/useConversation';
 
 export function ConversationView({
     conversationId,
@@ -9,27 +9,23 @@ export function ConversationView({
     conversationId: number;
 }) {
     const {
-        conversations,
         messages,
-        loading,
-        sending,
-        loadMessages,
+        isLoading: areMessagesLoading,
+        fetchNextPage,
+        hasNextPage,
+        isFetchingNextPage,
         markAsRead,
+        isSending,
     } = useMessages(conversationId);
+
+    const { conversation, isLoading: isConversationLoading } =
+        useConversation(conversationId);
 
     const { sendMessage } = useChatWebSocket();
 
-    useEffect(() => {
-        if (!Number.isFinite(conversationId)) return;
-        loadMessages(conversationId);
-    }, [conversationId, conversations, loadMessages]);
-
     if (!Number.isFinite(conversationId)) {
-        return <div className='p-4'>Invalid conversation</div>;
+        return <div className='p-4'>Please select a conversation.</div>;
     }
-
-    const conversation =
-        conversations.find((c) => c.id === conversationId) || null;
 
     if (!conversation) {
         return (
@@ -39,7 +35,7 @@ export function ConversationView({
         );
     }
 
-    if (loading) {
+    if (isConversationLoading || areMessagesLoading) {
         return (
             <div className='flex h-full w-full flex-col items-center justify-center text-slate-500'>
                 <div className='border-t-primary-500 mb-4 h-8 w-8 animate-spin rounded-full border-2 border-slate-200'></div>
@@ -52,10 +48,12 @@ export function ConversationView({
         <ChatWindow
             conversation={conversation}
             messages={messages}
-            onSendMessage={sendMessage}
-            loading={loading}
-            sending={sending}
+            sendMessage={sendMessage}
             markAsRead={markAsRead}
+            isSending={isSending}
+            fetchNextPage={fetchNextPage}
+            hasNextPage={hasNextPage}
+            isFetchingNextPage={isFetchingNextPage}
         />
     );
 }

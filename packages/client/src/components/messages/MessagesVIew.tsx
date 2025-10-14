@@ -1,8 +1,8 @@
-import { useMessages } from './hooks/useMessages';
 import { ConversationList } from './ConversationList';
 import { NewConversationModal } from './NewConversationModal';
 import { Outlet, useNavigate, useParams } from '@tanstack/react-router';
 import { Dialog, useDialog } from '../ui/Dialog';
+import { useConversations } from './hooks/useConversations';
 
 export default function MessagesView() {
     const dialog = useDialog(false);
@@ -12,7 +12,7 @@ export default function MessagesView() {
         ? Number(params.conversationId)
         : null;
 
-    const { conversations, loading, error } = useMessages(conversationId);
+    const { conversations, isLoading } = useConversations();
 
     const handleSelectConversation = (conversation: any) => {
         navigate({
@@ -33,7 +33,7 @@ export default function MessagesView() {
                         conversationId={conversationId}
                         onSelectConversation={handleSelectConversation}
                         onNewConversation={dialog.openDialog}
-                        loading={loading}
+                        isLoading={isLoading}
                     />
                 </div>
                 <Outlet />
@@ -46,12 +46,6 @@ export default function MessagesView() {
             >
                 <NewConversationModal onClose={dialog.closeDialog} />
             </Dialog>
-
-            {error && (
-                <div className='fixed right-4 bottom-4 rounded-lg bg-rose-500 px-4 py-2 text-white shadow-lg'>
-                    {error}
-                </div>
-            )}
         </>
     );
 }

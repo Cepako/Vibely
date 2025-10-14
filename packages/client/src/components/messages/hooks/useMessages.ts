@@ -1,85 +1,69 @@
-import { useState, useCallback, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useAuth } from '../../auth/AuthProvider';
+import { useCallback, useMemo } from 'react';
+import {
+    useMutation,
+    useQueryClient,
+    useInfiniteQuery,
+} from '@tanstack/react-query';
 import { messageApiService } from '../MessageApi';
 import type {
     Message,
     Conversation,
     CreateMessageData,
-    CreateConversationData,
-    UpdateConversationNameData,
-    UpdateParticipantNicknameData,
 } from '../../../types/message';
-import toast from 'react-hot-toast';
 
 interface UseMessagesReturn {
-    conversations: Conversation[];
     messages: Message[];
-    loading: boolean;
-    error: string | null;
-    sending: boolean;
-
-    loadConversations: () => Promise<void>;
-    loadMessages: (conversationId: number) => Promise<void>;
+    isLoading: boolean;
+    isSending: boolean;
+    fetchNextPage: () => void;
+    hasNextPage: boolean;
+    isFetchingNextPage: boolean;
     sendMessage: (content: string, file?: File) => Promise<void>;
-    createConversation: (
-        participantIds: number[],
-        name?: string,
-        type?: 'direct' | 'group'
-    ) => Promise<void>;
     markAsRead: (
         messageIds: number[],
         countToDecrement: number
     ) => Promise<void>;
     deleteMessage: (messageId: number) => Promise<void>;
-    leaveConversation: (conversationId: number) => Promise<void>;
-    updateConversationName: (
-        conversationId: number,
-        name: string
-    ) => Promise<void>;
-    updateParticipantNickname: (
-        conversationId: number,
-        userId: number,
-        nickname: string
-    ) => Promise<void>;
-    addParticipant: (conversationId: number, userId: number) => Promise<void>;
-    removeParticipant: (
-        conversationId: number,
-        userId: number
-    ) => Promise<void>;
 }
+
+const MESSAGE_PAGE_LIMIT = 50;
 
 export const useMessages = (
     conversationId?: number | null
 ): UseMessagesReturn => {
-    const { user } = useAuth();
     const queryClient = useQueryClient();
 
-    const [error, setError] = useState<string | null>(null);
-    const [sending, setSending] = useState(false);
+    const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
+        useInfiniteQuery({
+            queryKey: ['messages', conversationId],
+            queryFn: async ({ pageParam = 0 }: { pageParam: number }) => {
+                if (!conversationId) return [];
+                return messageApiService.getMessages(
+                    conversationId,
+                    MESSAGE_PAGE_LIMIT,
+                    pageParam
+                );
+            },
+            initialPageParam: 0,
+            getNextPageParam: (lastPage, allPages) => {
+                if (
+                    !Array.isArray(lastPage) ||
+                    !Array.isArray(allPages) ||
+                    lastPage.length < MESSAGE_PAGE_LIMIT
+                ) {
+                    return undefined;
+                }
 
-    const {
-        data: conversations = [],
-        isLoading: conversationsLoading,
-        refetch: refetchConversations,
-    } = useQuery<Conversation[], Error>({
-        queryKey: ['conversations'],
-        queryFn: () => messageApiService.getConversations(),
-        enabled: Boolean(user?.id),
-    });
+                return allPages.flat().length;
+            },
+            enabled: !!conversationId,
+            select: (data) => ({
+                ...data,
+                pages: [...data.pages].reverse(),
+            }),
+        });
 
-    const {
-        data: messages = [],
-        isLoading: messagesLoading,
-        refetch: refetchMessages,
-    } = useQuery<Message[], Error>({
-        queryKey: ['messages', conversationId],
-        queryFn: async () => {
-            if (!conversationId) return [];
-            return messageApiService.getMessages(conversationId);
-        },
-        enabled: !!conversationId,
-    });
+    const messages = useMemo(() => data?.pages.flat() ?? [], [data]);
 
     const sendMessageMutation = useMutation<Message, Error, CreateMessageData>({
         mutationFn: (data) => messageApiService.sendMessage(data),
@@ -89,117 +73,6 @@ export const useMessages = (
             });
             queryClient.invalidateQueries({ queryKey: ['conversations'] });
         },
-        onError: (err: any) =>
-            setError(
-                err instanceof Error ? err.message : 'Failed to send message'
-            ),
-    });
-
-    const createConversationMutation = useMutation<
-        Conversation,
-        Error,
-        CreateConversationData
-    >({
-        mutationFn: (data) => messageApiService.createConversation(data),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['conversations'] });
-            toast.success('Conversation created');
-        },
-        onError: (err: any) => {
-            setError(
-                err instanceof Error
-                    ? err.message
-                    : 'Failed to create conversation'
-            );
-            toast.error(
-                err instanceof Error
-                    ? err.message
-                    : 'Failed to create conversation'
-            );
-        },
-    });
-
-    const updateConversationNameMutation = useMutation<
-        Conversation,
-        Error,
-        { conversationId: number; data: UpdateConversationNameData }
-    >({
-        mutationFn: ({ conversationId, data }) =>
-            messageApiService.updateConversationName(conversationId, data),
-        onSuccess: (_, variables) => {
-            queryClient.invalidateQueries({ queryKey: ['conversations'] });
-            variables.data.name === ''
-                ? toast.success('Conversation name removed')
-                : toast.success('Conversation name updated');
-        },
-        onError: (err: any, variables) => {
-            variables.data.name === ''
-                ? toast.error('Failed to remove conversation name')
-                : toast.error('Failed to update conversation name');
-            setError(
-                err instanceof Error
-                    ? err.message
-                    : 'Failed to update conversation name'
-            );
-        },
-    });
-
-    const updateParticipantNicknameMutation = useMutation<
-        void,
-        Error,
-        { conversationId: number; data: UpdateParticipantNicknameData }
-    >({
-        mutationFn: ({ conversationId, data }) =>
-            messageApiService.updateParticipantNickname(conversationId, data),
-        onSuccess: (_, variables) => {
-            queryClient.invalidateQueries({ queryKey: ['conversations'] });
-            variables.data.nickname === ''
-                ? toast.success('Nickname removed')
-                : toast.success('Nickname updated');
-        },
-        onError: (err: any) => {
-            toast.error('Failed to update nickname');
-            setError(
-                err instanceof Error ? err.message : 'Failed to update nickname'
-            );
-        },
-    });
-
-    const addParticipantMutation = useMutation<
-        void,
-        Error,
-        { conversationId: number; userId: number }
-    >({
-        mutationFn: ({ conversationId, userId }) =>
-            messageApiService.addParticipant(conversationId, userId),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['conversations'] });
-            toast.success(`Participant added`);
-        },
-        onError: (err: any) => {
-            toast.error(`Failed to add participant`);
-            setError(
-                err instanceof Error ? err.message : 'Failed to add participant'
-            );
-        },
-    });
-
-    const removeParticipantMutation = useMutation<
-        void,
-        Error,
-        { conversationId: number; userId: number }
-    >({
-        mutationFn: ({ conversationId, userId }) =>
-            messageApiService.removeParticipant(conversationId, userId),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['conversations'] });
-        },
-        onError: (err: any) =>
-            setError(
-                err instanceof Error
-                    ? err.message
-                    : 'Failed to remove participant'
-            ),
     });
 
     const markAsReadMutation = useMutation<
@@ -209,47 +82,32 @@ export const useMessages = (
     >({
         mutationFn: ({ messageIds }) =>
             messageApiService.markMessagesAsRead(messageIds),
-        onMutate: async ({ messageIds, countToDecrement }) => {
+        onMutate: async ({ countToDecrement }) => {
             await queryClient.cancelQueries({
                 queryKey: ['conversations', 'unreadCount'],
             });
-
-            const previousUnreadCount = queryClient.getQueryData<number>([
-                'conversations',
-                'unreadCount',
-            ]);
 
             queryClient.setQueryData<number>(
                 ['conversations', 'unreadCount'],
                 (old = 0) => Math.max(0, old - countToDecrement)
             );
 
-            const conversations =
-                queryClient.getQueryData<Conversation[]>(['conversations']) ||
-                [];
-            if (conversations.find((c) => c.id === conversationId)) {
-                queryClient.setQueryData<Conversation[]>(
-                    ['conversations'],
-                    (old = []) =>
-                        old.map((c) =>
-                            c.id === conversationId
-                                ? {
-                                      ...c,
-                                      unreadCount: Math.max(
-                                          0,
-                                          c.unreadCount - countToDecrement
-                                      ),
-                                  }
-                                : c
-                        )
-                );
-            }
-
-            return { previousUnreadCount };
+            queryClient.setQueryData<Conversation[]>(
+                ['conversations'],
+                (old = []) =>
+                    old.map((c) =>
+                        c.id === conversationId
+                            ? {
+                                  ...c,
+                                  unreadCount: Math.max(
+                                      0,
+                                      c.unreadCount - countToDecrement
+                                  ),
+                              }
+                            : c
+                    )
+            );
         },
-
-        onError: (err: any) =>
-            console.error('Failed to mark messages as read', err),
         onSettled: () => {
             queryClient.invalidateQueries({ queryKey: ['conversations'] });
         },
@@ -257,74 +115,13 @@ export const useMessages = (
 
     const deleteMessageMutation = useMutation<void, Error, number>({
         mutationFn: (messageId) => messageApiService.deleteMessage(messageId),
-
-        onSuccess: (_, messageId) => {
-            if (conversationId) {
-                queryClient.setQueryData<Message[]>(
-                    ['messages', conversationId],
-                    (old = []) => old.filter((m) => m.id !== messageId)
-                );
-            }
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: ['messages', conversationId],
+            });
             queryClient.invalidateQueries({ queryKey: ['conversations'] });
         },
-        onError: (err: any) =>
-            setError(
-                err instanceof Error ? err.message : 'Failed to delete message'
-            ),
     });
-
-    const leaveConversationMutation = useMutation<void, Error, number>({
-        mutationFn: (conversationIdToLeave) =>
-            messageApiService.leaveConversation(conversationIdToLeave),
-
-        onSuccess: (_, conversationIdToLeave) => {
-            queryClient.invalidateQueries({ queryKey: ['conversations'] });
-            if (conversationId === conversationIdToLeave) {
-                queryClient.removeQueries({
-                    queryKey: ['messages', conversationIdToLeave],
-                });
-            }
-            toast.success('Leaved sucessfully!');
-        },
-        onError: (err: any) => {
-            toast.error('Failed to leave conversation!');
-            setError(
-                err instanceof Error
-                    ? err.message
-                    : 'Failed to leave conversation'
-            );
-        },
-    });
-
-    const loadConversations = useCallback(async (): Promise<void> => {
-        try {
-            await refetchConversations();
-        } catch (err) {
-            setError(
-                err instanceof Error
-                    ? err.message
-                    : 'Failed to load conversations'
-            );
-        }
-    }, [refetchConversations]);
-
-    const loadMessages = useCallback(
-        async (convId: number): Promise<void> => {
-            try {
-                await queryClient.fetchQuery({
-                    queryKey: ['messages', convId],
-                    queryFn: () => messageApiService.getMessages(convId),
-                });
-            } catch (err) {
-                setError(
-                    err instanceof Error
-                        ? err.message
-                        : 'Failed to load messages'
-                );
-            }
-        },
-        [conversations, queryClient]
-    );
 
     const sendMessage = useCallback(
         async (content: string, file?: File): Promise<void> => {
@@ -332,105 +129,20 @@ export const useMessages = (
             if (!content.trim() && !file)
                 throw new Error('Message content or file is required');
 
-            try {
-                setSending(true);
-                const messageData: CreateMessageData = {
-                    conversationId: conversationId,
-                    content,
-                    contentType: (() => {
-                        if (!file) return 'text';
-                        if (file.type.startsWith('image/')) return 'image';
-                        if (file.type.startsWith('video/')) return 'video';
-                        return 'file';
-                    })(),
-                    file,
-                };
-                await sendMessageMutation.mutateAsync(messageData);
-            } finally {
-                setSending(false);
-            }
+            const messageData: CreateMessageData = {
+                conversationId: conversationId,
+                content,
+                contentType: (() => {
+                    if (!file) return 'text';
+                    if (file.type.startsWith('image/')) return 'image';
+                    if (file.type.startsWith('video/')) return 'video';
+                    return 'file';
+                })(),
+                file,
+            };
+            await sendMessageMutation.mutateAsync(messageData);
         },
         [conversationId, sendMessageMutation]
-    );
-
-    const createConversation = useCallback(
-        async (
-            participantIds: number[],
-            name?: string,
-            type?: 'direct' | 'group'
-        ): Promise<void> => {
-            try {
-                const data: CreateConversationData = {
-                    participantIds,
-                    ...(name && { name }),
-                    ...(type && { type }),
-                };
-                await createConversationMutation.mutateAsync(data);
-            } catch (err) {
-                throw err;
-            }
-        },
-        [createConversationMutation]
-    );
-
-    const updateConversationName = useCallback(
-        async (convId: number, name: string): Promise<void> => {
-            try {
-                await updateConversationNameMutation.mutateAsync({
-                    conversationId: convId,
-                    data: { name },
-                });
-            } catch (err) {
-                throw err;
-            }
-        },
-        [updateConversationNameMutation]
-    );
-
-    const updateParticipantNickname = useCallback(
-        async (
-            convId: number,
-            userId: number,
-            nickname: string
-        ): Promise<void> => {
-            try {
-                await updateParticipantNicknameMutation.mutateAsync({
-                    conversationId: convId,
-                    data: { userId, nickname },
-                });
-            } catch (err) {
-                throw err;
-            }
-        },
-        [updateParticipantNicknameMutation]
-    );
-
-    const addParticipant = useCallback(
-        async (convId: number, userId: number): Promise<void> => {
-            try {
-                await addParticipantMutation.mutateAsync({
-                    conversationId: convId,
-                    userId,
-                });
-            } catch (err) {
-                throw err;
-            }
-        },
-        [addParticipantMutation]
-    );
-
-    const removeParticipant = useCallback(
-        async (convId: number, userId: number): Promise<void> => {
-            try {
-                await removeParticipantMutation.mutateAsync({
-                    conversationId: convId,
-                    userId,
-                });
-            } catch (err) {
-                throw err;
-            }
-        },
-        [removeParticipantMutation]
     );
 
     const markAsRead = useCallback(
@@ -439,59 +151,30 @@ export const useMessages = (
             countToDecrement: number
         ): Promise<void> => {
             if (messageIds.length === 0) return;
-            try {
-                await markAsReadMutation.mutateAsync({
-                    messageIds,
-                    countToDecrement,
-                });
-            } catch (err) {
-                console.error(err);
-            }
+            await markAsReadMutation.mutateAsync({
+                messageIds,
+                countToDecrement,
+            });
         },
         [markAsReadMutation]
     );
 
     const deleteMessage = useCallback(
         async (messageId: number): Promise<void> => {
-            try {
-                await deleteMessageMutation.mutateAsync(messageId);
-            } catch (err) {
-                throw err;
-            }
+            await deleteMessageMutation.mutateAsync(messageId);
         },
         [deleteMessageMutation]
     );
 
-    const leaveConversation = useCallback(
-        async (convId: number): Promise<void> => {
-            try {
-                await leaveConversationMutation.mutateAsync(convId);
-            } catch (err) {
-                throw err;
-            }
-        },
-        [leaveConversationMutation]
-    );
-
-    const loading = conversationsLoading || messagesLoading;
-
     return {
-        conversations,
         messages,
-        loading,
-        error,
-        sending,
-
-        loadConversations,
-        loadMessages,
+        isLoading,
+        isSending: sendMessageMutation.isPending,
+        fetchNextPage,
+        hasNextPage: hasNextPage ?? false,
+        isFetchingNextPage,
         sendMessage,
-        createConversation,
         markAsRead,
         deleteMessage,
-        leaveConversation,
-        updateConversationName,
-        updateParticipantNickname,
-        addParticipant,
-        removeParticipant,
     };
 };

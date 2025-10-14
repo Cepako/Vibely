@@ -13,25 +13,30 @@ import UserAvatar from '../ui/UserAvatar';
 import type { User } from '../../types/user';
 import MessageBubble from './MessageBubble';
 import { ChatWindowHeader } from './ChatWindowHeader';
+import { usePrevious } from '../hooks/usePrevious';
 
 interface ChatWindowProps {
     conversation: Conversation;
     messages: Message[];
-    onSendMessage: (content: string, file?: File) => Promise<void>;
-    loading: boolean;
-    sending: boolean;
+    sendMessage: (content: string, file?: File) => Promise<void>;
+    isSending: boolean;
     markAsRead: (
         messagesIds: Array<number>,
         countToDecrement: number
     ) => Promise<void>;
+    fetchNextPage: () => void;
+    hasNextPage?: boolean;
+    isFetchingNextPage: boolean;
 }
 
 export const ChatWindow: React.FC<ChatWindowProps> = ({
     conversation,
     messages,
-    onSendMessage,
-    loading,
-    sending,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    sendMessage,
+    isSending,
     markAsRead,
 }) => {
     const { user } = useAuth();
@@ -42,12 +47,11 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     const fileInputRef = useRef<HTMLInputElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-    const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({
-            behavior: 'smooth',
-            block: 'end',
-        });
-    };
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const topLoaderRef = useRef<HTMLDivElement>(null);
+    const scrollPositionRef = useRef<number | null>(null);
+
+    const isInitialLoadRef = useRef(true);
 
     const adjustTextareaHeight = () => {
         if (textareaRef.current) {
@@ -56,17 +60,79 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         }
     };
 
+    const prevMessages = usePrevious(messages);
+
     useEffect(() => {
-        scrollToBottom();
+        isInitialLoadRef.current = true;
+    }, [conversation.id]);
+
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            (entries) => {
+                const firstEntry = entries[0];
+
+                if (
+                    firstEntry.isIntersecting &&
+                    hasNextPage &&
+                    !isFetchingNextPage
+                ) {
+                    if (scrollContainerRef.current) {
+                        scrollPositionRef.current =
+                            scrollContainerRef.current.scrollHeight;
+                    }
+                    fetchNextPage();
+                }
+            },
+            { root: scrollContainerRef.current, threshold: 1.0 }
+        );
+
+        const currentLoader = topLoaderRef.current;
+        if (currentLoader) {
+            observer.observe(currentLoader);
+        }
+
+        return () => {
+            if (currentLoader) {
+                observer.unobserve(currentLoader);
+            }
+        };
+    }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+    useEffect(() => {
+        if (scrollContainerRef.current && scrollPositionRef.current !== null) {
+            const newScrollTop =
+                scrollContainerRef.current.scrollHeight -
+                scrollPositionRef.current;
+            scrollContainerRef.current.scrollTop = newScrollTop;
+            scrollPositionRef.current = null;
+        }
+    }, [messages]);
+
+    useEffect(() => {
         const unreadMessages = messages.filter(
             (m) => !m.isRead && m.senderId !== user?.id
         );
-
         if (unreadMessages.length > 0) {
             const unreadMessageIds = unreadMessages.map((m) => m.id);
             markAsRead(unreadMessageIds, unreadMessages.length);
         }
-    }, [messages]);
+    }, [messages, user?.id]);
+
+    useEffect(() => {
+        if (isFetchingNextPage) {
+            return;
+        }
+
+        const lastMessage = messages[messages.length - 1];
+        const prevLastMessage = prevMessages?.[prevMessages.length - 1];
+
+        if (isInitialLoadRef.current && messages.length > 0) {
+            messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
+            isInitialLoadRef.current = false;
+        } else if (lastMessage?.id !== prevLastMessage?.id) {
+            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }
+    }, [messages, prevMessages, isFetchingNextPage]);
 
     useEffect(() => {
         adjustTextareaHeight();
@@ -117,7 +183,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     };
 
     const handleSendMessage = async () => {
-        if ((!messageText.trim() && !selectedFile) || sending) return;
+        if ((!messageText.trim() && !selectedFile) || isSending) return;
 
         if (!conversation) {
             console.error('No conversation selected');
@@ -125,7 +191,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         }
 
         try {
-            await onSendMessage(messageText.trim(), selectedFile || undefined);
+            await sendMessage(messageText.trim(), selectedFile || undefined);
             setMessageText('');
             removeFile();
         } catch (error) {
@@ -181,13 +247,21 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                 </div>
             </div>
 
-            <div className='bg-primary-50 flex-1 overflow-y-auto p-4'>
-                {loading ? (
-                    <div className='flex h-48 flex-col items-center justify-center text-slate-500'>
-                        <div className='border-t-primary-500 mb-3 h-6 w-6 animate-spin rounded-full border-2 border-slate-200'></div>
-                        <p>Loading messages...</p>
+            <div
+                ref={scrollContainerRef}
+                className='bg-primary-50 flex-1 overflow-y-auto p-4'
+            >
+                {hasNextPage && (
+                    <div
+                        ref={topLoaderRef}
+                        className='flex justify-center py-4'
+                    >
+                        {isFetchingNextPage && (
+                            <div className='border-t-primary-500 h-6 w-6 animate-spin rounded-full border-2 border-slate-200'></div>
+                        )}
                     </div>
-                ) : Object.keys(messageGroups).length === 0 ? (
+                )}
+                {Object.keys(messageGroups).length === 0 ? (
                     <div className='flex h-48 items-center justify-center text-slate-500'>
                         <p>No messages yet. Start the conversation!</p>
                     </div>
@@ -330,7 +404,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                             placeholder='Type a message...'
                             className='max-h-24 w-full resize-none border-none bg-transparent px-3 py-2 text-sm outline-none'
                             rows={1}
-                            disabled={sending}
+                            disabled={isSending}
                         />
                     </div>
 
@@ -350,11 +424,11 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                         }`}
                         onClick={handleSendMessage}
                         disabled={
-                            (!messageText.trim() && !selectedFile) || sending
+                            (!messageText.trim() && !selectedFile) || isSending
                         }
                         title='Send message'
                     >
-                        {sending ? (
+                        {isSending ? (
                             <div className='h-5 w-5 animate-spin rounded-full border-2 border-transparent border-t-current'></div>
                         ) : (
                             <IconSend size={20} />

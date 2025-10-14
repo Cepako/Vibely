@@ -18,7 +18,7 @@ interface ConversationListProps {
     conversationId: number | null;
     onSelectConversation: (conversation: Conversation) => void;
     onNewConversation: () => void;
-    loading: boolean;
+    isLoading: boolean;
 }
 
 export const ConversationList: React.FC<ConversationListProps> = ({
@@ -26,7 +26,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
     conversationId,
     onSelectConversation,
     onNewConversation,
-    loading,
+    isLoading: loading,
 }) => {
     const { user } = useAuth();
     const [searchTerm, setSearchTerm] = useState('');
@@ -239,7 +239,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                                             )}
 
                                             {conversation.unreadCount > 0 && (
-                                                <span className='bg-primary-500 ml-2 h-6 w-6 flex-shrink-0 items-center rounded-full px-2 py-1 text-center text-xs font-semibold text-white'>
+                                                <span className='bg-primary-500 ml-2 flex h-6 w-6 items-center justify-center rounded-full px-2 py-1 text-center text-xs font-semibold text-white'>
                                                     {conversation.unreadCount >
                                                     99
                                                         ? '99+'

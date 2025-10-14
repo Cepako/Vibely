@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { useMessages } from './hooks/useMessages';
 import { Dialog } from '../ui/Dialog';
 import {
     IconX,
@@ -13,6 +12,7 @@ import type { Conversation } from '../../types/message';
 import { Nicknames } from './Nicknames';
 import { IconDeviceFloppy } from '@tabler/icons-react';
 import { useNavigate } from '@tanstack/react-router';
+import { useConversation } from './hooks/useConversation';
 
 interface GroupSettingsModalProps {
     isOpen: boolean;
@@ -28,7 +28,7 @@ export function GroupSettingsModal({
     const user = useAuth();
     const navigate = useNavigate();
     const { updateConversationName, addParticipant, leaveConversation } =
-        useMessages(conversation.id);
+        useConversation(conversation.id);
 
     const [newName, setNewName] = useState(conversation.name || '');
 
@@ -50,23 +50,23 @@ export function GroupSettingsModal({
 
     const handleSaveName = async () => {
         if (newName.trim() && newName !== conversation.name) {
-            await updateConversationName(conversation.id, newName.trim());
+            updateConversationName(newName.trim());
         }
     };
 
     const handleRemoveName = async () => {
         if (!conversation.name) return;
-        await updateConversationName(conversation.id, '');
+        updateConversationName('');
         setNewName('');
     };
 
     const handleAddParticipant = async (userId: number) => {
-        await addParticipant(conversation.id, userId);
+        addParticipant(userId);
         setSelectedUserId(null);
     };
 
     const handleLeaveConversation = async () => {
-        leaveConversation(conversation.id);
+        leaveConversation();
         navigate({ to: '/messages' });
     };
 

@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useCallback, useMemo } from 'react';
 import { useAuth } from '../auth/AuthProvider';
 import { useWebSocket } from '../hooks/useWebSocket';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, type InfiniteData } from '@tanstack/react-query';
 import { messageApiService } from '../messages/MessageApi';
 import type { Message as ChatMessage } from '../../types/message';
 
@@ -49,9 +49,26 @@ export const ChatWebSocketProvider: React.FC<ChatWebSocketProviderProps> = ({
             if (message.type === 'chat_message') {
                 const newMessage: ChatMessage = message.data;
 
-                queryClient.setQueryData<ChatMessage[]>(
+                queryClient.setQueryData<InfiniteData<ChatMessage[]>>(
                     ['messages', newMessage.conversationId],
-                    (oldMessages = []) => [...oldMessages, newMessage]
+                    (oldData) => {
+                        if (!oldData) {
+                            return {
+                                pages: [[newMessage]],
+                                pageParams: [0],
+                            };
+                        }
+
+                        const newData = { ...oldData };
+                        const newPages = [...newData.pages];
+
+                        newPages[0] = [...newPages[0], newMessage];
+
+                        return {
+                            ...newData,
+                            pages: newPages,
+                        };
+                    }
                 );
 
                 queryClient.invalidateQueries({ queryKey: ['conversations'] });
