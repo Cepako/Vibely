@@ -10,11 +10,11 @@ import {
     useBlockUser,
     useSendFriendRequest,
     type Friend,
+    useSentFriendRequests,
 } from './hooks/useFriendship';
 import { Link } from '@tanstack/react-router';
 import DropdownMenu, { type DropdownMenuItem } from '../ui/DropdownMenu';
 import UserAvatar from '../ui/UserAvatar';
-import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { useNotificationWebSocketContext } from '../providers/NotificationWebSocketProvider';
 
@@ -22,20 +22,24 @@ interface FriendCardProps {
     friend: Friend;
     isMe: boolean;
     isFriend: boolean;
+    conversationId?: number;
 }
 
 export default function FriendCard({
     friend,
     isMe,
     isFriend,
+    conversationId,
 }: FriendCardProps) {
     const removeFriendMutation = useRemoveFriend();
     const blockUserMutation = useBlockUser();
     const sendRequest = useSendFriendRequest();
-    const [requestSent, setRequestSent] = useState(false);
     const { isUserOnline } = useNotificationWebSocketContext();
     const isOnline = isUserOnline(friend.id);
-
+    const { data: sentRequsets } = useSentFriendRequests();
+    const isSentRequest = sentRequsets
+        ? sentRequsets.some((r) => r.user_friendId.id === friend.id)
+        : false;
     const handleRemoveFriend = async () => {
         try {
             await removeFriendMutation.mutateAsync(friend.id);
@@ -56,7 +60,6 @@ export default function FriendCard({
     const handleSendRequest = async () => {
         try {
             await sendRequest.mutateAsync(friend.id);
-            setRequestSent(true);
             toast.success('Friend request sent');
         } catch (err) {
             console.error('Failed to send request', err);
@@ -132,8 +135,12 @@ export default function FriendCard({
                 <div className='flex space-x-2'>
                     {isFriend ? (
                         <Link
-                            to={`/messages`}
-                            search={{ userId: String(friend.id) }}
+                            to={
+                                conversationId
+                                    ? '/messages/$conversationId'
+                                    : '/messages'
+                            }
+                            params={{ conversationId }}
                             className='bg-primary-600 hover:bg-primary-700 flex flex-1 cursor-pointer items-center justify-center rounded-md px-3 py-2 text-sm font-medium text-white transition-colors'
                         >
                             <IconMessage size={16} className='mr-2' />
@@ -142,11 +149,11 @@ export default function FriendCard({
                     ) : (
                         <button
                             onClick={handleSendRequest}
-                            disabled={sendRequest.isPending || requestSent}
+                            disabled={sendRequest.isPending || isSentRequest}
                             className='bg-primary-600 hover:bg-primary-700 flex flex-1 cursor-pointer items-center justify-center rounded-md px-3 py-2 text-sm font-medium text-white transition-colors disabled:cursor-not-allowed disabled:opacity-60'
                         >
                             <IconUserPlus size={16} className='mr-2' />
-                            {requestSent ? 'Request Sent' : 'Add Friend'}
+                            {isSentRequest ? 'Request Sent' : 'Add Friend'}
                         </button>
                     )}
                 </div>

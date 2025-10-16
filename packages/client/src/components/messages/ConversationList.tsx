@@ -145,7 +145,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                             <div>
                                 <p className='mb-3'>No conversations yet</p>
                                 <button
-                                    className='bg-primary-500 hover:bg-primary-600 rounded-full px-5 py-2 text-sm text-white transition-colors'
+                                    className='bg-primary-500 hover:bg-primary-600 cursor-pointer rounded-full px-5 py-2 text-sm text-white transition-colors'
                                     onClick={onNewConversation}
                                 >
                                     Start chatting

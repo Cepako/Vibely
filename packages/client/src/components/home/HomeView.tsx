@@ -1,5 +1,5 @@
 import CreatePostCard from './CreatePostCard';
-import PostsFeed from './InfiniteScrollPostsFeed';
+import PostsFeed from './PostsFeed';
 import Sidebar from './Sidebar';
 import HomeHeader from './HomeHeader';
 

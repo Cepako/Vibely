@@ -4,13 +4,15 @@ import type { Comment } from '../../types/comment';
 import { usePostComments } from './hooks/useComments';
 import CommentItem from './CommentItem';
 import CommentForm from './CommentForm';
+import clsx from 'clsx';
 
 interface CommentsSectionProps {
     postId: number;
+    isHomePage?: boolean;
 }
 
 const CommentsSection = forwardRef<HTMLDivElement, CommentsSectionProps>(
-    ({ postId }, ref) => {
+    ({ postId, isHomePage = false }, ref) => {
         const [replyingTo, setReplyingTo] = useState<Comment | null>(null);
         const {
             data: comments = [],
@@ -45,7 +47,12 @@ const CommentsSection = forwardRef<HTMLDivElement, CommentsSectionProps>(
 
         return (
             <div ref={ref} className='flex h-full flex-col'>
-                <div className='flex-1 overflow-y-auto'>
+                <div
+                    className={clsx(
+                        'flex-1 overflow-y-auto',
+                        isHomePage && 'max-h-[300px]'
+                    )}
+                >
                     {isLoading ? (
                         <div className='flex items-center justify-center py-12'>
                             <div className='flex items-center space-x-3'>
@@ -98,7 +105,12 @@ const CommentsSection = forwardRef<HTMLDivElement, CommentsSectionProps>(
                 </div>
 
                 {!replyingTo && (
-                    <div className='sticky bottom-0 border-t border-slate-100 bg-white shadow-sm'>
+                    <div
+                        className={clsx(
+                            'bottom-0 border-t border-slate-100 bg-white shadow-sm',
+                            !isHomePage && 'sticky'
+                        )}
+                    >
                         <CommentForm postId={postId} />
                     </div>
                 )}

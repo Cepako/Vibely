@@ -1,4 +1,4 @@
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { useAuth } from '../../auth/AuthProvider';
 import type { Post } from '../../../types/post';
 import { apiClient } from '../../../lib/apiClient';
@@ -24,19 +24,6 @@ const fetchHomeFeed = async (
 export const useHomeFeed = (limit: number = 20) => {
     const { user } = useAuth();
 
-    return useQuery({
-        queryKey: ['homeFeed', limit],
-        queryFn: () => fetchHomeFeed(limit, 0),
-        enabled: !!user,
-        staleTime: 1000 * 60 * 5, // 5 minutes
-        refetchOnWindowFocus: true,
-        select: (data) => data.posts,
-    });
-};
-
-export const useInfiniteHomeFeed = (limit: number = 20) => {
-    const { user } = useAuth();
-
     return useInfiniteQuery({
         queryKey: ['homeFeed', 'infinite', limit],
         queryFn: ({ pageParam = 0 }) => fetchHomeFeed(limit, pageParam),
@@ -53,15 +40,4 @@ export const useInfiniteHomeFeed = (limit: number = 20) => {
             pageParams: data.pageParams,
         }),
     });
-};
-
-export const useHomeFeedPosts = (limit: number = 20) => {
-    const { data, isLoading, error, refetch } = useHomeFeed(limit);
-
-    return {
-        posts: data || [],
-        isLoading,
-        error,
-        refetch,
-    };
 };

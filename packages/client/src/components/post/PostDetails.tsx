@@ -279,7 +279,7 @@ export default function PostDetails({ post: initialPost }: PostDetailsProps) {
                                         {isLiked ? (
                                             <IconHeartFilled
                                                 size={24}
-                                                className='animate-pulse'
+                                                className=''
                                             />
                                         ) : (
                                             <IconHeart

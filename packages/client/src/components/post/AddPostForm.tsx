@@ -8,9 +8,10 @@ import ContentTypeSelector from './ContentTypeSelector';
 interface AddPostFormProps {
     profileId: number;
     onClose: () => void;
+    startContent?: 'video' | 'photo';
 }
 
-function AddPostForm({ profileId, onClose }: AddPostFormProps) {
+function AddPostForm({ profileId, onClose, startContent }: AddPostFormProps) {
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [fileTypeError, setFileTypeError] = useState<string>('');
@@ -26,7 +27,7 @@ function AddPostForm({ profileId, onClose }: AddPostFormProps) {
     } = useForm<CreatePostData>({
         defaultValues: {
             content: '',
-            contentType: 'photo',
+            contentType: startContent === 'video' ? 'video' : 'photo',
             privacyLevel: 'public',
         },
         mode: 'onChange',

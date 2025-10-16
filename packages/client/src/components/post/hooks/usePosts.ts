@@ -47,11 +47,11 @@ const postsApi = {
         postId: number,
         data: UpdatePostData
     ): Promise<{ message: string; post: Post }> {
-        return await apiClient.put(`/api/post/${postId}/edit`, data);
+        return await apiClient.put(`/post/${postId}/edit`, data);
     },
 
     async deletePost(postId: number): Promise<{ message: string }> {
-        return await apiClient.delete(`/api/post/${postId}`);
+        return await apiClient.delete(`/post/${postId}`);
     },
 };
 

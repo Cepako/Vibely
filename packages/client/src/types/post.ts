@@ -1,6 +1,6 @@
 import { type User } from './user';
 
-export type ContentType = 'photo' | 'video' | 'album';
+export type ContentType = 'photo' | 'video';
 export type PrivacyLevel = 'public' | 'friends' | 'private';
 
 export interface PostReaction {

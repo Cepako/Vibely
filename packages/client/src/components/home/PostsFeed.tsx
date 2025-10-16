@@ -1,10 +1,10 @@
 import { useEffect, useRef } from 'react';
 import { IconCamera } from '@tabler/icons-react';
-import { useInfiniteHomeFeed } from './hooks/useHomeFeed';
+import { useHomeFeed } from './hooks/useHomeFeed';
 import HomePostCard from './HomePostCard';
 import type { Post } from '../../types/post';
 
-export default function InfiniteScrollPostsFeed() {
+export default function PostsFeed() {
     const {
         data,
         isLoading,
@@ -12,7 +12,7 @@ export default function InfiniteScrollPostsFeed() {
         fetchNextPage,
         hasNextPage,
         isFetchingNextPage,
-    } = useInfiniteHomeFeed(10);
+    } = useHomeFeed(10);
 
     const loadMoreRef = useRef<HTMLDivElement>(null);
 

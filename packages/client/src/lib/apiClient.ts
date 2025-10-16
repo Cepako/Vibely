@@ -38,7 +38,7 @@ export const apiClient = {
                 'Content-Type': 'application/json',
                 ...options?.headers,
             },
-            body: JSON.stringify(data),
+            body: JSON.stringify(data ?? {}),
         }),
 
     patch: <T = any>(url: string, data?: any, options?: RequestInit) =>
@@ -49,7 +49,7 @@ export const apiClient = {
                 'Content-Type': 'application/json',
                 ...options?.headers,
             },
-            body: JSON.stringify(data),
+            body: JSON.stringify(data ?? {}),
         }),
     put: <T = any>(url: string, data?: any, options?: RequestInit) =>
         fetchWithAuth<T>(url, {
@@ -59,7 +59,7 @@ export const apiClient = {
                 'Content-Type': 'application/json',
                 ...options?.headers,
             },
-            body: JSON.stringify(data),
+            body: JSON.stringify(data ?? {}),
         }),
 
     delete: <T = any>(url: string, options?: RequestInit) =>

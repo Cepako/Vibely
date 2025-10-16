@@ -426,6 +426,26 @@ export class MessageService implements IMessageService {
 
             for (const userConv of userConversations) {
                 const conversation = userConv.conversation;
+                if (conversation.type === 'direct') {
+                    const otherParticipant =
+                        conversation.conversationParticipants.find(
+                            (p) => p.userId !== userId
+                        );
+
+                    if (!otherParticipant) {
+                        continue;
+                    }
+
+                    const friendshipStatus =
+                        await this.friendshipService.getFriendshipStatus(
+                            userId,
+                            otherParticipant.userId
+                        );
+
+                    if (friendshipStatus !== 'accepted') {
+                        continue;
+                    }
+                }
 
                 const lastMessage = await db.query.messages.findFirst({
                     where: eq(messages.conversationId, conversation.id),
@@ -547,6 +567,27 @@ export class MessageService implements IMessageService {
 
             if (!conversation) {
                 return null;
+            }
+
+            if (conversation.type === 'direct') {
+                const otherParticipant =
+                    conversation.conversationParticipants.find(
+                        (p) => p.userId !== userId
+                    );
+
+                if (!otherParticipant) {
+                    return null;
+                }
+
+                const friendshipStatus =
+                    await this.friendshipService.getFriendshipStatus(
+                        userId,
+                        otherParticipant.userId
+                    );
+
+                if (friendshipStatus !== 'accepted') {
+                    return null;
+                }
             }
 
             const lastMessage = await db.query.messages.findFirst({

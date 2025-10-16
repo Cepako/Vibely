@@ -135,6 +135,66 @@ export const NotificationWebSocketProvider: React.FC<
                         setUnreadCount((prev) => prev + 1);
                     }
 
+                    switch (
+                        message.data.type //TODO
+                    ) {
+                        case 'friendships': {
+                            queryClient.invalidateQueries({
+                                queryKey: ['friends'],
+                            });
+                            queryClient.invalidateQueries({
+                                queryKey: ['friendRequests'],
+                            });
+                            queryClient.invalidateQueries({
+                                queryKey: ['sentFriendRequests'],
+                            });
+                            queryClient.invalidateQueries({
+                                queryKey: ['blockedUsers'],
+                            });
+
+                            queryClient.invalidateQueries({
+                                queryKey: ['friendshipStatus'],
+                            });
+                            break;
+                        }
+                        case 'post_reactions': {
+                            queryClient.invalidateQueries({
+                                queryKey: ['post'],
+                            });
+                            queryClient.invalidateQueries({
+                                queryKey: ['homeFeed'],
+                            });
+                            break;
+                        }
+                        case 'comment_reactions': {
+                            queryClient.invalidateQueries({
+                                queryKey: ['posts'],
+                            });
+                            queryClient.invalidateQueries({
+                                queryKey: ['post'],
+                            });
+                            break;
+                        }
+                        case 'comments': {
+                            queryClient.invalidateQueries({
+                                queryKey: ['comments'],
+                            });
+                            break;
+                        }
+                        case 'events': {
+                            queryClient.invalidateQueries({
+                                queryKey: ['events'],
+                            });
+                            break;
+                        }
+                        case 'posts': {
+                            queryClient.invalidateQueries({
+                                queryKey: ['posts'],
+                            });
+                            break;
+                        }
+                    }
+
                     if (Notification.permission === 'granted') {
                         new Notification(message.data.content, {
                             icon: '/notification-icon.png',

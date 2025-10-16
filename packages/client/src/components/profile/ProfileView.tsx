@@ -1,6 +1,11 @@
-import { IconMapPin, IconCalendar, IconCake } from '@tabler/icons-react';
+import {
+    IconMapPin,
+    IconCalendar,
+    IconCake,
+    IconMessage,
+} from '@tabler/icons-react';
 import { useProfile } from '../hooks/useProfile';
-import { useParams } from '@tanstack/react-router';
+import { useNavigate, useParams } from '@tanstack/react-router';
 import { useAuth } from '../auth/AuthProvider';
 import FriendshipButton from './FriendshipButton';
 import { useMemo, useState } from 'react';
@@ -10,7 +15,9 @@ import EditProfileForm from './EditProfileForm';
 import ProfileImage from './ProfileImage';
 import { cn } from '../../utils/utils';
 import { usePosts } from '../post/hooks/usePosts';
-import { useFriends } from './hooks/useFriendship';
+import { useBlockUser, useFriends } from './hooks/useFriendship';
+import { Dialog, useDialog } from '../ui/Dialog';
+import { useConversations } from '../messages/hooks/useConversations';
 
 export default function ProfileView() {
     const params = useParams({ from: '/profile/$profileId' });
@@ -21,9 +28,23 @@ export default function ProfileView() {
     const { user } = useAuth();
     const { data, isLoading } = useProfile(Number(params.profileId));
     const userProfile = data;
+    const navigate = useNavigate();
+    const { conversations } = useConversations();
+    const conversationId = conversations
+        ? conversations.find(
+              (c) =>
+                  c.type === 'direct' &&
+                  c.participants.some(
+                      (p) => p.userId === Number(params.profileId)
+                  )
+          )?.id
+        : undefined;
+
+    const blockUserMutation = useBlockUser();
 
     const { data: friends } = useFriends(Number(params.profileId));
     const friendsCount = friends?.length || 0;
+    const blockDialog = useDialog();
 
     const postsData = useMemo(() => {
         if (!posts.data) return [];
@@ -31,6 +52,19 @@ export default function ProfileView() {
     }, [posts]);
 
     const isOwnProfile = user?.id === userProfile?.id;
+
+    const handleBlockUser = async () => {
+        try {
+            await blockUserMutation.mutateAsync(userProfile!.id);
+            navigate({
+                to: '/profile/$profileId',
+                params: { profileId: user!.id.toString() },
+            });
+            blockDialog.closeDialog();
+        } catch (error) {
+            console.error('Failed to block user:', error);
+        }
+    };
 
     const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleDateString('en-US', {
@@ -73,11 +107,16 @@ export default function ProfileView() {
         return age;
     };
 
-    if (isLoading) {
-        return <div>Loading...</div>; //TODO: Loader
-    }
+    if (!userProfile)
+        return (
+            <div className='flex h-full w-full items-center justify-center text-3xl font-semibold text-slate-700'>
+                Profile not found
+            </div>
+        );
 
-    if (!userProfile) return <div>Profile not found</div>;
+    if (isLoading) {
+        return <div>Loading profile...</div>; //TODO: Loader
+    }
 
     return (
         <div className='w-full overflow-y-auto rounded-xl px-2 py-5 shadow-lg'>
@@ -137,12 +176,31 @@ export default function ProfileView() {
                                 </div>
 
                                 <div className='flex space-x-3 sm:mt-0'>
+                                    {!isOwnProfile && conversationId && (
+                                        <div
+                                            className='bg-primary-600 hover:bg-primary-700 flex cursor-pointer items-center gap-2 rounded-lg px-4 py-2 text-white duration-150'
+                                            onClick={() => {
+                                                navigate({
+                                                    to: '/messages/$conversationId',
+                                                    params: {
+                                                        conversationId:
+                                                            conversationId.toString(),
+                                                    },
+                                                });
+                                            }}
+                                        >
+                                            <IconMessage size={18} /> Message
+                                        </div>
+                                    )}
                                     {isOwnProfile ? (
                                         <EditProfileForm user={userProfile} />
                                     ) : (
                                         <FriendshipButton
                                             friendshipStatus={
                                                 userProfile.friendshipStatus
+                                            }
+                                            openBlockDialog={
+                                                blockDialog.openDialog
                                             }
                                         />
                                     )}
@@ -218,6 +276,39 @@ export default function ProfileView() {
                     <FriendsList userId={userProfile.id} />
                 )}
             </div>
+            <Dialog
+                isOpen={blockDialog.isOpen}
+                onClose={blockDialog.closeDialog}
+            >
+                <div className='flex flex-col gap-2 p-4'>
+                    <div>
+                        Are you sure you want to block{' '}
+                        <span className='text-primary-700 font-bold'>
+                            {userProfile.name} {userProfile.surname}
+                        </span>
+                        ?
+                    </div>
+                    <div className='text-sm text-slate-500'>
+                        After blocking, you’ll be redirected to your profile and
+                        will no longer be able to view {userProfile.name}’s
+                        profile.
+                    </div>
+                    <div className='flex justify-end gap-2'>
+                        <div
+                            className='cursor-pointer rounded-xl bg-rose-500 px-4 py-2 text-white duration-150 hover:bg-rose-600'
+                            onClick={handleBlockUser}
+                        >
+                            Confirm
+                        </div>
+                        <div
+                            className='cursor-pointer rounded-xl bg-slate-500 px-4 py-2 text-white duration-150 hover:bg-slate-600'
+                            onClick={blockDialog.closeDialog}
+                        >
+                            Cancel
+                        </div>
+                    </div>
+                </div>
+            </Dialog>
         </div>
     );
 }

@@ -201,7 +201,7 @@ export default function HomePostCard({ post }: HomePostCardProps) {
 
             {showComments && (
                 <div className='border-t border-slate-100'>
-                    <CommentsSection postId={post.id} />
+                    <CommentsSection postId={post.id} isHomePage />
                 </div>
             )}
 

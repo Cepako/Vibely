@@ -22,14 +22,15 @@ import toast from 'react-hot-toast';
 
 interface FriendshipButtonProps {
     friendshipStatus: FriendshipStatus | null;
+    openBlockDialog: () => void;
 }
 
 export default function FriendshipButton({
     friendshipStatus,
+    openBlockDialog,
 }: FriendshipButtonProps) {
     const params = useParams({ from: '/profile/$profileId' });
     const userId = Number(params.profileId);
-
     const sendRequestMutation = useSendFriendRequest();
     const removeFriendMutation = useRemoveFriend();
     const blockUserMutation = useBlockUser();
@@ -51,14 +52,6 @@ export default function FriendshipButton({
             await removeFriendMutation.mutateAsync(userId);
         } catch (error) {
             console.error('Failed to remove friend:', error);
-        }
-    };
-
-    const handleBlockUser = async () => {
-        try {
-            await blockUserMutation.mutateAsync(userId);
-        } catch (error) {
-            console.error('Failed to block user:', error);
         }
     };
 
@@ -134,7 +127,7 @@ export default function FriendshipButton({
                     </button>
 
                     <button
-                        onClick={handleBlockUser}
+                        onClick={openBlockDialog}
                         disabled={blockUserMutation.isPending}
                         className='inline-flex cursor-pointer items-center gap-2 rounded-lg border border-rose-500 px-3 py-2 text-rose-600 hover:bg-rose-50 disabled:opacity-50'
                     >
@@ -209,7 +202,7 @@ export default function FriendshipButton({
                             ? 'Blocking...'
                             : 'Block User',
                         icon: <IconUserX />,
-                        onClick: handleBlockUser,
+                        onClick: openBlockDialog,
                         className: 'p-2 text-rose-600',
                     },
                 ];

@@ -23,8 +23,8 @@ export function useEvents(tab: EventTab) {
             const response = await apiClient.get(endpoint);
             return response.data || [];
         },
-        staleTime: 1000 * 5,
-        refetchInterval: 1000 * 5,
+        staleTime: 1000 * 60,
+        refetchInterval: 1000 * 60,
         refetchOnMount: 'always',
         refetchIntervalInBackground: true,
         gcTime: 1000 * 60 * 30,

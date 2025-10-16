@@ -19,6 +19,7 @@ import FriendCard from './FriendCard';
 import FriendRequestCard from './FriendRequestCard';
 import SentRequestCard from './SentRequestCard';
 import BlockedUserCard from './BlockedUserCard';
+import { useConversations } from '../messages/hooks/useConversations';
 
 type FriendsTab = 'friends' | 'requests' | 'sent' | 'blocked';
 
@@ -48,6 +49,12 @@ export default function FriendsList({ userId }: FriendsListProps) {
     const { data: sentRequests, isLoading: sentLoading } =
         useSentFriendRequests();
     const { data: blockedUsers, isLoading: blockedLoading } = useBlockedUsers();
+
+    const { conversations, isLoading: areConversationsLoading } =
+        useConversations();
+    const directConversations = conversations
+        ? conversations.filter((c) => c.type === 'direct')
+        : [];
 
     function compareSearch(name: string, surname: string, query: string) {
         return (
@@ -105,7 +112,7 @@ export default function FriendsList({ userId }: FriendsListProps) {
         );
     }, [blockedUsers, searchQuery]);
 
-    if (!targetUserId) {
+    if (!targetUserId || areConversationsLoading) {
         return <div>Loading...</div>;
     }
 
@@ -169,12 +176,21 @@ export default function FriendsList({ userId }: FriendsListProps) {
                             const isMe = friend.id === user?.id;
                             const isFriend =
                                 isOwnProfile || myFriendIds.has(friend.id);
+
+                            const conversationId = directConversations.find(
+                                (c) =>
+                                    c.participants.some(
+                                        (p) => p.userId === friend.id
+                                    )
+                            )?.id;
+
                             return (
                                 <FriendCard
                                     key={friend.id}
                                     friend={friend}
                                     isMe={isMe}
                                     isFriend={isFriend}
+                                    conversationId={conversationId}
                                 />
                             );
                         })}
