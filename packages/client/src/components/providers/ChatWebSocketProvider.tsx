@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useCallback, useMemo } from 'react';
+import React, {
+    createContext,
+    useContext,
+    useCallback,
+    useMemo,
+    useState,
+} from 'react';
 import { useAuth } from '../auth/AuthProvider';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { useQueryClient, type InfiniteData } from '@tanstack/react-query';
@@ -8,6 +14,9 @@ import type { Message as ChatMessage } from '../../types/message';
 interface ChatWebSocketContextType {
     isConnected: boolean;
     sendMessage: (content: string, file?: File) => Promise<void>;
+    askAdvisor: (question: string) => void;
+    advisorResponse: string;
+    isAdvisorLoading: boolean;
 }
 
 const ChatWebSocketContext = createContext<ChatWebSocketContextType | null>(
@@ -35,6 +44,8 @@ export const ChatWebSocketProvider: React.FC<ChatWebSocketProviderProps> = ({
 }) => {
     const { user } = useAuth();
     const queryClient = useQueryClient();
+    const [advisorResponse, setAdvisorResponse] = useState('');
+    const [isAdvisorLoading, setIsAdvisorLoading] = useState(false);
 
     const websocketUrl = useMemo(() => {
         return user?.id && conversationId
@@ -45,37 +56,50 @@ export const ChatWebSocketProvider: React.FC<ChatWebSocketProviderProps> = ({
     const { isConnected, sendMessage: wsSendMessage } = useWebSocket({
         url: websocketUrl || '',
         enabled: !!websocketUrl,
-        onMessage: useCallback((message: any) => {
-            if (message.type === 'chat_message') {
-                const newMessage: ChatMessage = message.data;
+        onMessage: useCallback(
+            (message: any) => {
+                if (message.type === 'chat_message') {
+                    const newMessage: ChatMessage = message.data;
 
-                queryClient.setQueryData<InfiniteData<ChatMessage[]>>(
-                    ['messages', newMessage.conversationId],
-                    (oldData) => {
-                        if (!oldData) {
+                    queryClient.setQueryData<InfiniteData<ChatMessage[]>>(
+                        ['messages', newMessage.conversationId],
+                        (oldData) => {
+                            if (!oldData) {
+                                return {
+                                    pages: [[newMessage]],
+                                    pageParams: [0],
+                                };
+                            }
+
+                            const newData = { ...oldData };
+                            const newPages = [...newData.pages];
+
+                            newPages[0] = [...newPages[0], newMessage];
+
                             return {
-                                pages: [[newMessage]],
-                                pageParams: [0],
+                                ...newData,
+                                pages: newPages,
                             };
                         }
+                    );
 
-                        const newData = { ...oldData };
-                        const newPages = [...newData.pages];
-
-                        newPages[0] = [...newPages[0], newMessage];
-
-                        return {
-                            ...newData,
-                            pages: newPages,
-                        };
-                    }
-                );
-
-                queryClient.invalidateQueries({ queryKey: ['conversations'] });
-            } else if (message.type === 'connected') {
-                console.log('Connected to chat WebSocket:', message.message);
-            }
-        }, []),
+                    queryClient.invalidateQueries({
+                        queryKey: ['conversations'],
+                    });
+                } else if (message.type === 'connected') {
+                    console.log(
+                        'Connected to chat WebSocket:',
+                        message.message
+                    );
+                } else if (message.type === 'advisor_chunk') {
+                    if (!isAdvisorLoading) setIsAdvisorLoading(true);
+                    setAdvisorResponse((prev) => prev + message.content);
+                } else if (message.type === 'advisor_stream_end') {
+                    setIsAdvisorLoading(false);
+                }
+            },
+            [queryClient, isAdvisorLoading]
+        ),
         onConnect: useCallback(() => {
             console.log('Connected to chat WebSocket');
         }, []),
@@ -114,12 +138,38 @@ export const ChatWebSocketProvider: React.FC<ChatWebSocketProviderProps> = ({
         [isConnected, wsSendMessage, user, conversationId]
     );
 
+    const askAdvisor = useCallback(
+        (question: string) => {
+            if (!isConnected) {
+                console.error('WebSocket not connected');
+                return;
+            }
+            setAdvisorResponse('');
+            setIsAdvisorLoading(true);
+
+            wsSendMessage({
+                type: 'ask_advisor',
+                content: question,
+            });
+        },
+        [isConnected, wsSendMessage]
+    );
+
     const contextValue = useMemo(
         () => ({
             isConnected,
             sendMessage,
+            askAdvisor,
+            advisorResponse,
+            isAdvisorLoading,
         }),
-        [isConnected, sendMessage]
+        [
+            isConnected,
+            sendMessage,
+            askAdvisor,
+            advisorResponse,
+            isAdvisorLoading,
+        ]
     );
 
     return (

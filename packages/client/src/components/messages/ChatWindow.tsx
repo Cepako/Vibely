@@ -5,7 +5,6 @@ import {
     IconPaperclip,
     IconSend,
     IconDotsVertical,
-    IconRobot,
     IconX,
 } from '@tabler/icons-react';
 import { useAuth } from '../auth/AuthProvider';
@@ -14,6 +13,7 @@ import type { User } from '../../types/user';
 import MessageBubble from './MessageBubble';
 import { ChatWindowHeader } from './ChatWindowHeader';
 import { usePrevious } from '../hooks/usePrevious';
+import { AdvisorPopover } from '../advisor/AdvisorPopover';
 
 interface ChatWindowProps {
     conversation: Conversation;
@@ -387,14 +387,12 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                     >
                         <IconPaperclip size={20} />
                     </button>
-
                     <input
                         type='file'
                         ref={fileInputRef}
                         onChange={handleFileSelect}
                         className='hidden'
                     />
-
                     <div className='flex-1'>
                         <textarea
                             ref={textareaRef}
@@ -407,15 +405,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                             disabled={isSending}
                         />
                     </div>
-
-                    <button
-                        className={`flex-shrink-0 cursor-pointer rounded-full bg-cyan-600 p-2 text-white transition-colors hover:bg-cyan-700`}
-                        onClick={() => {}} //TODO: handle AI
-                        title='Conversation Advisor'
-                    >
-                        <IconRobot size={20} />
-                    </button>
-
+                    <AdvisorPopover />
                     <button
                         className={`flex-shrink-0 rounded-full p-2 transition-colors ${
                             messageText.trim() || selectedFile

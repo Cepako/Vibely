@@ -4,10 +4,12 @@ import { Type } from '@sinclair/typebox';
 import WebSocket from 'ws';
 import { websocketManager } from '../ws/websocketManager';
 import { MessageService } from '@/message/message.service';
+import { AIService } from '@/ai/ai.service';
 
 const websocketPlugin: FastifyPluginAsync = async (fastify) => {
     await fastify.register(fastifyWebsocket);
     const messageService = new MessageService();
+    const aiService = new AIService();
 
     fastify.register(async function (fastify) {
         fastify.get(
@@ -155,8 +157,17 @@ const websocketPlugin: FastifyPluginAsync = async (fastify) => {
                 }
 
                 socket.on('message', async (message: Buffer) => {
+                    let data;
                     try {
-                        const data = JSON.parse(message.toString());
+                        data = JSON.parse(message.toString());
+                    } catch (error) {
+                        fastify.log.error(
+                            'Invalid chat message format (JSON.parse failed):',
+                            error
+                        );
+                        return;
+                    }
+                    try {
                         fastify.log.info('Chat message received:', data);
 
                         if (data.type === 'chat_message') {
@@ -165,12 +176,56 @@ const websocketPlugin: FastifyPluginAsync = async (fastify) => {
                                 conversationId,
                                 contentType: 'text',
                             });
+                        } else if (data.type === 'ask_advisor') {
+                            fastify.log.info(
+                                `User ${userId} asked advisor: ${data.content}`
+                            );
+
+                            const responseStream =
+                                await aiService.generateAnswer(data.content);
+
+                            let fullAiReply = '';
+
+                            for await (const part of responseStream) {
+                                const chunk = part.message.content;
+                                fullAiReply += chunk;
+
+                                if (socket.readyState === WebSocket.OPEN) {
+                                    socket.send(
+                                        JSON.stringify({
+                                            type: 'advisor_chunk',
+                                            content: chunk,
+                                        })
+                                    );
+                                } else {
+                                    fastify.log.warn(
+                                        'Client disconnected during advisor stream.'
+                                    );
+                                    break;
+                                }
+                            }
+
+                            if (socket.readyState === WebSocket.OPEN) {
+                                socket.send(
+                                    JSON.stringify({
+                                        type: 'advisor_stream_end',
+                                    })
+                                );
+                            }
                         }
-                    } catch (error) {
+                    } catch (error: any) {
                         fastify.log.error(
-                            'Invalid chat message format:',
-                            error
+                            'Error processing WebSocket message or AI stream:',
+                            error.message
                         );
+                        if (socket.readyState === WebSocket.OPEN) {
+                            socket.send(
+                                JSON.stringify({
+                                    type: 'error',
+                                    message: 'Error processing your request.',
+                                })
+                            );
+                        }
                     }
                 });
 

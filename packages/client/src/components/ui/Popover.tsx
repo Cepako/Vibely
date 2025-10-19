@@ -62,6 +62,8 @@ interface PopoverProps {
     /** Additional CSS classes for popover container */
     className?: string;
     /** Additional inline styles */
+    titleClassName?: string;
+    arrowClassName?: string;
     style?: CSSProperties;
     /** Whether popover is disabled */
     disabled?: boolean;
@@ -98,6 +100,8 @@ const Popover: React.FC<PopoverProps> = ({
     arrow: showArrow = true,
     maxWidth = 300,
     className = '',
+    titleClassName = '',
+    arrowClassName = '',
     style = {},
     disabled = false,
     offset: offsetValue = 8,
@@ -210,16 +214,21 @@ const Popover: React.FC<PopoverProps> = ({
                             {...containerProps}
                         >
                             {(title || showCloseButton) && (
-                                <div className='flex items-center justify-between border-b p-4 pb-3'>
+                                <div
+                                    className={cn(
+                                        'text-primary-600 flex items-center justify-between border-b py-1 pr-1 pl-3',
+                                        titleClassName
+                                    )}
+                                >
                                     {title && (
-                                        <h3 className='text-lg font-semibold text-gray-900'>
+                                        <h3 className='text-lg font-semibold'>
                                             {title}
                                         </h3>
                                     )}
                                     {showCloseButton && (
                                         <button
                                             onClick={handleClose}
-                                            className='text-gray-400 transition-colors hover:text-gray-600'
+                                            className='cursor-pointer text-slate-400 transition-colors duration-150 hover:text-slate-600'
                                             aria-label='Close popover'
                                             type='button'
                                         >
@@ -233,7 +242,10 @@ const Popover: React.FC<PopoverProps> = ({
                                 <FloatingArrow
                                     ref={arrowRef}
                                     context={context}
-                                    className='fill-white stroke-gray-200'
+                                    className={cn(
+                                        'stroke-primary-200 fill-white',
+                                        arrowClassName
+                                    )}
                                     width={16}
                                     height={8}
                                 />
