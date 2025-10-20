@@ -182,7 +182,11 @@ const websocketPlugin: FastifyPluginAsync = async (fastify) => {
                             );
 
                             const responseStream =
-                                await aiService.generateAnswer(data.content);
+                                await aiService.generateAnswer(
+                                    conversationId,
+                                    userId,
+                                    data.content
+                                );
 
                             let fullAiReply = '';
 
