@@ -365,6 +365,7 @@ export const users = pgTable("users", {
 	createdAt: timestamp("created_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
 	updatedAt: timestamp("updated_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
 	role: userRoleType().default('user').notNull(),
+	refreshToken: text("refresh_token"),
 }, (table) => [
 	index("idx_users_email").using("btree", table.email.asc().nullsLast().op("text_ops")),
 	index("idx_users_status").using("btree", table.status.asc().nullsLast().op("enum_ops")),

@@ -11,7 +11,10 @@ const EnvSchema = Type.Object({
     DATABASE_URL: Type.String({ format: 'uri' }),
     PORT: Type.Optional(Type.Number()),
     JWT_SECRET: Type.String(),
+    JWT_ACCESS_EXPIERS: Type.String(),
     COOKIE_SECRET: Type.String(),
+    JWT_REFRESH_SECRET: Type.String(),
+    JWT_REFRESH_EXPIRES: Type.String(),
 });
 
 export type Env = Static<typeof EnvSchema>;
@@ -25,7 +28,10 @@ const env = {
     DATABASE_URL: process.env.DATABASE_URL,
     PORT: process.env.PORT ? Number(process.env.PORT) : undefined,
     JWT_SECRET: process.env.JWT_SECRET,
+    JWT_ACCESS_EXPIERS: process.env.JWT_ACCESS_EXPIERS,
     COOKIE_SECRET: process.env.COOKIE_SECRET,
+    JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET,
+    JWT_REFRESH_EXPIRES: process.env.JWT_REFRESH_EXPIRES,
 };
 
 if (!validate(env)) {

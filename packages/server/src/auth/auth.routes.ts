@@ -25,4 +25,8 @@ export default async function authRoutes(fastify: FastifyInstance) {
     fastify.post('/logout', (req: FastifyRequest, reply: FastifyReply) =>
         authController.logout(req, reply)
     );
+
+    fastify.post('/refresh', (req: FastifyRequest, reply: FastifyReply) =>
+        authController.refreshToken(req, reply)
+    );
 }

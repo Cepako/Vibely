@@ -1,6 +1,12 @@
-import { createContext, useContext, useEffect, useRef } from 'react';
+import {
+    createContext,
+    useCallback,
+    useContext,
+    useEffect,
+    useRef,
+} from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { setAuthErrorCallback } from '../../lib/apiClient';
+import { apiClient, setAuthErrorCallback } from '../../lib/apiClient';
 
 type UserPayload = {
     id: number;
@@ -25,18 +31,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data, isLoading, refetch } = useQuery<UserPayload | null>({
         queryKey: ['verify'],
         queryFn: async () => {
-            const res = await fetch('/api/auth/verify', {
-                credentials: 'include',
-            });
-
-            if (!res.ok) {
+            try {
+                const data = await apiClient.get<{ user: UserPayload | null }>(
+                    '/auth/verify'
+                );
+                return data.user;
+            } catch (error) {
                 return null;
             }
-
-            const data = await res.json();
-            return data.user;
         },
-        staleTime: 1000 * 60 * 5,
+        staleTime: 1000 * 60 * 15,
         retry: false,
         refetchOnWindowFocus: true,
     });
@@ -46,42 +50,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return result.data ?? null;
     };
 
-    const logout = async () => {
-        try {
-            await fetch('/api/auth/logout', {
-                method: 'POST',
-                credentials: 'include',
-            });
-        } catch (error) {
-            console.error('Logout error:', error);
-        }
-        queryClient.clear();
-
-        const currentPath = window.location.pathname;
-        if (currentPath !== '/') {
-            sessionStorage.setItem('redirectAfterLogin', currentPath);
-        }
-
-        window.location.href = '/';
-    };
-
-    useEffect(() => {
-        setAuthErrorCallback(() => {
+    const performLogout = useCallback(
+        async (options: { isAutoLogout?: boolean } = {}) => {
+            const { isAutoLogout = false } = options;
             if (isRedirectingRef.current) return;
             isRedirectingRef.current = true;
 
-            queryClient.setQueryData(['verify'], null);
+            try {
+                if (!isAutoLogout) await apiClient.post('/auth/logout', {});
+            } catch (error) {
+                console.error('Logout error:', error);
+            }
+
             queryClient.clear();
+            queryClient.setQueryData(['verify'], null);
 
             const currentPath = window.location.pathname;
             if (currentPath !== '/') {
                 sessionStorage.setItem('redirectAfterLogin', currentPath);
-                sessionStorage.setItem('sessionExpired', 'true');
             }
 
+            if (isAutoLogout) sessionStorage.setItem('sessionExpired', 'true');
+
             window.location.href = '/';
-        });
-    }, [queryClient]);
+        },
+        [queryClient]
+    );
+
+    const manualLogout = async () => {
+        await performLogout({ isAutoLogout: false });
+    };
+
+    useEffect(() => {
+        setAuthErrorCallback(() => performLogout({ isAutoLogout: true }));
+    }, [performLogout]);
 
     return (
         <AuthContext.Provider
@@ -89,7 +91,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 user: data ?? null,
                 isAuthenticated: !!data,
                 isLoading,
-                logout,
+                logout: manualLogout,
                 refreshUser,
             }}
         >

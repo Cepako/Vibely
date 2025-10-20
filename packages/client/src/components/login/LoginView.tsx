@@ -6,6 +6,7 @@ import { Link, useNavigate } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../auth/AuthProvider';
 import toast from 'react-hot-toast';
+import { apiClient } from '../../lib/apiClient';
 
 type LoginFormData = {
     email: string;
@@ -36,18 +37,7 @@ export default function LoginView() {
 
         try {
             const { email, password } = data;
-            const response = await fetch('/api/auth/login', {
-                method: 'POST',
-                body: JSON.stringify({ email, password }),
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            });
-
-            if (!response.ok) {
-                setIsError(true);
-                return;
-            }
+            await apiClient.post('/auth/login', { email, password });
 
             const user = await refreshUser();
             if (!user) {

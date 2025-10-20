@@ -3,6 +3,8 @@ import { LoginBody } from './auth.schema';
 import { AuthService } from './auth.service';
 import { ENV } from '../utils/env';
 
+const ACCESS_TOKEN_MAX_AGE = 60 * 15; // 15m
+const REFRESH_TOKEN_MAX_AGE = 4 * 60 * 60; // 4h
 export default class AuthController {
     private authService: AuthService;
 
@@ -11,44 +13,100 @@ export default class AuthController {
     }
 
     async verifyToken(req: FastifyRequest, reply: FastifyReply) {
-        const token = req.cookies.token;
+        const token = req.cookies.accessToken;
 
         if (!token) {
             return reply.send({ user: null });
         }
 
-        const payload = this.authService.verifyToken(token);
-        return reply.send({ user: payload });
+        try {
+            const payload = this.authService.verifyAccessToken(token);
+            return reply.send({ user: payload });
+        } catch (error) {
+            return reply.send({ user: null });
+        }
     }
 
     async login(req: FastifyRequest<{ Body: LoginBody }>, reply: FastifyReply) {
         const { email, password } = req.body;
 
-        const token = await this.authService.login(email, password);
+        const { accessToken, refreshToken } = await this.authService.login(
+            email,
+            password
+        );
 
         return reply
             .status(200)
-            .setCookie('token', token, {
+            .setCookie('accessToken', accessToken, {
                 httpOnly: true,
                 secure: ENV.NODE_ENV === 'production',
                 sameSite: 'strict',
                 path: '/',
-                maxAge: 60 * 60 * 2,
+                maxAge: ACCESS_TOKEN_MAX_AGE,
+            })
+            .setCookie('refreshToken', refreshToken, {
+                httpOnly: true,
+                secure: ENV.NODE_ENV === 'production',
+                sameSite: 'strict',
+                path: '/api/auth/refresh',
+                maxAge: REFRESH_TOKEN_MAX_AGE,
             })
             .send({ success: true });
     }
 
-    async logout(req: FastifyRequest, reply: FastifyReply) {
-        const token = req.cookies.token;
+    async refreshToken(req: FastifyRequest, reply: FastifyReply) {
+        const token = req.cookies.refreshToken;
 
-        if (token) {
-            const payload = this.authService.verifyToken(token);
-
-            const { id } = payload;
-
-            this.authService.updateLastLoginAt(id);
+        if (!token) {
+            return reply
+                .status(401)
+                .send({ success: false, message: 'No refresh token' });
         }
 
-        reply.clearCookie('token', { path: '/' }).send({ success: true });
+        try {
+            const newAccessToken =
+                await this.authService.refreshAccessToken(token);
+
+            return reply
+                .status(200)
+                .setCookie('accessToken', newAccessToken, {
+                    httpOnly: true,
+                    secure: ENV.NODE_ENV === 'production',
+                    sameSite: 'strict',
+                    path: '/',
+                    maxAge: ACCESS_TOKEN_MAX_AGE,
+                })
+                .send({ success: true });
+        } catch (error: any) {
+            reply
+                .clearCookie('accessToken', { path: '/' })
+                .clearCookie('refreshToken', { path: '/api/auth/refresh' });
+
+            return reply.status(401).send({
+                success: false,
+                message: error.message || 'Invalid token',
+            });
+        }
+    }
+
+    async logout(req: FastifyRequest, reply: FastifyReply) {
+        const token = req.cookies.token;
+        let userId: number | null = null;
+
+        if (token) {
+            try {
+                const payload = this.authService.verifyAccessToken(token);
+                userId = payload.id;
+            } catch (error) {}
+        }
+
+        if (userId) {
+            await this.authService.logout(userId);
+        }
+
+        reply
+            .clearCookie('accessToken', { path: '/' })
+            .clearCookie('refreshToken', { path: '/api/auth/refresh' })
+            .send({ success: true });
     }
 }

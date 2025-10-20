@@ -8,38 +8,59 @@ import jwt from 'jsonwebtoken';
 import { ENV } from '../utils/env';
 import { Payload } from './auth.schema';
 
+const InvalidToken = createError(
+    'INVALID_TOKEN',
+    'Invalid or expired token',
+    401
+);
+const InvalidCredentials = createError(
+    'INVALID_CREDENTIALS',
+    'Invalid credentials',
+    401
+);
+const TokenRevoked = createError(
+    'TOKEN_REVOKED',
+    'Token has been revoked',
+    401
+);
+
 interface IAuthService {
-    verifyToken: (token: string) => Payload;
-    login: (email: string, password: string) => Promise<string>;
-    updateLastLoginAt: (userId: number) => Promise<void>;
+    verifyAccessToken: (token: string) => Payload;
+    login: (
+        email: string,
+        password: string
+    ) => Promise<{ accessToken: string; refreshToken: string }>;
+    refreshAccessToken: (refreshToken: string) => Promise<string>;
+    logout: (userId: number) => Promise<void>;
 }
 
 export class AuthService implements IAuthService {
     constructor() {}
 
-    verifyToken(token: string): Payload {
+    verifyAccessToken(token: string): Payload {
         try {
             const payload = jwt.verify(token, ENV.JWT_SECRET);
             return payload as Payload;
         } catch (error) {
-            const InvalidToken = createError(
-                'INVALID_TOKEN',
-                'Invalid or expired token',
-                401
-            );
             throw new InvalidToken();
         }
     }
 
-    async login(email: string, password: string): Promise<string> {
+    private verifyRefreshToken(token: string): Payload {
+        try {
+            const payload = jwt.verify(token, ENV.JWT_REFRESH_SECRET);
+            return payload as Payload;
+        } catch (error) {
+            throw new InvalidToken();
+        }
+    }
+
+    async login(
+        email: string,
+        password: string
+    ): Promise<{ accessToken: string; refreshToken: string }> {
         email = email.trim().toLowerCase();
         const user = await this.findUserByEmail(email);
-
-        const InvalidCredentials = createError(
-            'INVALID_CREDENTIALS',
-            'Invalid credentials',
-            401
-        );
 
         if (!user) {
             throw new InvalidCredentials();
@@ -54,13 +75,45 @@ export class AuthService implements IAuthService {
             throw new InvalidCredentials();
         }
 
-        return this.generateToken(user);
+        const accessToken = this.generateAccessToken(user);
+        const refreshToken = this.generateRefreshToken(user);
+
+        await this.storeRefreshToken(user.id, refreshToken);
+
+        return { accessToken, refreshToken };
     }
 
-    async updateLastLoginAt(userId: number) {
+    async refreshAccessToken(token: string): Promise<string> {
+        let payload: Payload;
+        try {
+            payload = this.verifyRefreshToken(token);
+        } catch (error) {
+            throw new TokenRevoked();
+        }
+
+        const user = await db.query.users.findFirst({
+            where: eq(users.id, payload.id),
+        });
+
+        if (!user || !user.refreshToken) {
+            throw new TokenRevoked();
+        }
+
+        const isTokenValid = await bcrypt.compare(token, user.refreshToken);
+        if (!isTokenValid) {
+            throw new TokenRevoked();
+        }
+
+        return this.generateAccessToken(user);
+    }
+
+    async logout(userId: number) {
         await db
             .update(users)
-            .set({ lastLoginAt: new Date().toISOString() })
+            .set({
+                lastLoginAt: new Date().toISOString(),
+                refreshToken: null,
+            })
             .where(eq(users.id, userId));
     }
 
@@ -74,7 +127,15 @@ export class AuthService implements IAuthService {
         return await bcrypt.compare(password, hashedPassword);
     }
 
-    private generateToken(user: User) {
+    private async storeRefreshToken(userId: number, token: string) {
+        const hashedToken = await bcrypt.hash(token, 10);
+        await db
+            .update(users)
+            .set({ refreshToken: hashedToken })
+            .where(eq(users.id, userId));
+    }
+
+    private generateAccessToken(user: User) {
         const payload = {
             id: user.id,
             email: user.email,
@@ -82,7 +143,17 @@ export class AuthService implements IAuthService {
         };
 
         return jwt.sign(payload, ENV.JWT_SECRET, {
-            expiresIn: '2h',
+            expiresIn: ENV.JWT_ACCESS_EXPIERS as any,
+        });
+    }
+
+    private generateRefreshToken(user: User) {
+        const payload = {
+            id: user.id,
+        };
+
+        return jwt.sign(payload, ENV.JWT_REFRESH_SECRET, {
+            expiresIn: ENV.JWT_REFRESH_EXPIRES as any,
         });
     }
 }
