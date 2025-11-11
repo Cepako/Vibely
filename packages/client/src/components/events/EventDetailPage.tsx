@@ -40,14 +40,10 @@ export default function EventDetailPage() {
         data: event,
         isLoading,
         error: eventError,
-        refetch: refetchEvent,
     } = useEventDetail(numericEventId);
 
-    const {
-        data: participants = [],
-        isLoading: participantsLoading,
-        refetch: refetchParticipants,
-    } = useEventParticipants(numericEventId);
+    const { data: participants = [], isLoading: participantsLoading } =
+        useEventParticipants(numericEventId);
 
     const { categories } = useEventCategories();
 

@@ -138,20 +138,20 @@ const LocationSuggestionsSchema = Type.Object({
 const SuccessResponse = <T>(dataSchema: T) =>
     Type.Object({
         success: Type.Literal(true),
-        data: dataSchema,
+        data: dataSchema as any,
     });
 
 const PaginatedResponse = <T>(dataSchema: T) =>
     Type.Object({
         success: Type.Literal(true),
-        data: dataSchema,
+        data: dataSchema as any,
         pagination: PaginationSchema,
     });
 
 const SearchResponse = <T>(dataSchema: T) =>
     Type.Object({
         success: Type.Literal(true),
-        data: dataSchema,
+        data: dataSchema as any,
         query: Type.String(),
     });
 

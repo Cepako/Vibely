@@ -1,10 +1,8 @@
 import {
     IconChevronLeft,
     IconChevronRight,
-    IconDots,
     IconHeart,
     IconMessageCircle,
-    IconMessageReport,
     IconArrowLeft,
     IconHeartFilled,
 } from '@tabler/icons-react';
@@ -13,7 +11,6 @@ import UserAvatar from '../ui/UserAvatar';
 import { cn, formatTimeAgo } from '../../utils/utils';
 import { type ReactNode, useRef, useState, useEffect } from 'react';
 import PrivacyIcon from './PrivacyIcon';
-import DropdownMenu, { type DropdownMenuItem } from '../ui/DropdownMenu';
 import CommentsSection from '../comment/CommentsSection';
 import { useTogglePostLike } from '../comment/hooks/useComments';
 import { useAuth } from '../auth/AuthProvider';
@@ -110,17 +107,6 @@ export default function PostDetails({ post: initialPost }: PostDetailsProps) {
             }, 100);
         }
     };
-
-    const postMenuItems: DropdownMenuItem[] = [
-        {
-            id: 'report',
-            label: 'Report post',
-            icon: <IconMessageReport size={16} />,
-            onClick: () => console.log('Report post', post.id),
-            className:
-                'p-3 transition-colors hover:bg-rose-50 text-rose-600 hover:text-rose-700',
-        },
-    ];
 
     const hasMedia = post.contentUrl;
     const likesCount = post.postReactions.length;
@@ -234,21 +220,6 @@ export default function PostDetails({ post: initialPost }: PostDetailsProps) {
                                         />
                                     </div>
                                 </div>
-                            </div>
-
-                            <div className='flex flex-shrink-0 items-center space-x-1'>
-                                <DropdownMenu
-                                    trigger={
-                                        <button
-                                            className='rounded-full p-2 transition-colors hover:bg-slate-100'
-                                            aria-label='Post options'
-                                        >
-                                            <IconDots size={20} />
-                                        </button>
-                                    }
-                                    items={postMenuItems}
-                                    placement='bottom-end'
-                                />
                             </div>
                         </div>
 

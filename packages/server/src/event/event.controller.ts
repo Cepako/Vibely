@@ -430,44 +430,4 @@ export class EventController {
             });
         }
     }
-
-    // Create event category (admin only)
-    async createEventCategory(request: FastifyRequest, reply: FastifyReply) {
-        try {
-            const userRole = (request.user as any).role;
-
-            if (userRole !== 'admin') {
-                return reply.status(403).send({
-                    error: 'Admin access required',
-                });
-            }
-
-            const { name, description } = request.body as {
-                name: string;
-                description?: string;
-            };
-
-            if (!name || name.trim().length === 0) {
-                return reply.status(400).send({
-                    error: 'Category name is required',
-                });
-            }
-
-            const category = await this.eventService.createEventCategory(
-                name,
-                description
-            );
-
-            reply.status(201).send({
-                success: true,
-                data: category,
-                message: 'Event category created successfully',
-            });
-        } catch (error: any) {
-            console.error('Create event category controller error:', error);
-            reply.status(error.statusCode || 500).send({
-                error: error.message || 'Failed to create event category',
-            });
-        }
-    }
 }

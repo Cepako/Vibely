@@ -155,10 +155,7 @@ export class ExploreService implements IExploreService {
             );
 
             // Build base query conditions
-            let whereConditions = [
-                notInArray(users.id, excludedUserIds),
-                eq(users.status, 'active'),
-            ];
+            let whereConditions = [notInArray(users.id, excludedUserIds)];
 
             // Apply filters
             if (filters?.location?.city) {
@@ -287,12 +284,12 @@ export class ExploreService implements IExploreService {
     ): Promise<EventWithDetails[]> {
         try {
             // Get user's interests for personalized recommendations
-            const currentUserInterests = await db.query.userInterests.findMany({
-                where: eq(userInterests.userId, userId),
-            });
-            const userInterestIds = currentUserInterests.map(
-                (ui) => ui.interestId
-            );
+            // const currentUserInterests = await db.query.userInterests.findMany({
+            //     where: eq(userInterests.userId, userId),
+            // });
+            // const userInterestIds = currentUserInterests.map(
+            //     (ui) => ui.interestId
+            // );
 
             // Get user's friends for friend-organized events
             const friendsList = await this.friendshipService.getFriends(userId);
@@ -529,7 +526,6 @@ export class ExploreService implements IExploreService {
 
             let whereConditions = [
                 notInArray(users.id, excludedUserIds),
-                eq(users.status, 'active'),
                 or(
                     sql`LOWER(${users.name}) LIKE ${searchTerm}`,
                     sql`LOWER(${users.surname}) LIKE ${searchTerm}`,

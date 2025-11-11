@@ -18,7 +18,7 @@ export default function EventsView() {
     const createEventDialog = useDialog(false);
 
     const { events, isLoading: eventsLoading } = useEvents(activeTab);
-    const { categories, isLoading: categoriesLoading } = useEventCategories();
+    const { categories } = useEventCategories();
 
     const filteredEvents = useMemo(() => {
         if (!events) return [];

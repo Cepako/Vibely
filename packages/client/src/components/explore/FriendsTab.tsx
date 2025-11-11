@@ -12,10 +12,7 @@ interface FriendsTabProps {
     onFiltersChange: (filters: ExploreFilters) => void;
 }
 
-export default function FriendsTab({
-    filters,
-    onFiltersChange,
-}: FriendsTabProps) {
+export default function FriendsTab({ filters }: FriendsTabProps) {
     const [searchQuery, setSearchQuery] = useState('');
     const isSearching = searchQuery.trim().length >= 2;
 

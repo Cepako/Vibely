@@ -32,13 +32,11 @@ export default function EventsHeader({
     viewMode,
     searchQuery,
     selectedCategories,
-    showFilters,
     categories,
     onTabChange,
     onViewModeChange,
     onSearchChange,
     onCategoriesChange,
-    onFiltersToggle,
     onCreateEvent,
 }: EventsHeaderProps) {
     const [filterDialogOpen, setFilterDialogOpen] = useState(false);

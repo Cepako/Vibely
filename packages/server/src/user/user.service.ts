@@ -13,7 +13,7 @@ import bcrypt from 'bcrypt';
 import createError from '@fastify/error';
 import { handleFileUpload } from '../utils/handleFileUpload';
 import { deleteFile } from '../utils/deleteFile';
-import { interests, userBlocks } from '../db/schema';
+import { interests } from '../db/schema';
 import { FriendshipService } from '../friendship/friendship.service';
 
 interface IUserService {
@@ -185,15 +185,6 @@ export default class UserService implements IUserService {
         const user = await this.findUserById(profileId);
         if (!user) return null;
 
-        if (user.status !== 'active') {
-            const UserUnavailable = createError(
-                'USER_UNAVAILABLE',
-                'User profile is not available',
-                403
-            );
-            throw new UserUnavailable();
-        }
-
         const isBlocked = await this.checkUserBlocked(viewerId, profileId);
         if (isBlocked) {
             const UserBlocked = createError(
@@ -246,12 +237,6 @@ export default class UserService implements IUserService {
         });
 
         if (userBlock) return true;
-
-        const viewerAdminBlock = await db.query.userBlocks.findFirst({
-            where: eq(userBlocks.userId, viewerId),
-        });
-
-        if (viewerAdminBlock) return true;
 
         return false;
     }

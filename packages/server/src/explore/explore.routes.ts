@@ -115,7 +115,7 @@ export async function exploreRoutes(fastify: FastifyInstance) {
                 description: 'Returns most popular interests among users.',
             },
         },
-        async (request, reply) => {
+        async (_, reply) => {
             reply.code(200).send({
                 success: true,
                 data: [],
@@ -134,7 +134,7 @@ export async function exploreRoutes(fastify: FastifyInstance) {
                 description: 'Returns popular cities and regions among users.',
             },
         },
-        async (request, reply) => {
+        async (_, reply) => {
             reply.code(200).send({
                 success: true,
                 data: {

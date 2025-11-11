@@ -963,7 +963,6 @@ export class EventService implements IEventService {
             const organizerName = `${event.user.name} ${event.user.surname}`;
             for (const userId of newUserIds) {
                 await this.notificationService.notifyEventInvitation(
-                    organizerId,
                     userId,
                     organizerName,
                     event.title,

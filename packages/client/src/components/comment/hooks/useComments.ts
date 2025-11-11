@@ -200,7 +200,7 @@ export const useToggleCommentLike = (postId: number) => {
 
             return { previousComments };
         },
-        onError: (error: Error, commentId, context) => {
+        onError: (error: Error, _, context) => {
             if (context?.previousComments) {
                 queryClient.setQueryData(
                     ['comments', postId],
@@ -272,7 +272,7 @@ export const useTogglePostLike = (profileId: number) => {
 
             return { previousPosts };
         },
-        onError: (error: Error, postId, context) => {
+        onError: (error: Error, _, context) => {
             if (context?.previousPosts) {
                 queryClient.setQueryData(
                     ['posts', user?.id, profileId],

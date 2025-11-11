@@ -8,10 +8,7 @@ interface EventsTabProps {
     onFiltersChange: (filters: EventFilters) => void;
 }
 
-export default function EventsTab({
-    filters,
-    onFiltersChange,
-}: EventsTabProps) {
+export default function EventsTab({ filters }: EventsTabProps) {
     const [searchQuery, setSearchQuery] = useState('');
 
     const currentFilters = searchQuery.trim()

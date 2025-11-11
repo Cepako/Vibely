@@ -1,10 +1,8 @@
 import { useState } from 'react';
 import {
     IconCamera,
-    IconDotsVertical,
     IconHeart,
     IconMessageCircle,
-    IconMessageReportFilled,
     IconVideo,
 } from '@tabler/icons-react';
 import { useAuth } from '../auth/AuthProvider';
@@ -12,7 +10,6 @@ import { useTogglePostLike } from '../comment/hooks/useComments';
 import { formatTimeAgo } from '../../utils/utils';
 import UserAvatar from '../ui/UserAvatar';
 import PrivacyIcon from '../post/PrivacyIcon';
-import DropdownMenu from '../ui/DropdownMenu';
 import { useDialog } from '../ui/Dialog';
 import PostLikesDialog from '../post/PostLikesDialog';
 import CommentsSection from '../comment/CommentsSection';
@@ -44,16 +41,6 @@ export default function HomePostCard({ post }: HomePostCardProps) {
         }
     };
 
-    const postMenuItems = [
-        {
-            id: 'report',
-            label: 'Report',
-            icon: <IconMessageReportFilled />,
-            onClick: () => console.log('Report post', post.id),
-            className: 'p-2',
-        },
-    ];
-
     return (
         <div className='mb-6 w-full rounded-lg border border-slate-200 bg-white shadow-sm'>
             <div className='flex items-center justify-between p-4'>
@@ -79,19 +66,6 @@ export default function HomePostCard({ post }: HomePostCardProps) {
                         </div>
                     </div>
                 </div>
-                <DropdownMenu
-                    trigger={
-                        <button className='cursor-pointer rounded-full p-1 hover:bg-slate-100'>
-                            <IconDotsVertical
-                                size={20}
-                                className='text-slate-400'
-                            />
-                        </button>
-                    }
-                    items={postMenuItems}
-                    placement='bottom-start'
-                    className='border-slate-300 shadow-lg'
-                />
             </div>
 
             {post.content && (

@@ -1,6 +1,4 @@
 export type Gender = 'male' | 'female';
-export type Role = 'admin' | 'user';
-export type Status = 'active' | 'inactive' | 'suspended' | 'banned';
 
 export type User = {
     id: number;
@@ -13,9 +11,7 @@ export type User = {
     city?: string;
     region?: string;
     dateOfBirth: string;
-    status: Status;
     lastLoginAt?: string;
     createdAt: string;
     updatedAt: string;
-    role: Role;
 };

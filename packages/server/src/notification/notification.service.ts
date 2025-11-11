@@ -239,7 +239,6 @@ export class NotificationService {
     }
 
     async notifyEventInvitation(
-        organizerId: number,
         invitedUserId: number,
         organizerName: string,
         eventTitle: string,

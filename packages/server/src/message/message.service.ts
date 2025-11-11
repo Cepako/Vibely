@@ -328,21 +328,11 @@ export class MessageService implements IMessageService {
                     name: true,
                     surname: true,
                     profilePictureUrl: true,
-                    status: true,
                 },
             });
 
             if (participantUsers.length !== uniqueParticipants.length) {
                 throw new Error('Some participants not found');
-            }
-
-            const activeUsers = participantUsers.filter(
-                (user) => user.status === 'active'
-            );
-            if (activeUsers.length !== participantUsers.length) {
-                throw new Error(
-                    'Cannot create conversation with inactive users'
-                );
             }
 
             const conversationType =

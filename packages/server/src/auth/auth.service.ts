@@ -139,7 +139,6 @@ export class AuthService implements IAuthService {
         const payload = {
             id: user.id,
             email: user.email,
-            role: user.role,
         };
 
         return jwt.sign(payload, ENV.JWT_SECRET, {

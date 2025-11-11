@@ -161,7 +161,7 @@ export interface EventWithDetails extends EventBase {
 export const ApiResponseSchema = <T extends any>(dataSchema: T) =>
     Type.Object({
         success: Type.Boolean(),
-        data: Type.Optional(dataSchema),
+        data: Type.Optional(dataSchema as any),
         message: Type.Optional(Type.String()),
         error: Type.Optional(Type.String()),
     });

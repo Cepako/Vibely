@@ -425,28 +425,4 @@ export async function eventRoutes(fastify: FastifyInstance) {
         async (req: FastifyRequest, reply: FastifyReply) =>
             eventController.getEventCategories(req, reply)
     );
-
-    // Create event category (admin only)
-    fastify.post(
-        '/categories',
-        {
-            schema: {
-                description: 'Create a new event category (admin only)',
-                tags: ['Event Categories'],
-                body: Type.Object({
-                    name: Type.String({ minLength: 1, maxLength: 100 }),
-                    description: Type.Optional(Type.String({ maxLength: 500 })),
-                }),
-            },
-        },
-        async (
-            req: FastifyRequest<{
-                Body: {
-                    name: string;
-                    description?: string;
-                };
-            }>,
-            reply: FastifyReply
-        ) => eventController.createEventCategory(req, reply)
-    );
 }

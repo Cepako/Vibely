@@ -11,7 +11,6 @@ import { apiClient, setAuthErrorCallback } from '../../lib/apiClient';
 type UserPayload = {
     id: number;
     email: string;
-    role: 'admin' | 'user';
 };
 
 export type AuthContextType = {
