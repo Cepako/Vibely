@@ -94,8 +94,10 @@ async function fetchWithRefresh(
  */
 async function handleResponse<T>(response: Response): Promise<T> {
     if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error?.message || `HTTP ${response.status}`);
+        const errorBody = await response.json().catch(() => ({}));
+        const errorMessage =
+            errorBody?.error || errorBody?.message || `HTTP ${response.status}`;
+        throw new Error(errorMessage);
     }
     if (response.status === 204) {
         return null as T;

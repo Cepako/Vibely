@@ -1,6 +1,10 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
 import UserService from './user.service';
-import { RegisterUser, RegisterUserSchema } from './user.schema';
+import {
+    ChangePassword,
+    RegisterUser,
+    RegisterUserSchema,
+} from './user.schema';
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
 import { handleFileUpload } from '../utils/handleFileUpload';
@@ -229,6 +233,56 @@ export default class UserController {
             return reply
                 .code(500)
                 .send({ message: 'Failed to fetch interests' });
+        }
+    }
+
+    async changePassword(
+        req: FastifyRequest<{
+            Body: ChangePassword;
+        }>,
+        reply: FastifyReply
+    ) {
+        try {
+            const { id: userId } = req.user;
+            const { currentPassword, newPassword, confirmPassword } = req.body;
+
+            if (newPassword !== confirmPassword) {
+                return reply.status(400).send({
+                    error: 'New password and confirm password do not match',
+                });
+            }
+
+            if (currentPassword === newPassword) {
+                return reply.status(400).send({
+                    error: 'New password must be different from current password',
+                });
+            }
+
+            await this.userService.changePassword(
+                userId,
+                currentPassword,
+                newPassword
+            );
+
+            return reply.status(200).send({
+                message: 'Password changed successfully',
+            });
+        } catch (error: any) {
+            if (error.code === 'INVALID_CURRENT_PASSWORD') {
+                return reply.status(400).send({
+                    error: 'Current password is incorrect',
+                });
+            }
+
+            if (error.code === 'USER_NOT_FOUND') {
+                return reply.status(404).send({
+                    error: 'User not found',
+                });
+            }
+
+            return reply.status(500).send({
+                error: error.message || 'Failed to change password',
+            });
         }
     }
 }

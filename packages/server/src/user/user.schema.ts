@@ -7,12 +7,14 @@ export const GenderSchema = Type.Union([
 
 export type Gender = Static<typeof GenderSchema>;
 
+const passwordSchema = Type.String({
+    minLength: 8,
+    pattern: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^\\w\\s]).+$',
+});
+
 export const RegisterUserSchema = Type.Object({
     email: Type.String({ format: 'email' }),
-    password: Type.String({
-        minLength: 8,
-        pattern: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^\\w\\s]).+$',
-    }),
+    password: passwordSchema,
     name: Type.String(),
     surname: Type.String(),
     gender: GenderSchema,
@@ -25,3 +27,11 @@ export const RegisterUserSchema = Type.Object({
 });
 
 export type RegisterUser = Static<typeof RegisterUserSchema>;
+
+export const ChangePasswordSchema = Type.Object({
+    currentPassword: Type.String({ minLength: 1 }),
+    newPassword: passwordSchema,
+    confirmPassword: Type.String({ minLength: 1 }),
+});
+
+export type ChangePassword = Static<typeof ChangePasswordSchema>;

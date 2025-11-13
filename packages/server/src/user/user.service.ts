@@ -42,6 +42,11 @@ interface IUserService {
         } | null
     ) => Promise<void>;
     getInterests: () => Promise<Interest[]>;
+    changePassword: (
+        userId: number,
+        currentPassword: string,
+        newPassword: string
+    ) => Promise<void>;
 }
 
 export default class UserService implements IUserService {
@@ -243,5 +248,48 @@ export default class UserService implements IUserService {
 
     async getInterests(): Promise<Interest[]> {
         return await db.query.interests.findMany();
+    }
+
+    async changePassword(
+        userId: number,
+        currentPassword: string,
+        newPassword: string
+    ): Promise<void> {
+        const user = await db.query.users.findFirst({
+            where: eq(users.id, userId),
+        });
+
+        if (!user) {
+            const UserNotFound = createError(
+                'USER_NOT_FOUND',
+                'User not found',
+                404
+            );
+            throw new UserNotFound();
+        }
+
+        const isPasswordValid = await bcrypt.compare(
+            currentPassword,
+            user.password
+        );
+
+        if (!isPasswordValid) {
+            const InvalidCurrentPassword = createError(
+                'INVALID_CURRENT_PASSWORD',
+                'Current password is incorrect',
+                400
+            );
+            throw new InvalidCurrentPassword();
+        }
+
+        const hashedPassword = await bcrypt.hash(newPassword, this.saltRounds);
+
+        await db
+            .update(users)
+            .set({
+                password: hashedPassword,
+                updatedAt: new Date().toISOString(),
+            })
+            .where(eq(users.id, userId));
     }
 }

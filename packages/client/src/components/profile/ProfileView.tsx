@@ -18,6 +18,7 @@ import { usePosts } from '../post/hooks/usePosts';
 import { useBlockUser, useFriends } from './hooks/useFriendship';
 import { Dialog, useDialog } from '../ui/Dialog';
 import { useConversations } from '../messages/hooks/useConversations';
+import ChangePasswordDialog from './ChangePasswordDialog';
 
 export default function ProfileView() {
     const params = useParams({ from: '/profile/$profileId' });
@@ -193,7 +194,12 @@ export default function ProfileView() {
                                         </div>
                                     )}
                                     {isOwnProfile ? (
-                                        <EditProfileForm user={userProfile} />
+                                        <>
+                                            <EditProfileForm
+                                                user={userProfile}
+                                            />
+                                            <ChangePasswordDialog />
+                                        </>
                                     ) : (
                                         <FriendshipButton
                                             friendshipStatus={
