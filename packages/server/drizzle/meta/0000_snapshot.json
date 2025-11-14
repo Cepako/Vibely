@@ -1,11 +1,11 @@
 {
-  "id": "00000000-0000-0000-0000-000000000000",
-  "prevId": "",
+  "id": "e947801d-4805-4fec-9107-185f741e2db7",
+  "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
-    "public.conversations": {
-      "name": "conversations",
+    "public.comment_reactions": {
+      "name": "comment_reactions",
       "schema": "",
       "columns": {
         "id": {
@@ -14,37 +14,10 @@
           "primaryKey": true,
           "notNull": true
         },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
+        "comment_id": {
+          "name": "comment_id",
+          "type": "integer",
           "primaryKey": false,
-          "notNull": false,
-          "default": "CURRENT_TIMESTAMP"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "CURRENT_TIMESTAMP"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {},
-      "policies": {},
-      "isRLSEnabled": false
-    },
-    "public.friendships": {
-      "name": "friendships",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
           "notNull": true
         },
         "user_id": {
@@ -53,28 +26,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "friend_id": {
-          "name": "friend_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "status": {
-          "name": "status",
-          "type": "friendship_status_type",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true
-        },
         "created_at": {
           "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "CURRENT_TIMESTAMP"
-        },
-        "updated_at": {
-          "name": "updated_at",
           "type": "timestamp",
           "primaryKey": false,
           "notNull": false,
@@ -82,15 +35,15 @@
         }
       },
       "indexes": {
-        "idx_friendships_friend_id": {
-          "name": "idx_friendships_friend_id",
+        "idx_comment_reactions_comment_id": {
+          "name": "idx_comment_reactions_comment_id",
           "columns": [
             {
-              "expression": "friend_id",
+              "expression": "comment_id",
+              "isExpression": false,
               "asc": true,
               "nulls": "last",
-              "opclass": "int4_ops",
-              "isExpression": false
+              "opclass": "int4_ops"
             }
           ],
           "isUnique": false,
@@ -98,31 +51,15 @@
           "method": "btree",
           "with": {}
         },
-        "idx_friendships_status": {
-          "name": "idx_friendships_status",
-          "columns": [
-            {
-              "expression": "status",
-              "asc": true,
-              "nulls": "last",
-              "opclass": "enum_ops",
-              "isExpression": false
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "idx_friendships_user_id": {
-          "name": "idx_friendships_user_id",
+        "idx_comment_reactions_user_id": {
+          "name": "idx_comment_reactions_user_id",
           "columns": [
             {
               "expression": "user_id",
+              "isExpression": false,
               "asc": true,
               "nulls": "last",
-              "opclass": "int4_ops",
-              "isExpression": false
+              "opclass": "int4_ops"
             }
           ],
           "isUnique": false,
@@ -132,13 +69,12 @@
         }
       },
       "foreignKeys": {
-        "friendships_friend_id_fkey": {
-          "name": "friendships_friend_id_fkey",
-          "tableFrom": "friendships",
-          "tableTo": "users",
-          "schemaTo": "public",
+        "comment_reactions_comment_id_fkey": {
+          "name": "comment_reactions_comment_id_fkey",
+          "tableFrom": "comment_reactions",
+          "tableTo": "comments",
           "columnsFrom": [
-            "friend_id"
+            "comment_id"
           ],
           "columnsTo": [
             "id"
@@ -146,11 +82,10 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "friendships_user_id_fkey": {
-          "name": "friendships_user_id_fkey",
-          "tableFrom": "friendships",
+        "comment_reactions_user_id_fkey": {
+          "name": "comment_reactions_user_id_fkey",
+          "tableFrom": "comment_reactions",
           "tableTo": "users",
-          "schemaTo": "public",
           "columnsFrom": [
             "user_id"
           ],
@@ -163,687 +98,17 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "friendships_user_id_friend_id_key": {
-          "columns": [
-            "user_id",
-            "friend_id"
-          ],
+        "comment_reactions_comment_id_user_id_key": {
+          "name": "comment_reactions_comment_id_user_id_key",
           "nullsNotDistinct": false,
-          "name": "friendships_user_id_friend_id_key"
-        }
-      },
-      "checkConstraints": {
-        "friendships_check": {
-          "name": "friendships_check",
-          "value": "user_id <> friend_id"
-        }
-      },
-      "policies": {},
-      "isRLSEnabled": false
-    },
-    "public.event_categories": {
-      "name": "event_categories",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "name": {
-          "name": "name",
-          "type": "varchar(100)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "description": {
-          "name": "description",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "CURRENT_TIMESTAMP"
-        }
-      },
-      "indexes": {
-        "idx_event_categories_name": {
-          "name": "idx_event_categories_name",
           "columns": [
-            {
-              "expression": "name",
-              "asc": true,
-              "nulls": "last",
-              "opclass": "text_ops",
-              "isExpression": false
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "event_categories_name_key": {
-          "columns": [
-            "name"
-          ],
-          "nullsNotDistinct": false,
-          "name": "event_categories_name_key"
-        }
-      },
-      "checkConstraints": {},
-      "policies": {},
-      "isRLSEnabled": false
-    },
-    "public.messages": {
-      "name": "messages",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "conversation_id": {
-          "name": "conversation_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "sender_id": {
-          "name": "sender_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "content": {
-          "name": "content",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "content_type": {
-          "name": "content_type",
-          "type": "content_type",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "'text'"
-        },
-        "is_read": {
-          "name": "is_read",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": false,
-          "default": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "CURRENT_TIMESTAMP"
-        }
-      },
-      "indexes": {
-        "idx_messages_conversation_id": {
-          "name": "idx_messages_conversation_id",
-          "columns": [
-            {
-              "expression": "conversation_id",
-              "asc": true,
-              "nulls": "last",
-              "opclass": "int4_ops",
-              "isExpression": false
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "idx_messages_created_at": {
-          "name": "idx_messages_created_at",
-          "columns": [
-            {
-              "expression": "created_at",
-              "asc": true,
-              "nulls": "last",
-              "opclass": "timestamp_ops",
-              "isExpression": false
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "idx_messages_sender_id": {
-          "name": "idx_messages_sender_id",
-          "columns": [
-            {
-              "expression": "sender_id",
-              "asc": true,
-              "nulls": "last",
-              "opclass": "int4_ops",
-              "isExpression": false
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "messages_conversation_id_fkey": {
-          "name": "messages_conversation_id_fkey",
-          "tableFrom": "messages",
-          "tableTo": "conversations",
-          "schemaTo": "public",
-          "columnsFrom": [
-            "conversation_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "messages_sender_id_fkey": {
-          "name": "messages_sender_id_fkey",
-          "tableFrom": "messages",
-          "tableTo": "users",
-          "schemaTo": "public",
-          "columnsFrom": [
-            "sender_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {},
-      "policies": {},
-      "isRLSEnabled": false
-    },
-    "public.notifications": {
-      "name": "notifications",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "type": {
-          "name": "type",
-          "type": "notification_related_type",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "content": {
-          "name": "content",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "related_id": {
-          "name": "related_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "is_read": {
-          "name": "is_read",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": false,
-          "default": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "CURRENT_TIMESTAMP"
-        }
-      },
-      "indexes": {
-        "idx_notifications_created_at": {
-          "name": "idx_notifications_created_at",
-          "columns": [
-            {
-              "expression": "created_at",
-              "asc": true,
-              "nulls": "last",
-              "opclass": "timestamp_ops",
-              "isExpression": false
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "idx_notifications_is_read": {
-          "name": "idx_notifications_is_read",
-          "columns": [
-            {
-              "expression": "is_read",
-              "asc": true,
-              "nulls": "last",
-              "opclass": "bool_ops",
-              "isExpression": false
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "idx_notifications_user_id": {
-          "name": "idx_notifications_user_id",
-          "columns": [
-            {
-              "expression": "user_id",
-              "asc": true,
-              "nulls": "last",
-              "opclass": "int4_ops",
-              "isExpression": false
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "notifications_user_id_fkey": {
-          "name": "notifications_user_id_fkey",
-          "tableFrom": "notifications",
-          "tableTo": "users",
-          "schemaTo": "public",
-          "columnsFrom": [
+            "comment_id",
             "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          ]
         }
       },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {},
       "policies": {},
-      "isRLSEnabled": false
-    },
-    "public.post_reactions": {
-      "name": "post_reactions",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "post_id": {
-          "name": "post_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "CURRENT_TIMESTAMP"
-        }
-      },
-      "indexes": {
-        "idx_post_reactions_post_id": {
-          "name": "idx_post_reactions_post_id",
-          "columns": [
-            {
-              "expression": "post_id",
-              "asc": true,
-              "nulls": "last",
-              "opclass": "int4_ops",
-              "isExpression": false
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "idx_post_reactions_user_id": {
-          "name": "idx_post_reactions_user_id",
-          "columns": [
-            {
-              "expression": "user_id",
-              "asc": true,
-              "nulls": "last",
-              "opclass": "int4_ops",
-              "isExpression": false
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "post_reactions_post_id_fkey": {
-          "name": "post_reactions_post_id_fkey",
-          "tableFrom": "post_reactions",
-          "tableTo": "posts",
-          "schemaTo": "public",
-          "columnsFrom": [
-            "post_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "post_reactions_user_id_fkey": {
-          "name": "post_reactions_user_id_fkey",
-          "tableFrom": "post_reactions",
-          "tableTo": "users",
-          "schemaTo": "public",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "post_reactions_post_id_user_id_key": {
-          "columns": [
-            "post_id",
-            "user_id"
-          ],
-          "nullsNotDistinct": false,
-          "name": "post_reactions_post_id_user_id_key"
-        }
-      },
       "checkConstraints": {},
-      "policies": {},
-      "isRLSEnabled": false
-    },
-    "public.conversation_participants": {
-      "name": "conversation_participants",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "conversation_id": {
-          "name": "conversation_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "CURRENT_TIMESTAMP"
-        }
-      },
-      "indexes": {
-        "idx_conversation_participants_conversation_id": {
-          "name": "idx_conversation_participants_conversation_id",
-          "columns": [
-            {
-              "expression": "conversation_id",
-              "asc": true,
-              "nulls": "last",
-              "opclass": "int4_ops",
-              "isExpression": false
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "idx_conversation_participants_user_id": {
-          "name": "idx_conversation_participants_user_id",
-          "columns": [
-            {
-              "expression": "user_id",
-              "asc": true,
-              "nulls": "last",
-              "opclass": "int4_ops",
-              "isExpression": false
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "conversation_participants_conversation_id_fkey": {
-          "name": "conversation_participants_conversation_id_fkey",
-          "tableFrom": "conversation_participants",
-          "tableTo": "conversations",
-          "schemaTo": "public",
-          "columnsFrom": [
-            "conversation_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "conversation_participants_user_id_fkey": {
-          "name": "conversation_participants_user_id_fkey",
-          "tableFrom": "conversation_participants",
-          "tableTo": "users",
-          "schemaTo": "public",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "conversation_participants_conversation_id_user_id_key": {
-          "columns": [
-            "conversation_id",
-            "user_id"
-          ],
-          "nullsNotDistinct": false,
-          "name": "conversation_participants_conversation_id_user_id_key"
-        }
-      },
-      "checkConstraints": {},
-      "policies": {},
-      "isRLSEnabled": false
-    },
-    "public.posts": {
-      "name": "posts",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "content": {
-          "name": "content",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "content_type": {
-          "name": "content_type",
-          "type": "post_content_type",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "'photo'"
-        },
-        "privacy_level": {
-          "name": "privacy_level",
-          "type": "privacy_level_type",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "'public'"
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "CURRENT_TIMESTAMP"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "CURRENT_TIMESTAMP"
-        }
-      },
-      "indexes": {
-        "idx_posts_created_at": {
-          "name": "idx_posts_created_at",
-          "columns": [
-            {
-              "expression": "created_at",
-              "asc": true,
-              "nulls": "last",
-              "opclass": "timestamp_ops",
-              "isExpression": false
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "idx_posts_privacy_level": {
-          "name": "idx_posts_privacy_level",
-          "columns": [
-            {
-              "expression": "privacy_level",
-              "asc": true,
-              "nulls": "last",
-              "opclass": "enum_ops",
-              "isExpression": false
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "idx_posts_user_id": {
-          "name": "idx_posts_user_id",
-          "columns": [
-            {
-              "expression": "user_id",
-              "asc": true,
-              "nulls": "last",
-              "opclass": "int4_ops",
-              "isExpression": false
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "posts_user_id_fkey": {
-          "name": "posts_user_id_fkey",
-          "tableFrom": "posts",
-          "tableTo": "users",
-          "schemaTo": "public",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {},
-      "policies": {},
       "isRLSEnabled": false
     },
     "public.comments": {
@@ -887,6 +152,12 @@
           "primaryKey": false,
           "notNull": false,
           "default": "CURRENT_TIMESTAMP"
+        },
+        "parent_id": {
+          "name": "parent_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -895,10 +166,26 @@
           "columns": [
             {
               "expression": "created_at",
+              "isExpression": false,
               "asc": true,
               "nulls": "last",
-              "opclass": "timestamp_ops",
-              "isExpression": false
+              "opclass": "timestamp_ops"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_comments_parent_id": {
+          "name": "idx_comments_parent_id",
+          "columns": [
+            {
+              "expression": "parent_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "int4_ops"
             }
           ],
           "isUnique": false,
@@ -911,10 +198,10 @@
           "columns": [
             {
               "expression": "post_id",
+              "isExpression": false,
               "asc": true,
               "nulls": "last",
-              "opclass": "int4_ops",
-              "isExpression": false
+              "opclass": "int4_ops"
             }
           ],
           "isUnique": false,
@@ -927,10 +214,10 @@
           "columns": [
             {
               "expression": "user_id",
+              "isExpression": false,
               "asc": true,
               "nulls": "last",
-              "opclass": "int4_ops",
-              "isExpression": false
+              "opclass": "int4_ops"
             }
           ],
           "isUnique": false,
@@ -944,7 +231,6 @@
           "name": "comments_post_id_fkey",
           "tableFrom": "comments",
           "tableTo": "posts",
-          "schemaTo": "public",
           "columnsFrom": [
             "post_id"
           ],
@@ -958,7 +244,130 @@
           "name": "comments_user_id_fkey",
           "tableFrom": "comments",
           "tableTo": "users",
-          "schemaTo": "public",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "comments_parent_id_fkey": {
+          "name": "comments_parent_id_fkey",
+          "tableFrom": "comments",
+          "tableTo": "comments",
+          "columnsFrom": [
+            "parent_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.conversation_participants": {
+      "name": "conversation_participants",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "conversation_id": {
+          "name": "conversation_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "CURRENT_TIMESTAMP"
+        },
+        "nickname": {
+          "name": "nickname",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "role": {
+          "name": "role",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'member'"
+        }
+      },
+      "indexes": {
+        "idx_conversation_participants_conversation_id": {
+          "name": "idx_conversation_participants_conversation_id",
+          "columns": [
+            {
+              "expression": "conversation_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "int4_ops"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_conversation_participants_user_id": {
+          "name": "idx_conversation_participants_user_id",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "int4_ops"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "conversation_participants_conversation_id_fkey": {
+          "name": "conversation_participants_conversation_id_fkey",
+          "tableFrom": "conversation_participants",
+          "tableTo": "conversations",
+          "columnsFrom": [
+            "conversation_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "conversation_participants_user_id_fkey": {
+          "name": "conversation_participants_user_id_fkey",
+          "tableFrom": "conversation_participants",
+          "tableTo": "users",
           "columnsFrom": [
             "user_id"
           ],
@@ -970,9 +379,283 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {},
+      "uniqueConstraints": {
+        "conversation_participants_conversation_id_user_id_key": {
+          "name": "conversation_participants_conversation_id_user_id_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "conversation_id",
+            "user_id"
+          ]
+        }
+      },
       "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.conversations": {
+      "name": "conversations",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "CURRENT_TIMESTAMP"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "CURRENT_TIMESTAMP"
+        },
+        "type": {
+          "name": "type",
+          "type": "conversation_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'direct'"
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "idx_conversations_type": {
+          "name": "idx_conversations_type",
+          "columns": [
+            {
+              "expression": "type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "enum_ops"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.event_categories": {
+      "name": "event_categories",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {
+        "idx_event_categories_name": {
+          "name": "idx_event_categories_name",
+          "columns": [
+            {
+              "expression": "name",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "text_ops"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "event_categories_name_key": {
+          "name": "event_categories_name_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "name"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.event_participants": {
+      "name": "event_participants",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "event_id": {
+          "name": "event_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "participant_status_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'invited'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "CURRENT_TIMESTAMP"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {
+        "idx_event_participants_event_id": {
+          "name": "idx_event_participants_event_id",
+          "columns": [
+            {
+              "expression": "event_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "int4_ops"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_event_participants_status": {
+          "name": "idx_event_participants_status",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "enum_ops"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_event_participants_user_id": {
+          "name": "idx_event_participants_user_id",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "int4_ops"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "event_participants_event_id_fkey": {
+          "name": "event_participants_event_id_fkey",
+          "tableFrom": "event_participants",
+          "tableTo": "events",
+          "columnsFrom": [
+            "event_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "event_participants_user_id_fkey": {
+          "name": "event_participants_user_id_fkey",
+          "tableFrom": "event_participants",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "event_participants_event_id_user_id_key": {
+          "name": "event_participants_event_id_user_id_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "event_id",
+            "user_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
       "isRLSEnabled": false
     },
     "public.events": {
@@ -1062,10 +745,10 @@
           "columns": [
             {
               "expression": "category_id",
+              "isExpression": false,
               "asc": true,
               "nulls": "last",
-              "opclass": "int4_ops",
-              "isExpression": false
+              "opclass": "int4_ops"
             }
           ],
           "isUnique": false,
@@ -1078,10 +761,10 @@
           "columns": [
             {
               "expression": "organizer_id",
+              "isExpression": false,
               "asc": true,
               "nulls": "last",
-              "opclass": "int4_ops",
-              "isExpression": false
+              "opclass": "int4_ops"
             }
           ],
           "isUnique": false,
@@ -1094,10 +777,10 @@
           "columns": [
             {
               "expression": "privacy_level",
+              "isExpression": false,
               "asc": true,
               "nulls": "last",
-              "opclass": "enum_ops",
-              "isExpression": false
+              "opclass": "enum_ops"
             }
           ],
           "isUnique": false,
@@ -1110,10 +793,10 @@
           "columns": [
             {
               "expression": "start_time",
+              "isExpression": false,
               "asc": true,
               "nulls": "last",
-              "opclass": "timestamp_ops",
-              "isExpression": false
+              "opclass": "timestamp_ops"
             }
           ],
           "isUnique": false,
@@ -1127,7 +810,6 @@
           "name": "events_category_id_fkey",
           "tableFrom": "events",
           "tableTo": "event_categories",
-          "schemaTo": "public",
           "columnsFrom": [
             "category_id"
           ],
@@ -1141,7 +823,6 @@
           "name": "events_organizer_id_fkey",
           "tableFrom": "events",
           "tableTo": "users",
-          "schemaTo": "public",
           "columnsFrom": [
             "organizer_id"
           ],
@@ -1154,12 +835,12 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "checkConstraints": {},
       "policies": {},
+      "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.event_participants": {
-      "name": "event_participants",
+    "public.friendships": {
+      "name": "friendships",
       "schema": "",
       "columns": {
         "id": {
@@ -1168,25 +849,24 @@
           "primaryKey": true,
           "notNull": true
         },
-        "event_id": {
-          "name": "event_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
         "user_id": {
           "name": "user_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": true
         },
+        "friend_id": {
+          "name": "friend_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
         "status": {
           "name": "status",
-          "type": "participant_status_type",
+          "type": "friendship_status_type",
           "typeSchema": "public",
           "primaryKey": false,
-          "notNull": true,
-          "default": "'invited'"
+          "notNull": true
         },
         "created_at": {
           "name": "created_at",
@@ -1204,15 +884,15 @@
         }
       },
       "indexes": {
-        "idx_event_participants_event_id": {
-          "name": "idx_event_participants_event_id",
+        "idx_friendships_friend_id": {
+          "name": "idx_friendships_friend_id",
           "columns": [
             {
-              "expression": "event_id",
+              "expression": "friend_id",
+              "isExpression": false,
               "asc": true,
               "nulls": "last",
-              "opclass": "int4_ops",
-              "isExpression": false
+              "opclass": "int4_ops"
             }
           ],
           "isUnique": false,
@@ -1220,15 +900,15 @@
           "method": "btree",
           "with": {}
         },
-        "idx_event_participants_status": {
-          "name": "idx_event_participants_status",
+        "idx_friendships_status": {
+          "name": "idx_friendships_status",
           "columns": [
             {
               "expression": "status",
+              "isExpression": false,
               "asc": true,
               "nulls": "last",
-              "opclass": "enum_ops",
-              "isExpression": false
+              "opclass": "enum_ops"
             }
           ],
           "isUnique": false,
@@ -1236,15 +916,15 @@
           "method": "btree",
           "with": {}
         },
-        "idx_event_participants_user_id": {
-          "name": "idx_event_participants_user_id",
+        "idx_friendships_user_id": {
+          "name": "idx_friendships_user_id",
           "columns": [
             {
               "expression": "user_id",
+              "isExpression": false,
               "asc": true,
               "nulls": "last",
-              "opclass": "int4_ops",
-              "isExpression": false
+              "opclass": "int4_ops"
             }
           ],
           "isUnique": false,
@@ -1254,13 +934,12 @@
         }
       },
       "foreignKeys": {
-        "event_participants_event_id_fkey": {
-          "name": "event_participants_event_id_fkey",
-          "tableFrom": "event_participants",
-          "tableTo": "events",
-          "schemaTo": "public",
+        "friendships_friend_id_fkey": {
+          "name": "friendships_friend_id_fkey",
+          "tableFrom": "friendships",
+          "tableTo": "users",
           "columnsFrom": [
-            "event_id"
+            "friend_id"
           ],
           "columnsTo": [
             "id"
@@ -1268,11 +947,10 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "event_participants_user_id_fkey": {
-          "name": "event_participants_user_id_fkey",
-          "tableFrom": "event_participants",
+        "friendships_user_id_fkey": {
+          "name": "friendships_user_id_fkey",
+          "tableFrom": "friendships",
           "tableTo": "users",
-          "schemaTo": "public",
           "columnsFrom": [
             "user_id"
           ],
@@ -1285,17 +963,79 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "event_participants_event_id_user_id_key": {
-          "columns": [
-            "event_id",
-            "user_id"
-          ],
+        "friendships_user_id_friend_id_key": {
+          "name": "friendships_user_id_friend_id_key",
           "nullsNotDistinct": false,
-          "name": "event_participants_event_id_user_id_key"
+          "columns": [
+            "user_id",
+            "friend_id"
+          ]
         }
       },
-      "checkConstraints": {},
       "policies": {},
+      "checkConstraints": {
+        "friendships_check": {
+          "name": "friendships_check",
+          "value": "user_id <> friend_id"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.interests": {
+      "name": "interests",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {
+        "idx_interests_name": {
+          "name": "idx_interests_name",
+          "columns": [
+            {
+              "expression": "name",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "text_ops"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "interests_name_key": {
+          "name": "interests_name_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "name"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
       "isRLSEnabled": false
     },
     "public.message_attachments": {
@@ -1339,6 +1079,12 @@
           "primaryKey": false,
           "notNull": false,
           "default": "CURRENT_TIMESTAMP"
+        },
+        "original_file_name": {
+          "name": "original_file_name",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -1347,10 +1093,10 @@
           "columns": [
             {
               "expression": "message_id",
+              "isExpression": false,
               "asc": true,
               "nulls": "last",
-              "opclass": "int4_ops",
-              "isExpression": false
+              "opclass": "int4_ops"
             }
           ],
           "isUnique": false,
@@ -1364,7 +1110,6 @@
           "name": "message_attachments_message_id_fkey",
           "tableFrom": "message_attachments",
           "tableTo": "messages",
-          "schemaTo": "public",
           "columnsFrom": [
             "message_id"
           ],
@@ -1377,12 +1122,12 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "checkConstraints": {},
       "policies": {},
+      "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.interests": {
-      "name": "interests",
+    "public.messages": {
+      "name": "messages",
       "schema": "",
       "columns": {
         "id": {
@@ -1391,237 +1136,34 @@
           "primaryKey": true,
           "notNull": true
         },
-        "name": {
-          "name": "name",
-          "type": "varchar(100)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "CURRENT_TIMESTAMP"
-        }
-      },
-      "indexes": {
-        "idx_interests_name": {
-          "name": "idx_interests_name",
-          "columns": [
-            {
-              "expression": "name",
-              "asc": true,
-              "nulls": "last",
-              "opclass": "text_ops",
-              "isExpression": false
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "interests_name_key": {
-          "columns": [
-            "name"
-          ],
-          "nullsNotDistinct": false,
-          "name": "interests_name_key"
-        }
-      },
-      "checkConstraints": {},
-      "policies": {},
-      "isRLSEnabled": false
-    },
-    "public.user_reports": {
-      "name": "user_reports",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "reporter_id": {
-          "name": "reporter_id",
+        "conversation_id": {
+          "name": "conversation_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": true
         },
-        "reported_id": {
-          "name": "reported_id",
+        "sender_id": {
+          "name": "sender_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": true
         },
-        "reason": {
-          "name": "reason",
+        "content": {
+          "name": "content",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
-        "status": {
-          "name": "status",
-          "type": "report_status_type",
+        "content_type": {
+          "name": "content_type",
+          "type": "content_type",
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": false,
-          "default": "'pending'"
+          "default": "'text'"
         },
-        "admin_notes": {
-          "name": "admin_notes",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "CURRENT_TIMESTAMP"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "CURRENT_TIMESTAMP"
-        }
-      },
-      "indexes": {
-        "idx_user_reports_reported_id": {
-          "name": "idx_user_reports_reported_id",
-          "columns": [
-            {
-              "expression": "reported_id",
-              "asc": true,
-              "nulls": "last",
-              "opclass": "int4_ops",
-              "isExpression": false
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "idx_user_reports_reporter_id": {
-          "name": "idx_user_reports_reporter_id",
-          "columns": [
-            {
-              "expression": "reporter_id",
-              "asc": true,
-              "nulls": "last",
-              "opclass": "int4_ops",
-              "isExpression": false
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "idx_user_reports_status": {
-          "name": "idx_user_reports_status",
-          "columns": [
-            {
-              "expression": "status",
-              "asc": true,
-              "nulls": "last",
-              "opclass": "enum_ops",
-              "isExpression": false
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "user_reports_reported_id_fkey": {
-          "name": "user_reports_reported_id_fkey",
-          "tableFrom": "user_reports",
-          "tableTo": "users",
-          "schemaTo": "public",
-          "columnsFrom": [
-            "reported_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "user_reports_reporter_id_fkey": {
-          "name": "user_reports_reporter_id_fkey",
-          "tableFrom": "user_reports",
-          "tableTo": "users",
-          "schemaTo": "public",
-          "columnsFrom": [
-            "reporter_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {
-        "user_reports_check": {
-          "name": "user_reports_check",
-          "value": "reporter_id <> reported_id"
-        }
-      },
-      "policies": {},
-      "isRLSEnabled": false
-    },
-    "public.user_blocks": {
-      "name": "user_blocks",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "blocked_by": {
-          "name": "blocked_by",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "reason": {
-          "name": "reason",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "end_date": {
-          "name": "end_date",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "is_permanent": {
-          "name": "is_permanent",
+        "is_read": {
+          "name": "is_read",
           "type": "boolean",
           "primaryKey": false,
           "notNull": false,
@@ -1636,15 +1178,15 @@
         }
       },
       "indexes": {
-        "idx_user_blocks_blocked_by": {
-          "name": "idx_user_blocks_blocked_by",
+        "idx_messages_conversation_id": {
+          "name": "idx_messages_conversation_id",
           "columns": [
             {
-              "expression": "blocked_by",
+              "expression": "conversation_id",
+              "isExpression": false,
               "asc": true,
               "nulls": "last",
-              "opclass": "int4_ops",
-              "isExpression": false
+              "opclass": "int4_ops"
             }
           ],
           "isUnique": false,
@@ -1652,15 +1194,31 @@
           "method": "btree",
           "with": {}
         },
-        "idx_user_blocks_user_id": {
-          "name": "idx_user_blocks_user_id",
+        "idx_messages_created_at": {
+          "name": "idx_messages_created_at",
           "columns": [
             {
-              "expression": "user_id",
+              "expression": "created_at",
+              "isExpression": false,
               "asc": true,
               "nulls": "last",
-              "opclass": "int4_ops",
-              "isExpression": false
+              "opclass": "timestamp_ops"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_messages_sender_id": {
+          "name": "idx_messages_sender_id",
+          "columns": [
+            {
+              "expression": "sender_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "int4_ops"
             }
           ],
           "isUnique": false,
@@ -1670,13 +1228,12 @@
         }
       },
       "foreignKeys": {
-        "user_blocks_blocked_by_fkey": {
-          "name": "user_blocks_blocked_by_fkey",
-          "tableFrom": "user_blocks",
-          "tableTo": "users",
-          "schemaTo": "public",
+        "messages_conversation_id_fkey": {
+          "name": "messages_conversation_id_fkey",
+          "tableFrom": "messages",
+          "tableTo": "conversations",
           "columnsFrom": [
-            "blocked_by"
+            "conversation_id"
           ],
           "columnsTo": [
             "id"
@@ -1684,11 +1241,131 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "user_blocks_user_id_fkey": {
-          "name": "user_blocks_user_id_fkey",
-          "tableFrom": "user_blocks",
+        "messages_sender_id_fkey": {
+          "name": "messages_sender_id_fkey",
+          "tableFrom": "messages",
           "tableTo": "users",
-          "schemaTo": "public",
+          "columnsFrom": [
+            "sender_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.notifications": {
+      "name": "notifications",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "notification_related_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "content": {
+          "name": "content",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "related_id": {
+          "name": "related_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_read": {
+          "name": "is_read",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {
+        "idx_notifications_created_at": {
+          "name": "idx_notifications_created_at",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "timestamp_ops"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_notifications_is_read": {
+          "name": "idx_notifications_is_read",
+          "columns": [
+            {
+              "expression": "is_read",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "bool_ops"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_notifications_user_id": {
+          "name": "idx_notifications_user_id",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "int4_ops"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "notifications_user_id_fkey": {
+          "name": "notifications_user_id_fkey",
+          "tableFrom": "notifications",
+          "tableTo": "users",
           "columnsFrom": [
             "user_id"
           ],
@@ -1701,13 +1378,245 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "checkConstraints": {
-        "user_blocks_check": {
-          "name": "user_blocks_check",
-          "value": "user_id <> blocked_by"
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.post_reactions": {
+      "name": "post_reactions",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "post_id": {
+          "name": "post_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {
+        "idx_post_reactions_post_id": {
+          "name": "idx_post_reactions_post_id",
+          "columns": [
+            {
+              "expression": "post_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "int4_ops"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_post_reactions_user_id": {
+          "name": "idx_post_reactions_user_id",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "int4_ops"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "post_reactions_post_id_fkey": {
+          "name": "post_reactions_post_id_fkey",
+          "tableFrom": "post_reactions",
+          "tableTo": "posts",
+          "columnsFrom": [
+            "post_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "post_reactions_user_id_fkey": {
+          "name": "post_reactions_user_id_fkey",
+          "tableFrom": "post_reactions",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "post_reactions_post_id_user_id_key": {
+          "name": "post_reactions_post_id_user_id_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "post_id",
+            "user_id"
+          ]
         }
       },
       "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.posts": {
+      "name": "posts",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "content": {
+          "name": "content",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "content_type": {
+          "name": "content_type",
+          "type": "post_content_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'photo'"
+        },
+        "privacy_level": {
+          "name": "privacy_level",
+          "type": "privacy_level_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'public'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "CURRENT_TIMESTAMP"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "CURRENT_TIMESTAMP"
+        },
+        "content_url": {
+          "name": "content_url",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "idx_posts_created_at": {
+          "name": "idx_posts_created_at",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "timestamp_ops"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_posts_privacy_level": {
+          "name": "idx_posts_privacy_level",
+          "columns": [
+            {
+              "expression": "privacy_level",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "enum_ops"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_posts_user_id": {
+          "name": "idx_posts_user_id",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "int4_ops"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "posts_user_id_fkey": {
+          "name": "posts_user_id_fkey",
+          "tableFrom": "posts",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
       "isRLSEnabled": false
     },
     "public.user_interests": {
@@ -1746,10 +1655,10 @@
           "columns": [
             {
               "expression": "interest_id",
+              "isExpression": false,
               "asc": true,
               "nulls": "last",
-              "opclass": "int4_ops",
-              "isExpression": false
+              "opclass": "int4_ops"
             }
           ],
           "isUnique": false,
@@ -1762,10 +1671,10 @@
           "columns": [
             {
               "expression": "user_id",
+              "isExpression": false,
               "asc": true,
               "nulls": "last",
-              "opclass": "int4_ops",
-              "isExpression": false
+              "opclass": "int4_ops"
             }
           ],
           "isUnique": false,
@@ -1779,7 +1688,6 @@
           "name": "user_interests_interest_id_fkey",
           "tableFrom": "user_interests",
           "tableTo": "interests",
-          "schemaTo": "public",
           "columnsFrom": [
             "interest_id"
           ],
@@ -1793,7 +1701,6 @@
           "name": "user_interests_user_id_fkey",
           "tableFrom": "user_interests",
           "tableTo": "users",
-          "schemaTo": "public",
           "columnsFrom": [
             "user_id"
           ],
@@ -1807,122 +1714,16 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "user_interests_user_id_interest_id_key": {
+          "name": "user_interests_user_id_interest_id_key",
+          "nullsNotDistinct": false,
           "columns": [
             "user_id",
             "interest_id"
-          ],
-          "nullsNotDistinct": false,
-          "name": "user_interests_user_id_interest_id_key"
+          ]
         }
       },
-      "checkConstraints": {},
       "policies": {},
-      "isRLSEnabled": false
-    },
-    "public.user_photos": {
-      "name": "user_photos",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "url": {
-          "name": "url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "description": {
-          "name": "description",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "is_profile_picture": {
-          "name": "is_profile_picture",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": false,
-          "default": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "CURRENT_TIMESTAMP"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "CURRENT_TIMESTAMP"
-        }
-      },
-      "indexes": {
-        "idx_user_photos_is_profile_picture": {
-          "name": "idx_user_photos_is_profile_picture",
-          "columns": [
-            {
-              "expression": "is_profile_picture",
-              "asc": true,
-              "nulls": "last",
-              "opclass": "bool_ops",
-              "isExpression": false
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "idx_user_photos_user_id": {
-          "name": "idx_user_photos_user_id",
-          "columns": [
-            {
-              "expression": "user_id",
-              "asc": true,
-              "nulls": "last",
-              "opclass": "int4_ops",
-              "isExpression": false
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "user_photos_user_id_fkey": {
-          "name": "user_photos_user_id_fkey",
-          "tableFrom": "user_photos",
-          "tableTo": "users",
-          "schemaTo": "public",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
       "checkConstraints": {},
-      "policies": {},
       "isRLSEnabled": false
     },
     "public.users": {
@@ -1964,7 +1765,7 @@
           "type": "gender_type",
           "typeSchema": "public",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "profile_picture_url": {
           "name": "profile_picture_url",
@@ -1994,14 +1795,7 @@
           "name": "date_of_birth",
           "type": "date",
           "primaryKey": false,
-          "notNull": false
-        },
-        "status": {
-          "name": "status",
-          "type": "user_status_type",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "last_login_at": {
           "name": "last_login_at",
@@ -2023,20 +1817,11 @@
           "notNull": false,
           "default": "CURRENT_TIMESTAMP"
         },
-        "role": {
-          "name": "role",
-          "type": "user_role_type",
-          "typeSchema": "public",
+        "refresh_token": {
+          "name": "refresh_token",
+          "type": "text",
           "primaryKey": false,
-          "notNull": true,
-          "default": "'user'"
-        },
-        "is_online": {
-          "name": "is_online",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": false,
-          "default": false
+          "notNull": false
         }
       },
       "indexes": {
@@ -2045,26 +1830,10 @@
           "columns": [
             {
               "expression": "email",
+              "isExpression": false,
               "asc": true,
               "nulls": "last",
-              "opclass": "text_ops",
-              "isExpression": false
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "idx_users_status": {
-          "name": "idx_users_status",
-          "columns": [
-            {
-              "expression": "status",
-              "asc": true,
-              "nulls": "last",
-              "opclass": "enum_ops",
-              "isExpression": false
+              "opclass": "text_ops"
             }
           ],
           "isUnique": false,
@@ -2077,121 +1846,100 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "users_email_key": {
+          "name": "users_email_key",
+          "nullsNotDistinct": false,
           "columns": [
             "email"
-          ],
-          "nullsNotDistinct": false,
-          "name": "users_email_key"
+          ]
         }
       },
-      "checkConstraints": {},
       "policies": {},
+      "checkConstraints": {},
       "isRLSEnabled": false
     }
   },
   "enums": {
     "public.content_type": {
       "name": "content_type",
+      "schema": "public",
       "values": [
         "text",
         "video",
-        "image"
-      ],
-      "schema": "public"
+        "image",
+        "file"
+      ]
+    },
+    "public.conversation_type": {
+      "name": "conversation_type",
+      "schema": "public",
+      "values": [
+        "direct",
+        "group"
+      ]
     },
     "public.file_type": {
       "name": "file_type",
+      "schema": "public",
       "values": [
         "image",
         "video",
-        "pdf"
-      ],
-      "schema": "public"
+        "document"
+      ]
     },
     "public.friendship_status_type": {
       "name": "friendship_status_type",
+      "schema": "public",
       "values": [
         "pending",
         "accepted",
-        "rejected",
         "blocked"
-      ],
-      "schema": "public"
+      ]
     },
     "public.gender_type": {
       "name": "gender_type",
+      "schema": "public",
       "values": [
         "male",
         "female"
-      ],
-      "schema": "public"
+      ]
     },
     "public.notification_related_type": {
       "name": "notification_related_type",
+      "schema": "public",
       "values": [
         "posts",
         "comments",
         "friendships",
-        "messages",
         "events",
-        "post_reactions"
-      ],
-      "schema": "public"
+        "post_reactions",
+        "comment_reactions"
+      ]
     },
     "public.participant_status_type": {
       "name": "participant_status_type",
+      "schema": "public",
       "values": [
         "invited",
         "going",
         "declined"
-      ],
-      "schema": "public"
+      ]
     },
     "public.post_content_type": {
       "name": "post_content_type",
+      "schema": "public",
       "values": [
         "photo",
-        "video",
-        "album"
-      ],
-      "schema": "public"
+        "video"
+      ]
     },
     "public.privacy_level_type": {
       "name": "privacy_level_type",
+      "schema": "public",
       "values": [
         "public",
         "friends",
         "private"
-      ],
-      "schema": "public"
-    },
-    "public.report_status_type": {
-      "name": "report_status_type",
-      "values": [
-        "pending",
-        "reviewing",
-        "resolved",
-        "dismissed"
-      ],
-      "schema": "public"
-    },
-    "public.user_role_type": {
-      "name": "user_role_type",
-      "values": [
-        "user",
-        "admin"
-      ],
-      "schema": "public"
-    },
-    "public.user_status_type": {
-      "name": "user_status_type",
-      "values": [
-        "active",
-        "inactive",
-        "suspended",
-        "banned"
-      ],
-      "schema": "public"
+      ]
     }
   },
   "schemas": {},
@@ -2200,11 +1948,8 @@
   "policies": {},
   "views": {},
   "_meta": {
+    "columns": {},
     "schemas": {},
-    "tables": {},
-    "columns": {}
-  },
-  "internal": {
     "tables": {}
   }
 }

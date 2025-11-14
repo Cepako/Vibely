@@ -59,7 +59,7 @@ const websocketPlugin: FastifyPluginAsync = async (fastify) => {
                         if (data.type === 'ping') {
                             socket.send(JSON.stringify({ type: 'pong' }));
                         }
-                    } catch (error) {
+                    } catch (error: any) {
                         fastify.log.error('Invalid message format:', error);
                     }
                 });
@@ -75,7 +75,7 @@ const websocketPlugin: FastifyPluginAsync = async (fastify) => {
                     );
                 });
 
-                socket.on('error', (error: Error) => {
+                socket.on('error', (error: any) => {
                     fastify.log.error(
                         `WebSocket error for user ${userId}:`,
                         error
@@ -160,7 +160,7 @@ const websocketPlugin: FastifyPluginAsync = async (fastify) => {
                     let data;
                     try {
                         data = JSON.parse(message.toString());
-                    } catch (error) {
+                    } catch (error: any) {
                         fastify.log.error(
                             'Invalid chat message format (JSON.parse failed):',
                             error
@@ -243,7 +243,7 @@ const websocketPlugin: FastifyPluginAsync = async (fastify) => {
                     );
                 });
 
-                socket.on('error', (error: Error) => {
+                socket.on('error', (error: any) => {
                     fastify.log.error(
                         `Chat WebSocket error for user ${userId}:`,
                         error
