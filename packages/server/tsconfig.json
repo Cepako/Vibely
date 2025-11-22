@@ -32,7 +32,7 @@
             "@/routes/*": ["./routes/*"],
             "@/*": ["./*"]
         },
-        "types": ["node"],
+        "types": ["node", "jest"],
         "typeRoots": [
             "./node_modules/@types",
             "../node_modules/@types",
@@ -40,7 +40,7 @@
         ]
     },
     "include": ["src/**/*", "src/**/*.json"],
-    "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"],
+    "exclude": ["node_modules", "dist"],
     "ts-node": {
         "esm": false,
         "experimentalSpecifierResolution": "node"
