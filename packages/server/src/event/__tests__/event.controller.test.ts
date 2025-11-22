@@ -21,7 +21,6 @@ describe('EventController', () => {
 
         mockService = new EventService() as jest.Mocked<EventService>;
         controller = new EventController();
-        // Podmieniamy prywatną instancję serwisu w kontrolerze na naszego mocka
         (controller as any).eventService = mockService;
 
         mockRequest = {
@@ -67,7 +66,7 @@ describe('EventController', () => {
         });
 
         it('powinien zwrócić 400 przy braku wymaganych pól', async () => {
-            mockRequest.body = { title: 'Party' }; // Brak startTime i privacyLevel
+            mockRequest.body = { title: 'Party' };
 
             await controller.createEvent(
                 mockRequest as FastifyRequest,

@@ -15,7 +15,7 @@ jest.mock('../../db', () => ({
         },
         insert: jest.fn(() => ({
             values: jest.fn(() => ({ returning: jest.fn() })),
-        })), // Chainowanie inserta
+        })),
         update: jest.fn(() => ({
             set: jest.fn(() => ({
                 where: jest.fn(() => ({ returning: jest.fn() })),
@@ -39,9 +39,7 @@ describe('CommentReactionService', () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
-        // NotificationService jest mockowany automatycznie przez jest.mock na górze
         service = new CommentReactionService();
-        // Pobieramy instancję mocka, aby sprawdzać czy metody były wołane
         mockNotificationService = (NotificationService as unknown as jest.Mock)
             .mock.instances[0];
     });
@@ -54,23 +52,18 @@ describe('CommentReactionService', () => {
         };
 
         it('powinien utworzyć komentarz i wysłać powiadomienie do autora posta', async () => {
-            // Arrange
             const inputData = { postId: 100, content: 'Nice post!' };
 
-            // Mockowanie po kolei zapytań
-            (db.query.posts.findFirst as jest.Mock).mockResolvedValue(mockPost); // Znajdź post
-            (db.query.users.findFirst as jest.Mock).mockResolvedValue(mockUser); // Znajdź autora komentarza
+            (db.query.posts.findFirst as jest.Mock).mockResolvedValue(mockPost);
+            (db.query.users.findFirst as jest.Mock).mockResolvedValue(mockUser);
 
             const createdComment = { id: 1, ...inputData, userId: 1 };
             mockInsertReturn(createdComment);
 
-            // Act
             const result = await service.createComment(1, inputData);
 
-            // Assert
             expect(result).toEqual(createdComment);
             expect(db.query.posts.findFirst).toHaveBeenCalled();
-            // Sprawdź powiadomienie (autor posta != autor komentarza)
             expect(
                 mockNotificationService.notifyNewComment
             ).toHaveBeenCalledWith(
@@ -106,24 +99,20 @@ describe('CommentReactionService', () => {
         const mockUser = { id: 1, name: 'Liker', surname: 'Man' };
 
         it('powinien dodać lajka, jeśli jeszcze nie istnieje', async () => {
-            // Arrange
             (db.query.posts.findFirst as jest.Mock).mockResolvedValue(mockPost);
             (db.query.postReactions.findFirst as jest.Mock).mockResolvedValue(
                 null
-            ); // Brak lajka
+            );
 
-            // Mock dla inserta (chaining: insert().values())
             const insertValuesMock = jest.fn();
             (db.insert as jest.Mock).mockReturnValue({
                 values: insertValuesMock,
             });
 
-            (db.query.users.findFirst as jest.Mock).mockResolvedValue(mockUser); // Pobranie danych likera do powiadomienia
+            (db.query.users.findFirst as jest.Mock).mockResolvedValue(mockUser);
 
-            // Act
             const result = await service.togglePostLike(1, 100);
 
-            // Assert
             expect(result).toEqual({ liked: true });
             expect(db.insert).toHaveBeenCalled();
             expect(
@@ -132,20 +121,17 @@ describe('CommentReactionService', () => {
         });
 
         it('powinien usunąć lajka, jeśli już istnieje', async () => {
-            // Arrange
             (db.query.posts.findFirst as jest.Mock).mockResolvedValue(mockPost);
             (db.query.postReactions.findFirst as jest.Mock).mockResolvedValue({
                 id: 55,
                 userId: 1,
                 postId: 100,
-            }); // Lajk jest
+            });
 
-            // Act
             const result = await service.togglePostLike(1, 100);
 
-            // Assert
             expect(result).toEqual({ liked: false });
-            expect(db.delete).toHaveBeenCalled(); // Powinien usunąć
+            expect(db.delete).toHaveBeenCalled();
             expect(
                 mockNotificationService.notifyPostReaction
             ).not.toHaveBeenCalled();
@@ -161,7 +147,6 @@ describe('CommentReactionService', () => {
 
             await service.deleteComment(1, 10);
 
-            // Sprawdź czy wywołano delete 3 razy (odpowiedzi, reakcje, sam komentarz)
             expect(db.delete).toHaveBeenCalledTimes(3);
         });
 

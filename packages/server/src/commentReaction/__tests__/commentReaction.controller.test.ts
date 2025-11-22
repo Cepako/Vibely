@@ -21,7 +21,7 @@ describe('CommentReactionController', () => {
         controller = new CommentReactionController(mockService);
 
         mockRequest = {
-            user: { id: 1 } as any, // Mockujemy zalogowanego usera
+            user: { id: 1 } as any,
             body: {},
             params: {},
         };

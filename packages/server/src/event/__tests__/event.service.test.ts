@@ -61,31 +61,25 @@ describe('EventService', () => {
         };
 
         it('powinien utworzyć wydarzenie i zwrócić jego szczegóły', async () => {
-            // Arrange
             const createdEvent = { id: 10, ...eventData, organizerId: userId };
 
-            // Mock inserta eventu
             (db.insert as jest.Mock).mockReturnValueOnce({
                 values: jest.fn().mockReturnValue({
                     returning: jest.fn().mockResolvedValue([createdEvent]),
                 }),
             });
 
-            // Mock dodania organizatora jako uczestnika (drugi insert)
             (db.insert as jest.Mock).mockReturnValueOnce({ values: jest.fn() });
 
-            // Mock pobrania eventu po stworzeniu (getEventById)
             (db.query.events.findFirst as jest.Mock).mockResolvedValue({
                 ...createdEvent,
                 eventParticipants: [{ userId, status: 'going', user: {} }],
                 user: { id: userId, name: 'Org', surname: 'Anizer' },
             });
 
-            // Act
             const result = await service.createEvent(userId, eventData);
 
-            // Assert
-            expect(db.insert).toHaveBeenCalledTimes(2); // Event + Participant
+            expect(db.insert).toHaveBeenCalledTimes(2);
             expect(result.title).toBe(eventData.title);
             expect(result.participants).toHaveLength(1);
         });
@@ -108,25 +102,20 @@ describe('EventService', () => {
         const eventId = 100;
 
         it('powinien dodać użytkownika do publicznego wydarzenia', async () => {
-            // Arrange
             (db.query.events.findFirst as jest.Mock).mockResolvedValue({
                 id: eventId,
                 privacyLevel: 'public',
                 organizerId: 99,
             });
-            // Sprawdzenie czy już uczestniczy
             (
                 db.query.eventParticipants.findFirst as jest.Mock
             ).mockResolvedValue(null);
 
-            // Mock inserta
             const insertMock = jest.fn();
             (db.insert as jest.Mock).mockReturnValue({ values: insertMock });
 
-            // Act
             await service.joinPublicEvent(userId, eventId);
 
-            // Assert
             expect(insertMock).toHaveBeenCalledWith({
                 eventId,
                 userId,
@@ -155,7 +144,6 @@ describe('EventService', () => {
             (
                 db.query.eventParticipants.findFirst as jest.Mock
             ).mockResolvedValue(null);
-            // Symulacja, że już jest 2 uczestników "going"
             (
                 db.query.eventParticipants.findMany as jest.Mock
             ).mockResolvedValue([{}, {}]);
@@ -172,31 +160,26 @@ describe('EventService', () => {
         const userIdsToInvite = [2, 3];
 
         it('powinien zaprosić użytkowników i wysłać powiadomienia', async () => {
-            // Arrange
             (db.query.events.findFirst as jest.Mock).mockResolvedValue({
                 id: eventId,
-                organizerId, // Zgadza się z wywołującym
+                organizerId,
                 privacyLevel: 'public',
                 user: { name: 'Host', surname: 'User' },
             });
 
-            // Brak istniejących uczestników z tej listy
             (
                 db.query.eventParticipants.findMany as jest.Mock
             ).mockResolvedValue([]);
 
-            // Mock inserta zaproszeń
             const insertMock = jest.fn();
             (db.insert as jest.Mock).mockReturnValue({ values: insertMock });
 
-            // Act
             await service.inviteUsersToEvent(
                 organizerId,
                 eventId,
                 userIdsToInvite
             );
 
-            // Assert
             expect(db.insert).toHaveBeenCalled();
             expect(
                 mockNotificationService.notifyEventInvitation
@@ -206,7 +189,7 @@ describe('EventService', () => {
         it('powinien rzucić błąd, jeśli nie jest organizatorem', async () => {
             (db.query.events.findFirst as jest.Mock).mockResolvedValue({
                 id: eventId,
-                organizerId: 999, // Inny ID
+                organizerId: 999,
                 privacyLevel: 'public',
             });
 
@@ -220,22 +203,18 @@ describe('EventService', () => {
         });
 
         it('powinien sprawdzić znajomych dla wydarzenia prywatnego', async () => {
-            // Arrange
             (db.query.events.findFirst as jest.Mock).mockResolvedValue({
                 id: eventId,
                 organizerId,
-                privacyLevel: 'private', // Prywatne = wymusza sprawdzenie znajomych
+                privacyLevel: 'private',
                 user: { name: 'Host' },
             });
             (
                 db.query.eventParticipants.findMany as jest.Mock
             ).mockResolvedValue([]);
 
-            // Mock FriendshipService zwracający pustą listę znajomych
             mockFriendshipService.getFriends.mockResolvedValue([]);
 
-            // Act & Assert
-            // Próbujemy zaprosić kogoś kto nie jest na liście znajomych
             await expect(
                 service.inviteUsersToEvent(organizerId, eventId, [2])
             ).rejects.toThrow('You can only invite friends to private events');

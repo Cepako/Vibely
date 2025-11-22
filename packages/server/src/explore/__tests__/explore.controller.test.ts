@@ -21,7 +21,6 @@ describe('ExploreController', () => {
 
         mockService = new ExploreService() as jest.Mocked<ExploreService>;
         controller = new ExploreController();
-        // Podmiana prywatnej instancji serwisu
         (controller as any).exploreService = mockService;
 
         mockRequest = {
@@ -30,7 +29,7 @@ describe('ExploreController', () => {
         };
 
         mockReply = {
-            code: jest.fn().mockReturnThis(), // explore.controller używa .code() zamiast .status()
+            code: jest.fn().mockReturnThis(),
             send: jest.fn().mockReturnThis(),
         };
     });

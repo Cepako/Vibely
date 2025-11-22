@@ -396,7 +396,7 @@ export class MessageController {
                 success: true,
                 data: message,
             });
-        } catch (error) {
+        } catch (error: any) {
             request.log.error('Send message error:', error);
             return reply.code(500).send({
                 success: false,
